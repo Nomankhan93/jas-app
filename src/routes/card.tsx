@@ -8,6 +8,9 @@ export const Route = createFileRoute('/card')({
   component: CardPage,
 })
 
+const JAS_LOGO_PATH = '/jas/logo.jpeg'
+const JAS_FLAG_PATH = '/jas/flag.jpeg'
+
 type Member = {
   id: string
   member_no: string | null
@@ -31,6 +34,8 @@ function CardPage() {
   const [downloading, setDownloading] = useState(false)
   const [member, setMember] = useState<Member | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [flagUrl, setFlagUrl] = useState<string | null>(null)
   const [qrUrl, setQrUrl] = useState<string | null>(null)
   const [verifyUrl, setVerifyUrl] = useState('')
   const [error, setError] = useState('')
@@ -42,6 +47,14 @@ function CardPage() {
   async function loadCard() {
     setLoading(true)
     setError('')
+
+    const [logoDataUrl, flagDataUrl] = await Promise.all([
+      imageUrlToDataUrl(JAS_LOGO_PATH),
+      imageUrlToDataUrl(JAS_FLAG_PATH),
+    ])
+
+    setLogoUrl(logoDataUrl || JAS_LOGO_PATH)
+    setFlagUrl(flagDataUrl || JAS_FLAG_PATH)
 
     const {
       data: { user },
@@ -85,10 +98,10 @@ function CardPage() {
     setVerifyUrl(publicVerifyUrl)
 
     const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
-      width: 260,
+      width: 280,
       margin: 1,
       color: {
-        dark: '#064e3b',
+        dark: '#111827',
         light: '#ffffff',
       },
     })
@@ -111,12 +124,16 @@ function CardPage() {
     if (!cardRef.current || !member?.member_no) return
 
     setDownloading(true)
+    setError('')
 
     try {
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
+
+        // Avoids html-to-image cross-origin Google Fonts cssRules warning
+        fontEmbedCSS: '',
       })
 
       const link = document.createElement('a')
@@ -129,9 +146,9 @@ function CardPage() {
           ? err.message
           : 'Failed to download card. Please try again.',
       )
+    } finally {
+      setDownloading(false)
     }
-
-    setDownloading(false)
   }
 
   if (loading) {
@@ -174,111 +191,146 @@ function CardPage() {
             <section className="flex justify-center">
               <div
                 ref={cardRef}
-                className="w-full max-w-4xl overflow-hidden rounded-[2rem] border border-emerald-900/20 bg-white shadow-2xl"
+                className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-emerald-900/20 bg-white shadow-2xl"
               >
-                <div className="relative bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-700 p-7 text-white">
-                  <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-white/10" />
-                  <div className="absolute bottom-0 left-0 h-24 w-24 rounded-tr-full bg-white/10" />
+                <div className="relative overflow-hidden bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-700 p-7 text-white">
+                  <div className="absolute right-0 top-0 h-40 w-40 rounded-bl-full bg-white/10" />
+                  <div className="absolute bottom-0 left-0 h-28 w-28 rounded-tr-full bg-white/10" />
 
-                  <div className="relative flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-100">
-                        Jatt Alliance Sindh
-                      </p>
-                      <h2 className="mt-2 text-4xl font-black tracking-tight">
-                        Digital Member ID
-                      </h2>
-                      <p className="mt-2 text-sm text-emerald-50">
-                        Verified membership card
-                      </p>
+                  <div className="relative flex items-start justify-between gap-5">
+                    <div className="flex items-center gap-5">
+                      {logoUrl ? (
+                        <img
+                          src={logoUrl}
+                          alt="Jatt Alliance Sindh logo"
+                          className="h-24 w-24 rounded-full border-2 border-yellow-400/80 bg-white object-cover shadow-xl"
+                        />
+                      ) : null}
+
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-emerald-100">
+                          Jatt Alliance Sindh
+                        </p>
+                        <h2 className="mt-2 text-4xl font-black tracking-tight">
+                          Digital Member ID
+                        </h2>
+                        <p className="mt-2 text-sm text-emerald-50">
+                          Verified membership card
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="rounded-2xl border border-white/25 bg-white/15 px-4 py-2 text-sm font-bold">
+                    <div className="rounded-2xl border border-white/25 bg-white/15 px-5 py-3 text-sm font-bold">
                       VERIFIED
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-7 p-7 md:grid-cols-[180px_1fr_170px]">
-                  <div className="space-y-3">
-                    {photoUrl ? (
+                <div className="relative overflow-hidden bg-white">
+                  {flagUrl ? (
+                    <>
                       <img
-                        src={photoUrl}
-                        alt={member.full_name}
-                        className="h-44 w-44 rounded-3xl object-cover ring-4 ring-emerald-50"
+                        src={flagUrl}
+                        alt=""
+                        className="pointer-events-none absolute inset-0 h-full w-full object-fill opacity-[0.28] mix-blend-multiply"
                       />
-                    ) : (
-                      <div className="flex h-44 w-44 items-center justify-center rounded-3xl bg-slate-100 text-sm text-slate-500">
-                        No photo
+                      <div className="pointer-events-none absolute inset-0 bg-white/54" />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/70 via-white/58 to-white/44" />
+                    </>
+                  ) : null}
+
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt=""
+                      className="pointer-events-none absolute right-12 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full object-cover opacity-[0.08]"
+                    />
+                  ) : null}
+
+                  <div className="relative grid gap-7 p-7 md:grid-cols-[190px_1fr_190px]">
+                    <div className="space-y-3">
+                      {photoUrl ? (
+                        <img
+                          src={photoUrl}
+                          alt={member.full_name}
+                          className="h-48 w-48 rounded-3xl object-cover ring-4 ring-emerald-50"
+                        />
+                      ) : (
+                        <div className="flex h-48 w-48 items-center justify-center rounded-3xl bg-slate-100 text-sm text-slate-500">
+                          No photo
+                        </div>
+                      )}
+
+                      <div className="rounded-2xl bg-emerald-50 p-3 text-center">
+                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
+                          Member No
+                        </p>
+                        <p className="mt-1 text-sm font-black text-emerald-950">
+                          {member.member_no}
+                        </p>
                       </div>
-                    )}
-
-                    <div className="rounded-2xl bg-emerald-50 p-3 text-center">
-                      <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-                        Member No
-                      </p>
-                      <p className="mt-1 text-sm font-black text-emerald-950">
-                        {member.member_no}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-5">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Member Name
-                      </p>
-                      <h3 className="mt-1 text-3xl font-black text-slate-950">
-                        {member.full_name}
-                      </h3>
                     </div>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Info label="Father Name" value={member.father_name} />
-                      <Info label="CNIC" value={member.cnic} />
-                      <Info label="Mobile" value={member.mobile} />
-                      <Info label="District" value={member.district} />
-                      <Info
-                        label="Profession"
-                        value={member.profession || 'Not provided'}
-                      />
-                      <Info
-                        label="Caste Branch"
-                        value={member.caste_branch || 'Not provided'}
-                      />
-                      <Info
-                        label="Approved Date"
-                        value={
-                          member.approved_at
-                            ? new Date(member.approved_at).toLocaleDateString()
-                            : 'N/A'
-                        }
-                      />
-                      <Info label="Status" value="Approved" />
+                    <div className="space-y-5">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                          Member Name
+                        </p>
+                        <h3 className="mt-1 text-3xl font-black text-slate-950">
+                          {member.full_name}
+                        </h3>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <Info label="Father Name" value={member.father_name} />
+                        <Info label="CNIC" value={member.cnic} />
+                        <Info label="Mobile" value={member.mobile} />
+                        <Info label="District" value={member.district} />
+                        <Info
+                          label="Profession"
+                          value={member.profession || 'Not provided'}
+                        />
+                        <Info
+                          label="Caste Branch"
+                          value={member.caste_branch || 'Not provided'}
+                        />
+                        <Info
+                          label="Approved Date"
+                          value={
+                            member.approved_at
+                              ? new Date(member.approved_at).toLocaleDateString()
+                              : 'N/A'
+                          }
+                        />
+                        <Info label="Status" value="Approved" />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                    {qrUrl ? (
-                      <img
-                        src={qrUrl}
-                        alt="Verification QR"
-                        className="h-36 w-36 rounded-xl bg-white p-2"
-                      />
-                    ) : (
-                      <div className="h-36 w-36 rounded-xl bg-slate-100" />
-                    )}
+                    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+                      {qrUrl ? (
+                        <img
+                          src={qrUrl}
+                          alt="Verification QR"
+                          className="h-40 w-40 rounded-xl bg-white p-2"
+                        />
+                      ) : (
+                        <div className="h-40 w-40 rounded-xl bg-slate-100" />
+                      )}
 
-                    <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Scan to verify
-                    </p>
+                      <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Scan to verify
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="border-t border-slate-200 bg-slate-50 px-7 py-4">
                   <p className="text-xs leading-5 text-slate-500">
-                    This card is digitally generated by Jatt Alliance Sindh.
-                    Verification URL: {verifyUrl}
+                    This card is digitally generated by Jatt Alliance Sindh. QR
+                    verification confirms current membership status.
+                    {verifyUrl ? (
+                      <span className="ml-1">Verification URL: {verifyUrl}</span>
+                    ) : null}
                   </p>
                 </div>
               </div>
