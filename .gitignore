@@ -1,0 +1,30 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+.env
+.nitro
+.tanstack
+.wrangler
+.output
+.vinxi
+__unconfig*
+todos.json
+.env.local
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Supabase local temp/cache
+supabase/.temp/
+supabase/.branches/
+supabase/snippets/
+
+# Local backups
+backups/
+
+# Build output
+dist/
