@@ -1,7 +1,8 @@
 -- Jatt Alliance Sindh (JAS) Membership Platform
--- Clean initial schema:
+-- Combined clean initial schema:
 -- profiles + members + user_roles + member_counters + member-photos
 -- Secure RLS + private helper functions + service-role-only admin RPC
+-- Includes Phase 2.5 member profile/card-back fields.
 
 create extension if not exists "pgcrypto";
 
@@ -61,10 +62,23 @@ create table public.members (
 
   cnic text not null unique,
   mobile text not null,
+
   district text not null,
+  taluka text,
 
   profession text,
   caste_branch text,
+
+  -- Card backside / complete profile fields
+  address text,
+  date_of_birth date,
+  gender text,
+  education text,
+  blood_group text,
+  emergency_contact_name text,
+  emergency_contact_relation text,
+  emergency_contact_mobile text,
+  declaration_accepted boolean not null default false,
 
   -- This stores Supabase Storage object path, for example:
   -- user_id/photo.jpg
@@ -88,7 +102,26 @@ create table public.members (
 
   constraint members_mobile_format_check
   check (
-    mobile ~ '^[0-9+ -]{10,20}$'
+    mobile ~ '^(\+92|0)3[0-9]{9}$'
+  ),
+
+  constraint members_emergency_mobile_format_check
+  check (
+    emergency_contact_mobile is null
+    or emergency_contact_mobile = ''
+    or emergency_contact_mobile ~ '^(\+92|0)3[0-9]{9}$'
+  ),
+
+  constraint members_gender_check
+  check (
+    gender is null
+    or gender in ('Male', 'Female', 'Other', 'Prefer not to say')
+  ),
+
+  constraint members_blood_group_check
+  check (
+    blood_group is null
+    or blood_group in ('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-')
   ),
 
   constraint members_district_check
@@ -102,23 +135,23 @@ create table public.members (
       'Jamshoro',
       'Karachi Central',
       'Karachi East',
-      'Karachi Keamari',
-      'Karachi Korangi',
-      'Karachi Malir',
       'Karachi South',
       'Karachi West',
       'Kashmore',
+      'Keamari',
       'Khairpur',
+      'Korangi',
       'Larkana',
+      'Malir',
       'Matiari',
       'Mirpur Khas',
-      'Naushahro Feroze',
+      'Naushahro Firoze',
       'Qambar Shahdadkot',
       'Sanghar',
       'Shaheed Benazirabad',
       'Shikarpur',
-      'Sukkur',
       'Sujawal',
+      'Sukkur',
       'Tando Allahyar',
       'Tando Muhammad Khan',
       'Tharparkar',
@@ -151,6 +184,12 @@ on public.members(created_at desc);
 
 create index members_member_no_idx
 on public.members(member_no);
+
+create index members_cnic_idx
+on public.members(cnic);
+
+create index members_mobile_idx
+on public.members(mobile);
 
 create index user_roles_user_id_idx
 on public.user_roles(user_id);
@@ -216,10 +255,13 @@ begin
     return new;
   end if;
 
-  -- Direct client updates must never change review/card fields.
+  -- Members cannot transfer ownership.
+  if new.user_id is distinct from old.user_id then
+    raise exception 'Member ownership cannot be changed.';
+  end if;
+
+  -- Direct client updates must never change card/approval fields.
   if new.member_no is distinct from old.member_no
-    or new.status is distinct from old.status
-    or new.rejection_reason is distinct from old.rejection_reason
     or new.reviewed_by is distinct from old.reviewed_by
     or new.reviewed_at is distinct from old.reviewed_at
     or new.approved_at is distinct from old.approved_at
@@ -227,9 +269,32 @@ begin
     raise exception 'Review/card fields can only be changed by server-side admin actions.';
   end if;
 
-  -- Members cannot transfer ownership.
-  if new.user_id is distinct from old.user_id then
-    raise exception 'Member ownership cannot be changed.';
+  -- Pending form edits must stay pending and cannot set rejection reason.
+  if old.status = 'pending' then
+    if new.status is distinct from 'pending'::public.member_status
+      or new.rejection_reason is not null
+    then
+      raise exception 'Pending applications can only be edited as pending.';
+    end if;
+
+    return new;
+  end if;
+
+  -- Rejected form resubmission is allowed only by resetting status to pending
+  -- and clearing rejection reason.
+  if old.status = 'rejected' then
+    if new.status is distinct from 'pending'::public.member_status
+      or new.rejection_reason is not null
+    then
+      raise exception 'Rejected applications can only be resubmitted as pending.';
+    end if;
+
+    return new;
+  end if;
+
+  -- Approved forms cannot be edited by client users.
+  if old.status = 'approved' then
+    raise exception 'Approved membership forms cannot be edited.';
   end if;
 
   return new;
@@ -431,17 +496,20 @@ with check (
   and approved_at is null
 );
 
-create policy "members_update_own_while_pending"
+create policy "members_update_own_pending_or_rejected"
 on public.members
 for update
 to authenticated
 using (
   user_id = (select auth.uid())
-  and status = 'pending'
+  and status in ('pending', 'rejected')
 )
 with check (
   user_id = (select auth.uid())
   and status = 'pending'
+  and member_no is null
+  and rejection_reason is null
+  and approved_at is null
 );
 
 create policy "members_admin_select_update_all"
@@ -585,6 +653,9 @@ revoke execute on all functions in schema app_private from anon;
 grant execute on function app_private.has_role(uuid, public.app_role)
 to authenticated;
 
+grant execute on function app_private.has_role(uuid, public.app_role)
+to service_role;
+
 grant execute on all functions in schema app_private
 to service_role;
 
@@ -613,6 +684,3 @@ revoke execute on functions from anon;
 
 alter default privileges in schema app_private
 revoke execute on functions from authenticated;
-
-alter table public.members
-add column if not exists taluka text;

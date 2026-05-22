@@ -1,3 +1,4 @@
+// src/routes/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { toPng } from 'html-to-image'
 import QRCode from 'qrcode'
@@ -81,17 +82,41 @@ function CardPage() {
 
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (userError || !user) {
       navigate({ to: '/login' })
       return
     }
 
-    const { data, error } = await supabase
+    const { data: rawData, error } = await supabase
       .from('members')
       .select(
-        'id, member_no, address, date_of_birth, gender, education, blood_group, emergency_contact_name, emergency_contact_relation, emergency_contact_mobile, declaration_accepted, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, approved_at',
+        [
+          'id',
+          'member_no',
+          'full_name',
+          'father_name',
+          'cnic',
+          'mobile',
+          'district',
+          'taluka',
+          'profession',
+          'caste_branch',
+          'photo_url',
+          'status',
+          'approved_at',
+          'address',
+          'date_of_birth',
+          'gender',
+          'education',
+          'blood_group',
+          'emergency_contact_name',
+          'emergency_contact_relation',
+          'emergency_contact_mobile',
+          'declaration_accepted',
+        ].join(', '),
       )
       .eq('user_id', user.id)
       .maybeSingle()
@@ -101,6 +126,8 @@ function CardPage() {
       setLoading(false)
       return
     }
+
+    const data = rawData as unknown as MembershipCardMember | null
 
     if (!data) {
       setError('Membership form not found.')
@@ -157,7 +184,7 @@ function CardPage() {
       const dataUrl = await toPng(targetRef.current, {
         cacheBust: true,
         pixelRatio: 2,
-        backgroundColor: '#090806',
+        backgroundColor: '#ffffff',
         fontEmbedCSS: '',
         width: CARD_WIDTH,
         height: CARD_HEIGHT,
