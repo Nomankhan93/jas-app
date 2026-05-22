@@ -6,6 +6,15 @@ export type CardSide = 'front' | 'back'
 export type MembershipCardMember = {
   id: string
   member_no: string | null
+  address: string | null
+  date_of_birth: string | null
+  gender: string | null
+  education: string | null
+  blood_group: string | null
+  emergency_contact_name: string | null
+  emergency_contact_relation: string | null
+  emergency_contact_mobile: string | null
+  declaration_accepted: boolean
   full_name: string
   father_name: string
   cnic: string
@@ -219,18 +228,31 @@ function CardBack({
           <div className="mt-8 grid flex-1 grid-cols-[1fr_315px] gap-7">
             <div className="grid grid-cols-2 gap-5">
               <BackPanel title="Residential Address">
-                <p>{member.taluka || 'Taluka not provided'}</p>
-                <p>{member.district}</p>
+                {member.address ? (
+                  <p>{member.address}</p>
+                ) : (
+                  <p>Full street address not collected yet.</p>
+                )}
                 <p className="mt-2 text-yellow-100/70">
-                  Full street address not collected yet.
+                  {[member.taluka, member.district].filter(Boolean).join(', ')}
                 </p>
               </BackPanel>
 
               <BackPanel title="Emergency Contact">
-                <p>Not collected yet.</p>
-                <p className="mt-2 text-yellow-100/70">
-                  Add emergency contact fields in a later schema phase.
-                </p>
+                {member.emergency_contact_name ||
+                member.emergency_contact_mobile ? (
+                  <>
+                    <p>{member.emergency_contact_name || 'Name not provided'}</p>
+                    <p className="mt-1 text-yellow-100/70">
+                      {member.emergency_contact_relation || 'Relation not provided'}
+                    </p>
+                    <p className="mt-1">
+                      {member.emergency_contact_mobile || 'Mobile not provided'}
+                    </p>
+                  </>
+                ) : (
+                  <p>Emergency contact not collected yet.</p>
+                )}
               </BackPanel>
 
               <BackPanel title="Verification Instructions">

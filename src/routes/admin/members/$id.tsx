@@ -11,6 +11,15 @@ type Member = {
   id: string
   user_id: string
   member_no: string | null
+  address: string | null
+  date_of_birth: string | null
+  gender: string | null
+  education: string | null
+  blood_group: string | null
+  emergency_contact_name: string | null
+  emergency_contact_relation: string | null
+  emergency_contact_mobile: string | null
+  declaration_accepted: boolean
   full_name: string
   father_name: string
   cnic: string
@@ -69,7 +78,7 @@ function AdminMemberDetailPage() {
 
     const { data, error } = await supabase
       .from('members')
-      .select('id, user_id, member_no, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, rejection_reason, reviewed_at, approved_at, created_at')
+      .select('id, user_id, member_no, address, date_of_birth, gender, education, blood_group, emergency_contact_name, emergency_contact_relation, emergency_contact_mobile, declaration_accepted, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, rejection_reason, reviewed_at, approved_at, created_at')
       .eq('id', id)
       .single()
 
@@ -226,6 +235,34 @@ function AdminMemberDetailPage() {
               <InfoItem label="Mobile" value={member.mobile} />
               <InfoItem label="District" value={member.district} />
               <InfoItem label="Taluka" value={member.taluka || 'Not provided'} />
+              <InfoItem label="Address" value={member.address} />
+              <InfoItem
+                label="Date of Birth"
+                value={
+                  member.date_of_birth
+                    ? new Date(member.date_of_birth).toLocaleDateString()
+                    : null
+                }
+              />
+              <InfoItem label="Gender" value={member.gender} />
+              <InfoItem label="Education" value={member.education} />
+              <InfoItem label="Blood Group" value={member.blood_group} />
+              <InfoItem
+                label="Emergency Contact Name"
+                value={member.emergency_contact_name}
+              />
+              <InfoItem
+                label="Emergency Contact Relation"
+                value={member.emergency_contact_relation}
+              />
+              <InfoItem
+                label="Emergency Contact Mobile"
+                value={member.emergency_contact_mobile}
+              />
+              <InfoItem
+                label="Declaration Accepted"
+                value={member.declaration_accepted ? 'Yes' : 'No'}
+              />
               <InfoItem label="Profession" value={member.profession} />
               <InfoItem label="Caste Branch" value={member.caste_branch} />
               <InfoItem label="Member No" value={member.member_no} />

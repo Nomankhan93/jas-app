@@ -148,9 +148,31 @@ const talukasByDistrict: Record<string, string[]> = {
   Sukkur: ['New Sukkur', 'Pano Aqil', 'Rohri', 'Salehpat', 'Sukkur City'],
 }
 
+const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say']
+
+const bloodGroupOptions = [
+  'A+',
+  'A-',
+  'B+',
+  'B-',
+  'AB+',
+  'AB-',
+  'O+',
+  'O-',
+]
+
 type ExistingMember = {
   id: string
   status: 'pending' | 'approved' | 'rejected'
+  address: string | null
+  date_of_birth: string | null
+  gender: string | null
+  education: string | null
+  blood_group: string | null
+  emergency_contact_name: string | null
+  emergency_contact_relation: string | null
+  emergency_contact_mobile: string | null
+  declaration_accepted: boolean
   full_name: string
   father_name: string
   cnic: string
@@ -180,6 +202,15 @@ function RegisterPage() {
   const [taluka, setTaluka] = useState('')
   const [profession, setProfession] = useState('')
   const [casteBranch, setCasteBranch] = useState('')
+  const [address, setAddress] = useState('')
+  const [dateOfBirth, setDateOfBirth] = useState('')
+  const [gender, setGender] = useState('')
+  const [education, setEducation] = useState('')
+  const [bloodGroup, setBloodGroup] = useState('')
+  const [emergencyContactName, setEmergencyContactName] = useState('')
+  const [emergencyContactRelation, setEmergencyContactRelation] = useState('')
+  const [emergencyContactMobile, setEmergencyContactMobile] = useState('')
+  const [declarationAccepted, setDeclarationAccepted] = useState(false)
   const [photo, setPhoto] = useState<File | null>(null)
 
   const [error, setError] = useState('')
@@ -209,7 +240,7 @@ function RegisterPage() {
     const { data, error } = await supabase
       .from('members')
       .select(
-        'id, status, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url',
+        'id, status, address, date_of_birth, gender, education, blood_group, emergency_contact_name, emergency_contact_relation, emergency_contact_mobile, declaration_accepted, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url',
       )
       .eq('user_id', user.id)
       .maybeSingle()
@@ -230,6 +261,15 @@ function RegisterPage() {
       setTaluka(data.taluka ?? '')
       setProfession(data.profession ?? '')
       setCasteBranch(data.caste_branch ?? '')
+      setAddress(data.address ?? '')
+      setDateOfBirth(data.date_of_birth ?? '')
+      setGender(data.gender ?? '')
+      setEducation(data.education ?? '')
+      setBloodGroup(data.blood_group ?? '')
+      setEmergencyContactName(data.emergency_contact_name ?? '')
+      setEmergencyContactRelation(data.emergency_contact_relation ?? '')
+      setEmergencyContactMobile(data.emergency_contact_mobile ?? '')
+      setDeclarationAccepted(data.declaration_accepted)
     }
 
     setLoading(false)
@@ -274,6 +314,24 @@ function RegisterPage() {
       return
     }
 
+    if (!address.trim()) {
+      setError('Complete residential address is required.')
+      return
+    }
+
+    if (
+      emergencyContactMobile.trim() &&
+      !isPakistaniMobile(emergencyContactMobile)
+    ) {
+      setError('Emergency contact mobile must be a valid Pakistani mobile number.')
+      return
+    }
+
+    if (!declarationAccepted) {
+      setError('Please accept the declaration before submitting.')
+      return
+    }
+
     setSubmitting(true)
 
     let photoPath = existingMember?.photo_url ?? ''
@@ -308,6 +366,15 @@ function RegisterPage() {
           taluka,
           profession: profession || null,
           caste_branch: casteBranch || null,
+          address: address.trim(),
+          date_of_birth: dateOfBirth || null,
+          gender: gender || null,
+          education: education || null,
+          blood_group: bloodGroup || null,
+          emergency_contact_name: emergencyContactName || null,
+          emergency_contact_relation: emergencyContactRelation || null,
+          emergency_contact_mobile: emergencyContactMobile || null,
+          declaration_accepted: declarationAccepted,
           photo_url: photoPath,
         })
         .eq('id', existingMember.id)
@@ -328,6 +395,15 @@ function RegisterPage() {
         taluka,
         profession: profession || null,
         caste_branch: casteBranch || null,
+        address: address.trim(),
+        date_of_birth: dateOfBirth || null,
+        gender: gender || null,
+        education: education || null,
+        blood_group: bloodGroup || null,
+        emergency_contact_name: emergencyContactName || null,
+        emergency_contact_relation: emergencyContactRelation || null,
+        emergency_contact_mobile: emergencyContactMobile || null,
+        declaration_accepted: declarationAccepted,
         photo_url: photoPath,
         status: 'pending',
       })
@@ -492,6 +568,101 @@ function RegisterPage() {
               />
             </Field>
 
+            <Field label="Complete Residential Address" className="md:col-span-2">
+              <textarea
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                disabled={locked}
+                required
+                className="input min-h-28"
+                placeholder="House, street, area, taluka, district"
+              />
+            </Field>
+
+            <Field label="Date of Birth">
+              <input
+                type="date"
+                value={dateOfBirth}
+                onChange={(event) => setDateOfBirth(event.target.value)}
+                disabled={locked}
+                className="input"
+              />
+            </Field>
+
+            <Field label="Gender">
+              <select
+                value={gender}
+                onChange={(event) => setGender(event.target.value)}
+                disabled={locked}
+                className="input"
+              >
+                <option value="">Optional</option>
+                {genderOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Education / Qualification">
+              <input
+                value={education}
+                onChange={(event) => setEducation(event.target.value)}
+                disabled={locked}
+                className="input"
+                placeholder="Optional"
+              />
+            </Field>
+
+            <Field label="Blood Group">
+              <select
+                value={bloodGroup}
+                onChange={(event) => setBloodGroup(event.target.value)}
+                disabled={locked}
+                className="input"
+              >
+                <option value="">Optional</option>
+                {bloodGroupOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Emergency Contact Name">
+              <input
+                value={emergencyContactName}
+                onChange={(event) => setEmergencyContactName(event.target.value)}
+                disabled={locked}
+                className="input"
+                placeholder="Optional"
+              />
+            </Field>
+
+            <Field label="Emergency Contact Relation">
+              <input
+                value={emergencyContactRelation}
+                onChange={(event) =>
+                  setEmergencyContactRelation(event.target.value)
+                }
+                disabled={locked}
+                className="input"
+                placeholder="Optional"
+              />
+            </Field>
+
+            <Field label="Emergency Contact Mobile">
+              <input
+                value={emergencyContactMobile}
+                onChange={(event) => setEmergencyContactMobile(event.target.value)}
+                disabled={locked}
+                className="input"
+                placeholder="03001234567"
+              />
+            </Field>
+
             <Field label="Photo">
               <input
                 type="file"
@@ -502,6 +673,24 @@ function RegisterPage() {
                 className="block w-full text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-emerald-800"
               />
             </Field>
+
+            <label className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 md:col-span-2">
+              <input
+                type="checkbox"
+                checked={declarationAccepted}
+                onChange={(event) =>
+                  setDeclarationAccepted(event.target.checked)
+                }
+                disabled={locked}
+                required
+                className="mt-1 h-4 w-4 shrink-0 accent-emerald-700"
+              />
+              <span>
+                I confirm that the provided information is true and authorize
+                Jatt Alliance Sindh to review it for membership approval and
+                digital card issuance.
+              </span>
+            </label>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -536,16 +725,23 @@ function RegisterPage() {
 function Field({
   label,
   children,
+  className = '',
 }: {
   label: string
   children: React.ReactNode
+  className?: string
 }) {
   return (
-    <label className="block">
+    <label className={`block ${className}`}>
       <span className="mb-1 block text-sm font-medium text-slate-700">
         {label}
       </span>
       {children}
     </label>
   )
+}
+
+function isPakistaniMobile(value: string) {
+  const normalized = value.replace(/[\s-]/g, '')
+  return /^(\+92|0)3[0-9]{9}$/.test(normalized)
 }
