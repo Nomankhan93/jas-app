@@ -1,3 +1,6 @@
+// src/components/MembershipCard.tsx
+import type { ReactNode } from 'react'
+
 export const CARD_WIDTH = 1280
 export const CARD_HEIGHT = 760
 
@@ -40,7 +43,7 @@ export function MembershipCard({
 }: MembershipCardProps) {
   return (
     <article
-      className="relative flex shrink-0 flex-col overflow-hidden rounded-[2rem] border border-yellow-500/35 bg-[#090806] text-white shadow-2xl"
+      className="relative flex shrink-0 flex-col overflow-hidden rounded-[2rem] border border-emerald-900/20 bg-white text-slate-950 shadow-2xl"
       style={{
         width: `${CARD_WIDTH}px`,
         minWidth: `${CARD_WIDTH}px`,
@@ -77,102 +80,84 @@ function CardFront({
   qrUrl,
   verifyUrl,
 }: Omit<MembershipCardProps, 'side'>) {
-  const shortVerifyUrl = getShortVerifyUrl(verifyUrl)
   const professionOrCaste =
     member.profession || member.caste_branch || 'Not provided'
 
   return (
     <>
-      <div className="relative h-[210px] overflow-hidden bg-[linear-gradient(135deg,#050505_0%,#064e3b_45%,#3a2606_100%)] px-9 py-7">
-        <GoldPattern />
+      <CardHeader
+        logoUrl={logoUrl}
+        label="Digital Member ID"
+        title="JATT ALLIANCE SINDH"
+        subtitle="Official verified membership card"
+        badge="Verified"
+      />
 
-        <div className="relative flex items-start justify-between gap-8">
-          <div className="flex items-start gap-5">
-            <LogoMark logoUrl={logoUrl} size="large" />
+      <div className="relative flex-1 overflow-hidden bg-white">
+        <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-            <div>
-              <p className="text-[14px] font-black uppercase tracking-[0.4em] text-yellow-300">
-                Official Digital Member ID
-              </p>
-              <h2 className="mt-4 whitespace-nowrap text-[64px] font-black uppercase leading-[0.92] text-white">
-                JATT ALLIANCE SINDH
-              </h2>
-              <p className="mt-4 text-[17px] font-semibold text-yellow-100">
-                Verified membership card for identity and QR confirmation
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-[1.15rem] border border-yellow-300/80 bg-yellow-300 px-7 py-4 text-[18px] font-black uppercase tracking-wide text-emerald-950 shadow-[0_18px_45px_rgba(250,204,21,0.24)]">
-            Approved
-          </div>
-        </div>
-      </div>
-
-      <div className="relative flex-1 overflow-hidden bg-[#07120d]">
-        <Watermark logoUrl={logoUrl} flagUrl={flagUrl} />
-
-        <div className="relative grid h-full grid-cols-[270px_1fr_235px] gap-8 p-8">
+        <div className="relative grid h-full grid-cols-[250px_1fr_220px] gap-8 p-8">
           <div className="space-y-4">
             {photoUrl ? (
               <img
                 src={photoUrl}
                 alt={member.full_name}
-                className="h-[250px] w-[250px] rounded-[1.6rem] border-4 border-yellow-300/85 object-cover shadow-[0_22px_55px_rgba(0,0,0,0.45)]"
+                className="h-[240px] w-[240px] rounded-[2rem] border-4 border-white object-cover shadow-lg ring-2 ring-yellow-300/80"
               />
             ) : (
-              <div className="flex h-[250px] w-[250px] items-center justify-center rounded-[1.6rem] border-4 border-yellow-300/70 bg-zinc-900 text-[18px] font-semibold text-yellow-100">
+              <div className="flex h-[240px] w-[240px] items-center justify-center rounded-[2rem] bg-slate-100 text-sm text-slate-500 shadow-sm ring-2 ring-yellow-300/60">
                 No photo
               </div>
             )}
 
-            <div className="rounded-[1.3rem] border border-yellow-300/70 bg-emerald-950 px-4 py-4 text-center shadow-lg">
-              <p className="text-[13px] font-black uppercase tracking-[0.22em] text-yellow-300">
+            <div className="rounded-[1.4rem] border border-yellow-300 bg-emerald-950 px-4 py-4 text-center shadow-sm">
+              <p className="text-[13px] font-black uppercase tracking-wide text-yellow-300">
                 Member No
               </p>
-              <p className="mt-2 text-[24px] font-black text-white">
+              <p className="mt-1 text-[20px] font-black text-white">
                 {member.member_no}
               </p>
             </div>
           </div>
 
-          <div className="space-y-6 py-1">
+          <div className="space-y-6">
             <div>
-              <p className="text-[17px] font-black uppercase tracking-[0.2em] text-yellow-300">
+              <p className="text-[18px] font-bold uppercase tracking-wide text-slate-500">
                 Member Name
               </p>
-              <h3 className="mt-3 text-[48px] font-black leading-tight text-white">
+              <h3 className="mt-2 text-[44px] font-black leading-tight text-slate-950">
                 {member.full_name}
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-x-10 gap-y-5">
+            <div className="grid grid-cols-2 gap-x-12 gap-y-6">
               <Info label="Father Name" value={member.father_name} />
               <Info label="District" value={member.district} />
               <Info label="Taluka" value={member.taluka || 'Not provided'} />
               <Info label="Profession / Caste" value={professionOrCaste} />
-              <Info label="Approved Date" value={formatDate(member.approved_at)} />
+              <Info
+                label="Approved Date"
+                value={formatDate(member.approved_at)}
+              />
               <Info label="Status" value="Approved" />
-            </div>
-
-            <div className="rounded-[1.25rem] border border-yellow-300/30 bg-emerald-950/70 px-5 py-4">
-              <p className="text-[13px] font-black uppercase tracking-[0.22em] text-yellow-300">
-                Short Verify URL
-              </p>
-              <p className="mt-2 break-all text-[16px] font-semibold leading-6 text-yellow-50">
-                {shortVerifyUrl}
-              </p>
             </div>
           </div>
 
-          <QrPanel qrUrl={qrUrl} verifyUrl={verifyUrl} />
+          <QrPanel qrUrl={qrUrl} />
         </div>
       </div>
 
-      <CardFooter
-        left="Official verified membership card"
-        right="Scan QR to confirm current membership status"
-      />
+      <div className="border-t border-slate-200 bg-slate-50 px-8 py-5">
+        <p className="text-[14px] leading-6 text-slate-500">
+          This card is digitally generated by Jatt Alliance Sindh. QR
+          verification confirms current membership status.
+          {verifyUrl ? (
+            <span className="ml-1 break-all">
+              Verification URL: {verifyUrl}
+            </span>
+          ) : null}
+        </p>
+      </div>
     </>
   )
 }
@@ -184,159 +169,216 @@ function CardBack({
   qrUrl,
   verifyUrl,
 }: Omit<MembershipCardProps, 'side' | 'photoUrl'>) {
-  const shortVerifyUrl = getShortVerifyUrl(verifyUrl)
-
   return (
     <>
-      <div className="relative h-full overflow-hidden bg-[linear-gradient(135deg,#050505_0%,#052e22_50%,#2b1d08_100%)] p-8">
-        <GoldPattern />
-        <Watermark logoUrl={logoUrl} flagUrl={flagUrl} />
+      <CardHeader
+        logoUrl={logoUrl}
+        label="Jatt Alliance Sindh"
+        title="CARDHOLDER DETAILS"
+        subtitle="Verification, terms and issuing authority"
+        badge="Back Side"
+      />
 
-        <div className="relative flex h-full flex-col">
-          <div className="flex items-start justify-between gap-8">
-            <div className="flex items-center gap-5">
-              <LogoMark logoUrl={logoUrl} size="small" />
-              <div>
-                <p className="text-[13px] font-black uppercase tracking-[0.36em] text-yellow-300">
-                  Jatt Alliance Sindh
-                </p>
-                <h2 className="mt-2 text-[38px] font-black uppercase leading-none text-white">
-                  Cardholder Details
-                </h2>
-              </div>
-            </div>
+      <div className="relative flex-1 overflow-hidden bg-white">
+        <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-            <div className="rounded-[1rem] border border-yellow-300/55 bg-emerald-950/65 px-5 py-3 text-right">
-              <p className="text-[12px] font-black uppercase tracking-[0.2em] text-yellow-300">
+        <div className="relative grid h-full grid-cols-[1fr_255px] gap-6 p-7">
+          <div className="grid grid-cols-2 gap-4">
+            <BackPanel title="Residential Address">
+              <p className="font-bold text-slate-950">
+                {member.taluka || 'Taluka not provided'}
+              </p>
+              <p className="font-bold text-slate-950">{member.district}</p>
+              <p className="mt-1 text-slate-600">
+                Full street address not collected yet.
+              </p>
+            </BackPanel>
+
+            <BackPanel title="Emergency Contact">
+              <p className="font-bold text-slate-950">Not collected yet.</p>
+              <p className="mt-1 text-slate-600">
+                Emergency contact fields can be added in the next schema phase.
+              </p>
+            </BackPanel>
+
+            <BackPanel title="Verification Instructions">
+              <p>Scan the QR code or open the verification URL.</p>
+              <p className="mt-1">
+                Match the verified name, member number, district and status
+                before accepting this card as valid.
+              </p>
+            </BackPanel>
+
+            <BackPanel title="Terms and Conditions">
+              <ul className="list-disc space-y-1 pl-5">
+                <li>This card remains property of Jatt Alliance Sindh.</li>
+                <li>Misuse, alteration or transfer is not permitted.</li>
+                <li>Validity depends on live verification status.</li>
+              </ul>
+            </BackPanel>
+
+            <BackPanel title="Organization Contact">
+              <p className="font-bold text-slate-950">Jatt Alliance Sindh</p>
+              <p>Sindh, Pakistan</p>
+              <p className="mt-1">Official contact details pending setup.</p>
+            </BackPanel>
+
+            <BackPanel title="Issuing Authority">
+              <div className="mt-5 h-px w-56 bg-slate-400" />
+              <p className="mt-2 font-black text-slate-950">
+                Authorized Signature
+              </p>
+              <p className="mt-1 text-slate-600">Digital membership office</p>
+            </BackPanel>
+          </div>
+
+          <div className="flex flex-col justify-between rounded-[2rem] border border-slate-200 bg-white/95 p-4 shadow-sm">
+            <div className="rounded-2xl border border-yellow-300 bg-emerald-950 px-3 py-3 text-center shadow-sm">
+              <p className="text-[12px] font-black uppercase tracking-wide text-yellow-300">
                 Issue No / Version
               </p>
               <p className="mt-1 text-[18px] font-black text-white">
                 {member.member_no ? `${member.member_no} / v1` : 'Pending / v1'}
               </p>
             </div>
-          </div>
 
-          <div className="mt-8 grid flex-1 grid-cols-[1fr_315px] gap-7">
-            <div className="grid grid-cols-2 gap-5">
-              <BackPanel title="Residential Address">
-                <p>{member.taluka || 'Taluka not provided'}</p>
-                <p>{member.district}</p>
-                <p className="mt-2 text-yellow-100/70">
-                  Full street address not collected yet.
-                </p>
-              </BackPanel>
+            <div className="text-center">
+              {qrUrl ? (
+                <img
+                  src={qrUrl}
+                  alt="Verification QR"
+                  className="mx-auto h-[175px] w-[175px] rounded-xl bg-white p-2"
+                />
+              ) : (
+                <div className="mx-auto h-[175px] w-[175px] rounded-xl bg-slate-100" />
+              )}
 
-              <BackPanel title="Emergency Contact">
-                <p>Not collected yet.</p>
-                <p className="mt-2 text-yellow-100/70">
-                  Add emergency contact fields in a later schema phase.
-                </p>
-              </BackPanel>
-
-              <BackPanel title="Verification Instructions">
-                <p>Scan the QR code or open the short verification URL.</p>
-                <p className="mt-2">
-                  Match the verified name, member number, and status with this
-                  card before accepting it as valid.
-                </p>
-              </BackPanel>
-
-              <BackPanel title="Terms and Conditions">
-                <ul className="list-disc space-y-1 pl-5">
-                  <li>This card remains property of Jatt Alliance Sindh.</li>
-                  <li>Misuse, alteration, or transfer is not permitted.</li>
-                  <li>Validity depends on the live verification status.</li>
-                </ul>
-              </BackPanel>
-
-              <BackPanel title="Organization Contact">
-                <p>Jatt Alliance Sindh</p>
-                <p>Sindh, Pakistan</p>
-                <p className="mt-2">Official contact details pending setup.</p>
-              </BackPanel>
-
-              <BackPanel title="Issuing Authority">
-                <div className="mt-8 h-px w-64 bg-yellow-300/70" />
-                <p className="mt-3 font-black text-white">Authorized Signature</p>
-                <p className="mt-1 text-yellow-100/70">
-                  Digital membership office
-                </p>
-              </BackPanel>
+              <p className="mt-3 text-center text-[13px] font-semibold uppercase tracking-wide text-slate-500">
+                Scan to verify
+              </p>
             </div>
 
-            <div className="flex flex-col justify-between rounded-[1.5rem] border border-yellow-300/45 bg-emerald-950/60 p-6 shadow-[0_18px_55px_rgba(0,0,0,0.26)]">
-              <div>
-                <p className="text-[13px] font-black uppercase tracking-[0.28em] text-yellow-300">
-                  QR Verification
-                </p>
-                <p className="mt-3 text-[17px] font-semibold leading-7 text-yellow-50">
-                  This code confirms whether the member record is currently
-                  approved in the JAS system.
-                </p>
-              </div>
-
-              <div className="mx-auto rounded-[1.35rem] bg-white p-4">
-                {qrUrl ? (
-                  <img
-                    src={qrUrl}
-                    alt="Verification QR"
-                    className="h-[205px] w-[205px]"
-                  />
-                ) : (
-                  <div className="h-[205px] w-[205px] bg-slate-100" />
-                )}
-              </div>
-
-              <div className="rounded-[1rem] border border-yellow-300/30 bg-yellow-300/10 p-4">
-                <p className="text-[12px] font-black uppercase tracking-[0.2em] text-yellow-300">
-                  Short URL
-                </p>
-                <p className="mt-2 break-all text-[15px] font-bold leading-6 text-white">
-                  {shortVerifyUrl}
-                </p>
-              </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[12px] font-black uppercase tracking-wide text-slate-500">
+                Verification URL
+              </p>
+              <p className="mt-1 break-all text-[12px] font-bold leading-5 text-slate-950">
+                {verifyUrl}
+              </p>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="border-t border-slate-200 bg-slate-50 px-8 py-4">
+        <p className="text-[13px] leading-5 text-slate-500">
+          This card is valid only when the QR verification page confirms the
+          membership as approved and active.
+        </p>
       </div>
     </>
   )
 }
 
-function LogoMark({
+function CardHeader({
   logoUrl,
-  size,
+  label,
+  title,
+  subtitle,
+  badge,
 }: {
   logoUrl: string | null
-  size: 'small' | 'large'
+  label: string
+  title: string
+  subtitle: string
+  badge: string
 }) {
-  const className =
-    size === 'large'
-      ? 'h-24 w-24 border-2'
-      : 'h-20 w-20 border-2'
+  return (
+    <div className="relative h-[200px] overflow-hidden bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-800 px-8 py-7 text-white">
+      <div className="absolute right-0 top-0 h-48 w-48 rounded-bl-full bg-yellow-300/12" />
+      <div className="absolute bottom-0 left-0 h-32 w-32 rounded-tr-full bg-white/8" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.16),transparent_34%)]" />
 
+      <div className="relative flex items-start justify-between gap-6">
+        <div className="flex items-start gap-5">
+          <LogoMark logoUrl={logoUrl} />
+
+          <div className="max-w-[760px]">
+            <p className="text-[14px] font-black uppercase tracking-[0.38em] text-yellow-300">
+              {label}
+            </p>
+
+            <h2 className="mt-3 whitespace-nowrap text-[58px] font-black uppercase leading-[0.94] tracking-tight text-white">
+              {title}
+            </h2>
+
+            <p className="mt-3 text-[16px] font-medium text-emerald-50">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+
+        <div className="min-w-[170px] whitespace-nowrap rounded-[1.1rem] border border-yellow-300/70 bg-yellow-300 px-7 py-4 text-center text-[18px] font-black uppercase tracking-wide text-emerald-950 shadow-lg">
+          {badge}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LogoMark({ logoUrl }: { logoUrl: string | null }) {
   return logoUrl ? (
     <img
       src={logoUrl}
       alt="Jatt Alliance Sindh logo"
-      className={`${className} rounded-full border-yellow-300 bg-white object-cover shadow-xl`}
+      className="mt-1 h-24 w-24 rounded-full border-2 border-yellow-400 bg-white object-cover shadow-xl"
     />
   ) : (
-    <div
-      className={`${className} flex items-center justify-center rounded-full border-yellow-300 bg-emerald-950 text-[18px] font-black text-yellow-300`}
-    >
+    <div className="mt-1 flex h-24 w-24 items-center justify-center rounded-full border-2 border-yellow-400 bg-emerald-950 text-xl font-black text-yellow-300 shadow-xl">
       JAS
     </div>
+  )
+}
+
+function SoftBackground({
+  logoUrl,
+  flagUrl,
+}: {
+  logoUrl: string | null
+  flagUrl: string | null
+}) {
+  return (
+    <>
+      {flagUrl ? (
+        <>
+          <img
+            src={flagUrl}
+            alt=""
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10] mix-blend-multiply"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-white/[0.78]" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/[0.92] via-white/[0.82] to-white/[0.72]" />
+        </>
+      ) : null}
+
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt=""
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full object-cover opacity-[0.045]"
+        />
+      ) : null}
+    </>
   )
 }
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[13px] font-black uppercase tracking-[0.2em] text-yellow-300/85">
+      <p className="text-[14px] font-bold uppercase tracking-wide text-slate-500">
         {label}
       </p>
-      <p className="mt-2 text-[22px] font-black leading-tight text-white">
+      <p className="mt-2 text-[20px] font-bold leading-tight text-slate-950">
         {value}
       </p>
     </div>
@@ -348,106 +390,42 @@ function BackPanel({
   children,
 }: {
   title: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
-    <section className="rounded-[1.15rem] border border-yellow-300/25 bg-black/45 p-5">
-      <h3 className="text-[13px] font-black uppercase tracking-[0.22em] text-yellow-300">
+    <section className="rounded-[1.25rem] border border-slate-200 bg-white/90 p-4 shadow-sm">
+      <h3 className="text-[13px] font-black uppercase tracking-[0.22em] text-emerald-800">
         {title}
       </h3>
-      <div className="mt-3 text-[16px] font-semibold leading-6 text-yellow-50">
+      <div className="mt-2 text-[15px] font-semibold leading-5 text-slate-700">
         {children}
       </div>
     </section>
   )
 }
 
-function QrPanel({
-  qrUrl,
-  verifyUrl,
-}: {
-  qrUrl: string | null
-  verifyUrl: string
-}) {
-  const shortVerifyUrl = getShortVerifyUrl(verifyUrl)
-
+function QrPanel({ qrUrl }: { qrUrl: string | null }) {
   return (
     <div className="flex items-center justify-center">
-      <div className="flex h-[360px] w-[215px] flex-col items-center justify-center rounded-[1.6rem] border border-yellow-300/55 bg-emerald-950/80 p-4 shadow-lg">
-        <div className="rounded-[1rem] bg-white p-3">
-          {qrUrl ? (
-            <img
-              src={qrUrl}
-              alt="Verification QR"
-              className="h-[155px] w-[155px]"
-            />
-          ) : (
-            <div className="h-[155px] w-[155px] bg-slate-100" />
-          )}
-        </div>
+      <div className="flex h-[340px] w-[200px] flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white/95 p-4 shadow-sm">
+        {qrUrl ? (
+          <img
+            src={qrUrl}
+            alt="Verification QR"
+            className="h-[150px] w-[150px] rounded-xl bg-white p-2"
+          />
+        ) : (
+          <div className="h-[150px] w-[150px] rounded-xl bg-slate-100" />
+        )}
 
-        <p className="mt-5 text-center text-[14px] font-black uppercase tracking-[0.18em] text-yellow-300">
+        <p className="mt-5 text-center text-[14px] font-semibold uppercase tracking-wide text-slate-500">
           Scan to verify
-        </p>
-        <p className="mt-3 line-clamp-4 break-all text-center text-[11px] font-semibold leading-5 text-yellow-50/80">
-          {shortVerifyUrl}
         </p>
       </div>
     </div>
   )
 }
 
-function CardFooter({ left, right }: { left: string; right: string }) {
-  return (
-    <footer className="flex items-center justify-between gap-5 border-t border-yellow-300/25 bg-[linear-gradient(90deg,#020403,#052e22,#020403)] px-8 py-5 text-[14px] font-bold text-yellow-100/85">
-      <span>{left}</span>
-      <span>{right}</span>
-    </footer>
-  )
-}
-
-function Watermark({
-  logoUrl,
-  flagUrl,
-}: {
-  logoUrl: string | null
-  flagUrl: string | null
-}) {
-  return (
-    <>
-      {flagUrl ? (
-        <img
-          src={flagUrl}
-          alt=""
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.07] mix-blend-screen"
-        />
-      ) : null}
-
-      {logoUrl ? (
-        <img
-          src={logoUrl}
-          alt=""
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full object-cover opacity-[0.055]"
-        />
-      ) : null}
-    </>
-  )
-}
-
-function GoldPattern() {
-  return (
-    <>
-      <div className="pointer-events-none absolute right-0 top-0 h-52 w-52 rounded-bl-full bg-yellow-300/15" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-36 w-36 rounded-tr-full bg-yellow-100/8" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.18),transparent_34%)]" />
-    </>
-  )
-}
-
 function formatDate(value: string | null) {
   return value ? new Date(value).toLocaleDateString() : 'N/A'
-}
-
-function getShortVerifyUrl(value: string) {
-  return value.replace(/^https?:\/\//, '')
 }
