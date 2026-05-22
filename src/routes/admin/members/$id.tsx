@@ -16,6 +16,7 @@ type Member = {
   cnic: string
   mobile: string
   district: string
+  taluka: string | null
   profession: string | null
   caste_branch: string | null
   photo_url: string
@@ -68,7 +69,7 @@ function AdminMemberDetailPage() {
 
     const { data, error } = await supabase
       .from('members')
-      .select('*')
+      .select('id, user_id, member_no, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, rejection_reason, reviewed_at, approved_at, created_at')
       .eq('id', id)
       .single()
 
@@ -184,6 +185,7 @@ function AdminMemberDetailPage() {
               </h1>
               <p className="mt-1 text-sm text-slate-600">
                 CNIC: {member.cnic} · District: {member.district}
+                {member.taluka ? ` · Taluka: ${member.taluka}` : ''}
               </p>
             </div>
 
@@ -223,6 +225,7 @@ function AdminMemberDetailPage() {
               <InfoItem label="CNIC" value={member.cnic} />
               <InfoItem label="Mobile" value={member.mobile} />
               <InfoItem label="District" value={member.district} />
+              <InfoItem label="Taluka" value={member.taluka || 'Not provided'} />
               <InfoItem label="Profession" value={member.profession} />
               <InfoItem label="Caste Branch" value={member.caste_branch} />
               <InfoItem label="Member No" value={member.member_no} />

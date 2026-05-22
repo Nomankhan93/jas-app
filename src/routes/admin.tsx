@@ -18,6 +18,7 @@ type Member = {
   cnic: string
   mobile: string
   district: string
+  taluka: string | null
   photo_url: string
   status: 'pending' | 'approved' | 'rejected'
   member_no: string | null
@@ -59,6 +60,7 @@ function AdminPage() {
         member.cnic.toLowerCase().includes(query) ||
         member.mobile.toLowerCase().includes(query) ||
         member.district.toLowerCase().includes(query) ||
+        (member.taluka?.toLowerCase().includes(query) ?? false) ||
         (member.member_no ?? '').toLowerCase().includes(query)
 
       return matchesStatus && matchesSearch
@@ -97,7 +99,7 @@ function AdminPage() {
     const { data, error } = await supabase
       .from('members')
       .select(
-        'id, full_name, cnic, mobile, district, photo_url, status, member_no, created_at',
+        'id, full_name, cnic, mobile, district, taluka, photo_url, status, member_no, created_at',
       )
       .order('created_at', { ascending: false })
 
@@ -166,7 +168,7 @@ function AdminPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="input md:max-w-md"
-              placeholder="Search name, CNIC, mobile, district, member no..."
+              placeholder="Search name, CNIC, mobile, district, taluka, member no..."
             />
 
             <select
@@ -216,7 +218,12 @@ function AdminPage() {
                     </td>
 
                     <td className="py-3 text-slate-700">{member.cnic}</td>
-                    <td className="py-3 text-slate-700">{member.district}</td>
+                    <td className="py-3 text-slate-700">
+                      <div className="font-medium">{member.district}</div>
+                      <div className="text-xs text-slate-500">
+                        {member.taluka || 'No taluka'}
+                      </div>
+                    </td>
 
                     <td className="py-3">
                       <StatusBadge status={member.status} />

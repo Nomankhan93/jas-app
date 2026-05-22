@@ -14,6 +14,7 @@ type VerifyResult = {
     member_no: string | null
     full_name: string
     district: string
+    taluka: string | null
     status: 'pending' | 'approved' | 'rejected'
     approved_at: string | null
   } | null
@@ -131,6 +132,7 @@ function VerifyMemberPage() {
                 <Info label="Member Name" value={result.member.full_name} />
                 <Info label="Member No" value={result.member.member_no ?? 'N/A'} />
                 <Info label="District" value={result.member.district} />
+                <Info label="Taluka" value={result.member.taluka || 'Not provided'} />
                 <Info
                   label="Approved At"
                   value={

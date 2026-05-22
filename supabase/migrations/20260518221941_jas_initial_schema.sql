@@ -613,3 +613,6 @@ revoke execute on functions from anon;
 
 alter default privileges in schema app_private
 revoke execute on functions from authenticated;
+
+alter table public.members
+add column if not exists taluka text;

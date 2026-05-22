@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase/client'
 
 export const Route = createFileRoute('/register')({
@@ -15,29 +15,138 @@ const sindhDistricts = [
   'Jamshoro',
   'Karachi Central',
   'Karachi East',
-  'Karachi Keamari',
-  'Karachi Korangi',
-  'Karachi Malir',
   'Karachi South',
   'Karachi West',
   'Kashmore',
+  'Keamari',
   'Khairpur',
+  'Korangi',
   'Larkana',
+  'Malir',
   'Matiari',
   'Mirpur Khas',
-  'Naushahro Feroze',
+  'Naushahro Firoze',
   'Qambar Shahdadkot',
   'Sanghar',
   'Shaheed Benazirabad',
   'Shikarpur',
-  'Sukkur',
   'Sujawal',
+  'Sukkur',
   'Tando Allahyar',
   'Tando Muhammad Khan',
   'Tharparkar',
   'Thatta',
   'Umerkot',
 ]
+
+const talukasByDistrict: Record<string, string[]> = {
+  Badin: ['Badin', 'Matli', 'Shaheed Fazil Rahu (Golarchi)', 'Talhar', 'Tando Bago'],
+
+  Sujawal: ['Jati', 'Kharo Chan', 'Mirpur Bathoro', 'Shah Bunder', 'Sujawal'],
+
+  Thatta: ['Ghorabari', 'Keti Bunder', 'Mirpur Sakro', 'Thatta'],
+
+  Dadu: ['Dadu', 'Johi', 'Khairpur Nathan Shah', 'Mehar'],
+
+  Hyderabad: ['Hyderabad City', 'Hyderabad Rural', 'Latifabad', 'Qasimabad'],
+
+  Jamshoro: ['Kotri', 'Manjhand', 'Sehwan Sharif', 'Thano Bula Khan'],
+
+  Matiari: ['Hala', 'Matiari', 'Saeedabad'],
+
+  'Tando Allahyar': ['Chamber', 'Jhando Mari', 'Tando Allahyar'],
+
+  'Tando Muhammad Khan': [
+    'Bulri Shah Karim',
+    'Tando Ghulam Hyder',
+    'Tando Muhammad Khan',
+  ],
+
+  'Karachi Central': [
+    'Gulberg',
+    'Liaquatabad',
+    'Nazimabad',
+    'New Karachi',
+    'North Nazimabad',
+  ],
+
+  'Karachi East': [
+    'Ferozabad',
+    'Gulshan-e-Iqbal',
+    'Gulzar-e-Hijri',
+    'Jamshed Quarters',
+  ],
+
+  'Karachi South': ['Aram Bagh', 'Civil Line', 'Garden', 'Lyari', 'Saddar'],
+
+  'Karachi West': ['Mango Pir', 'Mominabad', 'Orangi'],
+
+  Keamari: ['Baldia', 'Harbour', 'Mauripur', 'SITE'],
+
+  Korangi: ['Korangi', 'Landhi', 'Model Colony', 'Shah Faisal'],
+
+  Malir: [
+    'Airport',
+    'Bin Qasim',
+    'Gadap',
+    'Ibrahim Hyderi',
+    'Murad Memon',
+    'Shah Murad',
+  ],
+
+  Jacobabad: ['Garhi Khairo', 'Jacobabad', 'Thul'],
+
+  Kashmore: ['Kandhkot', 'Kashmore', 'Tangwani'],
+
+  Larkana: ['Bakrani', 'Dokri', 'Larkana', 'Ratodero'],
+
+  'Qambar Shahdadkot': [
+    'Mirokhan',
+    'Nasirabad',
+    'Qambar',
+    'Qubo Saeed Khan',
+    'Shahdadkot',
+    'Sijawal Junejo',
+    'Warah',
+  ],
+
+  Shikarpur: ['Garhi Yasin', 'Khanpur', 'Lakhi Ghulam Shah', 'Shikarpur'],
+
+  'Mirpur Khas': [
+    'Digri',
+    'Hussain Bux Mari',
+    'Jhuddo',
+    'Kot Ghulam Muhammad',
+    'Mirpur Khas',
+    'Shujabad',
+    'Sindhri',
+  ],
+
+  Tharparkar: ['Chachro', 'Dahli', 'Diplo', 'Islamkot', 'Kaloi', 'Mithi', 'Nagarparkar'],
+
+  Umerkot: ['Kunri', 'Pithoro', 'Samaro', 'Umerkot'],
+
+  'Naushahro Firoze': ['Bhiria', 'Kandiaro', 'Mehrabpur', 'Moro', 'Naushahro Firoze'],
+
+  Sanghar: ['Jam Nawaz Ali', 'Khipro', 'Sanghar', 'Shahdadpur', 'Sinjhoro', 'Tando Adam'],
+
+  'Shaheed Benazirabad': ['Daur', 'Nawabshah', 'Qazi Ahmed', 'Sakrand'],
+
+  Ghotki: ['Daharki', 'Ghotki', 'Khangarh', 'Mirpur Mathelo', 'Ubauro'],
+
+  Khairpur: [
+    'Faiz Ganj',
+    'Gambat',
+    'Khairpur',
+    'Kingri',
+    'Kot Diji',
+    'Mirwah',
+    'Nara',
+    'Sobhodero',
+  ],
+
+  Sukkur: ['New Sukkur', 'Pano Aqil', 'Rohri', 'Salehpat', 'Sukkur City'],
+}
 
 type ExistingMember = {
   id: string
@@ -47,6 +156,7 @@ type ExistingMember = {
   cnic: string
   mobile: string
   district: string
+  taluka: string | null
   profession: string | null
   caste_branch: string | null
   photo_url: string
@@ -67,11 +177,16 @@ function RegisterPage() {
   const [cnic, setCnic] = useState('')
   const [mobile, setMobile] = useState('')
   const [district, setDistrict] = useState('')
+  const [taluka, setTaluka] = useState('')
   const [profession, setProfession] = useState('')
   const [casteBranch, setCasteBranch] = useState('')
   const [photo, setPhoto] = useState<File | null>(null)
 
   const [error, setError] = useState('')
+
+  const talukaOptions = useMemo(() => {
+    return district ? talukasByDistrict[district] || [] : []
+  }, [district])
 
   useEffect(() => {
     loadExisting()
@@ -94,7 +209,7 @@ function RegisterPage() {
     const { data, error } = await supabase
       .from('members')
       .select(
-        'id, status, full_name, father_name, cnic, mobile, district, profession, caste_branch, photo_url',
+        'id, status, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url',
       )
       .eq('user_id', user.id)
       .maybeSingle()
@@ -112,11 +227,17 @@ function RegisterPage() {
       setCnic(data.cnic)
       setMobile(data.mobile)
       setDistrict(data.district)
+      setTaluka(data.taluka ?? '')
       setProfession(data.profession ?? '')
       setCasteBranch(data.caste_branch ?? '')
     }
 
     setLoading(false)
+  }
+
+  function handleDistrictChange(value: string) {
+    setDistrict(value)
+    setTaluka('')
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -140,6 +261,16 @@ function RegisterPage() {
 
     if (!/^[0-9]{5}-[0-9]{7}-[0-9]$/.test(cnic)) {
       setError('CNIC format must be 12345-1234567-1')
+      return
+    }
+
+    if (!district) {
+      setError('Please select your district.')
+      return
+    }
+
+    if (!taluka) {
+      setError('Please select your taluka.')
       return
     }
 
@@ -174,6 +305,7 @@ function RegisterPage() {
           cnic,
           mobile,
           district,
+          taluka,
           profession: profession || null,
           caste_branch: casteBranch || null,
           photo_url: photoPath,
@@ -193,6 +325,7 @@ function RegisterPage() {
         cnic,
         mobile,
         district,
+        taluka,
         profession: profession || null,
         caste_branch: casteBranch || null,
         photo_url: photoPath,
@@ -305,13 +438,33 @@ function RegisterPage() {
             <Field label="District">
               <select
                 value={district}
-                onChange={(event) => setDistrict(event.target.value)}
+                onChange={(event) => handleDistrictChange(event.target.value)}
                 disabled={locked}
                 required
                 className="input"
               >
                 <option value="">Select district</option>
                 {sindhDistricts.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Taluka / Town / Sub-division">
+              <select
+                value={taluka}
+                onChange={(event) => setTaluka(event.target.value)}
+                disabled={locked || !district}
+                required
+                className="input"
+              >
+                <option value="">
+                  {district ? 'Select taluka' : 'Select district first'}
+                </option>
+
+                {talukaOptions.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>
@@ -354,10 +507,16 @@ function RegisterPage() {
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
-              disabled={submitting || locked || existingMember?.status === 'rejected'}
+              disabled={
+                submitting || locked || existingMember?.status === 'rejected'
+              }
               className="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
             >
-              {submitting ? 'Saving...' : existingMember ? 'Update Form' : 'Submit Form'}
+              {submitting
+                ? 'Saving...'
+                : existingMember
+                  ? 'Update Form'
+                  : 'Submit Form'}
             </button>
 
             <button

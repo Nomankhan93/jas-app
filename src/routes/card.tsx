@@ -11,6 +11,9 @@ export const Route = createFileRoute('/card')({
 const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_FLAG_PATH = '/jas/flag.jpeg'
 
+const CARD_WIDTH = 1280
+const CARD_HEIGHT = 760
+
 type Member = {
   id: string
   member_no: string | null
@@ -19,6 +22,7 @@ type Member = {
   cnic: string
   mobile: string
   district: string
+  taluka: string | null
   profession: string | null
   caste_branch: string | null
   photo_url: string
@@ -29,7 +33,9 @@ type Member = {
 function CardPage() {
   const navigate = useNavigate()
   const cardRef = useRef<HTMLDivElement>(null)
+  const cardStageRef = useRef<HTMLDivElement>(null)
 
+  const [cardScale, setCardScale] = useState(1)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [member, setMember] = useState<Member | null>(null)
@@ -42,6 +48,33 @@ function CardPage() {
 
   useEffect(() => {
     loadCard()
+  }, [])
+
+  useEffect(() => {
+    const updateScale = () => {
+      const stageWidth = cardStageRef.current?.clientWidth || CARD_WIDTH
+      const nextScale = Math.min(1, stageWidth / CARD_WIDTH)
+      setCardScale(Number(nextScale.toFixed(4)))
+    }
+
+    updateScale()
+
+    const node = cardStageRef.current
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(updateScale)
+        : null
+
+    if (node && resizeObserver) {
+      resizeObserver.observe(node)
+    }
+
+    window.addEventListener('resize', updateScale)
+
+    return () => {
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', updateScale)
+    }
   }, [])
 
   async function loadCard() {
@@ -68,7 +101,7 @@ function CardPage() {
     const { data, error } = await supabase
       .from('members')
       .select(
-        'id, member_no, full_name, father_name, cnic, mobile, district, profession, caste_branch, photo_url, status, approved_at',
+        'id, member_no, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, approved_at',
       )
       .eq('user_id', user.id)
       .maybeSingle()
@@ -131,9 +164,15 @@ function CardPage() {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
-
-        // Avoids html-to-image cross-origin Google Fonts cssRules warning
         fontEmbedCSS: '',
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        canvasWidth: CARD_WIDTH * 2,
+        canvasHeight: CARD_HEIGHT * 2,
+        style: {
+          margin: '0',
+          transform: 'none',
+        },
       })
 
       const link = document.createElement('a')
@@ -188,150 +227,188 @@ function CardPage() {
 
         {member?.status === 'approved' && member.member_no ? (
           <>
-            <section className="flex justify-center">
-              <div
-                ref={cardRef}
-                className="w-full max-w-5xl overflow-hidden rounded-[2rem] border border-emerald-900/20 bg-white shadow-2xl"
-              >
-                <div className="relative overflow-hidden bg-gradient-to-r from-emerald-950 via-emerald-800 to-teal-700 p-7 text-white">
-                  <div className="absolute right-0 top-0 h-40 w-40 rounded-bl-full bg-white/10" />
-                  <div className="absolute bottom-0 left-0 h-28 w-28 rounded-tr-full bg-white/10" />
+            <section className="pb-2">
+              <div ref={cardStageRef} className="w-full">
+                <div
+                  className="mx-auto"
+                  style={{
+                    width: `${CARD_WIDTH * cardScale}px`,
+                    height: `${CARD_HEIGHT * cardScale}px`,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${CARD_WIDTH}px`,
+                      height: `${CARD_HEIGHT}px`,
+                      transform: `scale(${cardScale})`,
+                      transformOrigin: 'top left',
+                    }}
+                  >
+                    <div
+                      ref={cardRef}
+                      className="flex shrink-0 flex-col overflow-hidden rounded-[2rem] border border-emerald-900/20 bg-white shadow-2xl"
+                      style={{
+                        width: `${CARD_WIDTH}px`,
+                        minWidth: `${CARD_WIDTH}px`,
+                        height: `${CARD_HEIGHT}px`,
+                      }}
+                    >
+                      <div className="relative h-[200px] overflow-hidden bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-800 px-8 py-7 text-white">
+                        <div className="absolute right-0 top-0 h-48 w-48 rounded-bl-full bg-yellow-300/12" />
+                        <div className="absolute bottom-0 left-0 h-32 w-32 rounded-tr-full bg-white/8" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.16),transparent_34%)]" />
 
-                  <div className="relative flex items-start justify-between gap-5">
-                    <div className="flex items-center gap-5">
-                      {logoUrl ? (
-                        <img
-                          src={logoUrl}
-                          alt="Jatt Alliance Sindh logo"
-                          className="h-24 w-24 rounded-full border-2 border-yellow-400/80 bg-white object-cover shadow-xl"
-                        />
-                      ) : null}
+                        <div className="relative flex items-start justify-between gap-6">
+                          <div className="flex items-start gap-5">
+                            {logoUrl ? (
+                              <img
+                                src={logoUrl}
+                                alt="Jatt Alliance Sindh logo"
+                                className="mt-1 h-24 w-24 rounded-full border-2 border-yellow-400 bg-white object-cover shadow-xl"
+                              />
+                            ) : null}
 
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-emerald-100">
-                          Jatt Alliance Sindh
-                        </p>
-                        <h2 className="mt-2 text-4xl font-black tracking-tight">
-                          Digital Member ID
-                        </h2>
-                        <p className="mt-2 text-sm text-emerald-50">
-                          Verified membership card
-                        </p>
-                      </div>
-                    </div>
+                            <div className="max-w-[760px]">
+                              <p className="text-[14px] font-black uppercase tracking-[0.38em] text-yellow-300">
+                                Digital Member ID
+                              </p>
 
-                    <div className="rounded-2xl border border-white/25 bg-white/15 px-5 py-3 text-sm font-bold">
-                      VERIFIED
-                    </div>
-                  </div>
-                </div>
+                              <h2 className="mt-3 whitespace-nowrap text-[66px] font-black uppercase leading-[0.94] tracking-tight text-white">
+                                JATT ALLIANCE SINDH
+                              </h2>
 
-                <div className="relative overflow-hidden bg-white">
-                  {flagUrl ? (
-                    <>
-                      <img
-                        src={flagUrl}
-                        alt=""
-                        className="pointer-events-none absolute inset-0 h-full w-full object-fill opacity-[0.28] mix-blend-multiply"
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-white/54" />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/70 via-white/58 to-white/44" />
-                    </>
-                  ) : null}
+                              <p className="mt-3 text-[16px] font-medium text-emerald-50">
+                                Official verified membership card
+                              </p>
+                            </div>
+                          </div>
 
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt=""
-                      className="pointer-events-none absolute right-12 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full object-cover opacity-[0.08]"
-                    />
-                  ) : null}
-
-                  <div className="relative grid gap-7 p-7 md:grid-cols-[190px_1fr_190px]">
-                    <div className="space-y-3">
-                      {photoUrl ? (
-                        <img
-                          src={photoUrl}
-                          alt={member.full_name}
-                          className="h-48 w-48 rounded-3xl object-cover ring-4 ring-emerald-50"
-                        />
-                      ) : (
-                        <div className="flex h-48 w-48 items-center justify-center rounded-3xl bg-slate-100 text-sm text-slate-500">
-                          No photo
+                          <div className="rounded-[1.1rem] border border-yellow-300/70 bg-yellow-300 px-7 py-4 text-[18px] font-black uppercase tracking-wide text-emerald-950 shadow-lg">
+                            VERIFIED
+                          </div>
                         </div>
-                      )}
-
-                      <div className="rounded-2xl bg-emerald-50 p-3 text-center">
-                        <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">
-                          Member No
-                        </p>
-                        <p className="mt-1 text-sm font-black text-emerald-950">
-                          {member.member_no}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                          Member Name
-                        </p>
-                        <h3 className="mt-1 text-3xl font-black text-slate-950">
-                          {member.full_name}
-                        </h3>
                       </div>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <Info label="Father Name" value={member.father_name} />
-                        <Info label="CNIC" value={member.cnic} />
-                        <Info label="Mobile" value={member.mobile} />
-                        <Info label="District" value={member.district} />
-                        <Info
-                          label="Profession"
-                          value={member.profession || 'Not provided'}
-                        />
-                        <Info
-                          label="Caste Branch"
-                          value={member.caste_branch || 'Not provided'}
-                        />
-                        <Info
-                          label="Approved Date"
-                          value={
-                            member.approved_at
-                              ? new Date(member.approved_at).toLocaleDateString()
-                              : 'N/A'
-                          }
-                        />
-                        <Info label="Status" value="Approved" />
+                      <div className="relative flex-1 overflow-hidden bg-white">
+                        {flagUrl ? (
+                          <>
+                            <img
+                              src={flagUrl}
+                              alt=""
+                              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.10] mix-blend-multiply"
+                            />
+                            <div className="pointer-events-none absolute inset-0 bg-white/[0.78]" />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-white/[0.92] via-white/[0.82] to-white/[0.72]" />
+                          </>
+                        ) : null}
+
+                        {logoUrl ? (
+                          <img
+                            src={logoUrl}
+                            alt=""
+                            className="pointer-events-none absolute left-1/2 top-1/2 h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full object-cover opacity-[0.045]"
+                          />
+                        ) : null}
+
+                        <div className="relative grid h-full grid-cols-[250px_1fr_220px] gap-8 p-8">
+                          <div className="space-y-4">
+                            {photoUrl ? (
+                              <img
+                                src={photoUrl}
+                                alt={member.full_name}
+                                className="h-[240px] w-[240px] rounded-[2rem] border-4 border-white object-cover shadow-lg ring-2 ring-yellow-300/80"
+                              />
+                            ) : (
+                              <div className="flex h-[240px] w-[240px] items-center justify-center rounded-[2rem] bg-slate-100 text-sm text-slate-500 shadow-sm ring-2 ring-yellow-300/60">
+                                No photo
+                              </div>
+                            )}
+
+                            <div className="rounded-[1.4rem] border border-yellow-300 bg-emerald-950 px-4 py-4 text-center shadow-sm">
+                              <p className="text-[13px] font-black uppercase tracking-wide text-yellow-300">
+                                Member No
+                              </p>
+                              <p className="mt-1 text-[20px] font-black text-white">
+                                {member.member_no}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-6">
+                            <div>
+                              <p className="text-[18px] font-bold uppercase tracking-wide text-slate-500">
+                                Member Name
+                              </p>
+                              <h3 className="mt-2 text-[44px] font-black leading-tight text-slate-950">
+                                {member.full_name}
+                              </h3>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+                              <Info
+                                label="Father Name"
+                                value={member.father_name}
+                              />
+                              <Info label="CNIC" value={member.cnic} />
+                              <Info label="Mobile" value={member.mobile} />
+                              <Info label="District" value={member.district} />
+                              <Info label="Taluka" value={member.taluka || 'Not provided'} />
+                              <Info
+                                label="Profession"
+                                value={member.profession || 'Not provided'}
+                              />
+                              <Info
+                                label="Caste Branch"
+                                value={member.caste_branch || 'Not provided'}
+                              />
+                              <Info
+                                label="Approved Date"
+                                value={
+                                  member.approved_at
+                                    ? new Date(
+                                        member.approved_at,
+                                      ).toLocaleDateString()
+                                    : 'N/A'
+                                }
+                              />
+                              <Info label="Status" value="Approved" />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-center">
+                            <div className="flex h-[340px] w-[200px] flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white/95 p-4 shadow-sm">
+                              {qrUrl ? (
+                                <img
+                                  src={qrUrl}
+                                  alt="Verification QR"
+                                  className="h-[150px] w-[150px] rounded-xl bg-white p-2"
+                                />
+                              ) : (
+                                <div className="h-[150px] w-[150px] rounded-xl bg-slate-100" />
+                              )}
+
+                              <p className="mt-5 text-center text-[14px] font-semibold uppercase tracking-wide text-slate-500">
+                                Scan to verify
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col items-center justify-center rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-                      {qrUrl ? (
-                        <img
-                          src={qrUrl}
-                          alt="Verification QR"
-                          className="h-40 w-40 rounded-xl bg-white p-2"
-                        />
-                      ) : (
-                        <div className="h-40 w-40 rounded-xl bg-slate-100" />
-                      )}
-
-                      <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Scan to verify
-                      </p>
+                      <div className="border-t border-slate-200 bg-slate-50 px-8 py-5">
+                        <p className="text-[14px] leading-6 text-slate-500">
+                          This card is digitally generated by Jatt Alliance
+                          Sindh. QR verification confirms current membership
+                          status.
+                          {verifyUrl ? (
+                            <span className="ml-1 break-all">
+                              Verification URL: {verifyUrl}
+                            </span>
+                          ) : null}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="border-t border-slate-200 bg-slate-50 px-7 py-4">
-                  <p className="text-xs leading-5 text-slate-500">
-                    This card is digitally generated by Jatt Alliance Sindh. QR
-                    verification confirms current membership status.
-                    {verifyUrl ? (
-                      <span className="ml-1">Verification URL: {verifyUrl}</span>
-                    ) : null}
-                  </p>
                 </div>
               </div>
             </section>
@@ -370,10 +447,12 @@ function CardPage() {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+      <p className="text-[14px] font-bold uppercase tracking-wide text-slate-500">
         {label}
       </p>
-      <p className="mt-1 text-sm font-bold text-slate-950">{value}</p>
+      <p className="mt-2 text-[20px] font-bold leading-tight text-slate-950">
+        {value}
+      </p>
     </div>
   )
 }
@@ -383,7 +462,7 @@ async function imageUrlToDataUrl(url: string) {
     const response = await fetch(url)
     const blob = await response.blob()
 
-    return await new Promise<string>((resolve, reject) => {
+    return await new Promise<string | null>((resolve, reject) => {
       const reader = new FileReader()
       reader.onloadend = () => resolve(reader.result as string)
       reader.onerror = reject

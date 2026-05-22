@@ -21,7 +21,7 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
     const { data: member, error } = await supabaseAdmin
       .from('members')
       .select(
-        'id, member_no, full_name, district, photo_url, status, approved_at',
+        'id, member_no, full_name, district, taluka, photo_url, status, approved_at',
       )
       .eq('member_no', data.memberNo)
       .maybeSingle()
@@ -57,6 +57,8 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
         member_no: member.member_no,
         full_name: member.full_name,
         district: member.district,
+
+        taluka: member.taluka ?? null,
         status: member.status,
         approved_at: member.approved_at,
       },
