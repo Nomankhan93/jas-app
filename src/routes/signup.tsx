@@ -45,8 +45,8 @@ function SignupPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
-      <div className="mx-auto max-w-md rounded-2xl bg-white p-6 shadow-sm">
+    <main className="min-h-[100dvh] bg-slate-50 px-3 py-6 sm:px-4 sm:py-10">
+      <div className="mx-auto max-w-md rounded-2xl bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-slate-900">Create JAS Account</h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -60,10 +60,11 @@ function SignupPage() {
               Full Name
             </label>
             <input
+              autoComplete="name"
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600"
+              className="h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-emerald-600 sm:text-sm"
               placeholder="Enter your full name"
             />
           </div>
@@ -74,10 +75,11 @@ function SignupPage() {
             </label>
             <input
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600"
+              className="h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-emerald-600 sm:text-sm"
               placeholder="you@example.com"
             />
           </div>
@@ -88,11 +90,12 @@ function SignupPage() {
             </label>
             <input
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
               minLength={6}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-emerald-600"
+              className="h-11 w-full rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-emerald-600 sm:text-sm"
               placeholder="Minimum 6 characters"
             />
           </div>
@@ -110,7 +113,7 @@ function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
+            className="h-11 w-full rounded-lg bg-emerald-700 px-4 py-2 font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>

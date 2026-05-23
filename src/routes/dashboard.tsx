@@ -742,16 +742,48 @@ const DASHBOARD_CSS = `
 
 @media (max-width: 680px) {
   .jas-container {
-    width: min(100% - 28px, 1160px);
+    width: min(100% - 24px, 1160px);
+  }
+
+  .jas-content {
+    padding: 22px 0 36px;
   }
 
   .jas-nav {
-    align-items: flex-start;
-    padding: 18px 0;
+    min-height: 64px;
+    gap: 10px;
+    padding: 12px 0;
+  }
+
+  .jas-brand {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .jas-brand-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
   }
 
   .jas-brand-title {
-    font-size: 24px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 21px;
+  }
+
+  .jas-brand-subtitle {
+    margin-top: 4px;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+  }
+
+  .jas-logout {
+    min-height: 42px;
+    width: 42px;
+    justify-content: center;
+    padding: 0;
   }
 
   .jas-logout span {
@@ -759,17 +791,37 @@ const DASHBOARD_CSS = `
   }
 
   .jas-hero {
-    padding: 22px;
+    padding: 20px;
     border-radius: 24px;
   }
 
   .jas-hero-inner,
-  .jas-card-header {
-    align-items: flex-start;
+  .jas-card-header,
+  .jas-member-number {
+    align-items: stretch;
     flex-direction: column;
   }
 
+  .jas-hero h1 {
+    font-size: clamp(30px, 11vw, 40px);
+    overflow-wrap: anywhere;
+  }
+
+  .jas-chip,
+  .jas-badge {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+  }
+
   .jas-profile-intro {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .jas-info-grid,
+  .jas-section-grid {
     grid-template-columns: 1fr;
   }
 
@@ -785,13 +837,29 @@ const DASHBOARD_CSS = `
     border-radius: 24px;
   }
 
+  .jas-card,
+  .jas-side-card,
+  .jas-status-card {
+    border-radius: 20px;
+  }
+
   .jas-card-body,
-  .jas-card-header {
+  .jas-card-header,
+  .jas-side-card {
     padding: 18px;
   }
 
   .jas-action {
     width: 100%;
+    min-height: 48px;
+  }
+
+  .jas-empty-state {
+    padding: 44px 20px;
+  }
+
+  .jas-empty-state h2 {
+    font-size: 29px;
   }
 }
 `

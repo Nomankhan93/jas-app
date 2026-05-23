@@ -158,8 +158,8 @@ function AdminMemberDetailPage() {
 
   if (loading) {
     return (
-      <main className="px-4 py-10">
-        <div className="page-wrap rounded-2xl bg-white p-6 shadow-sm">
+      <main className="px-3 py-6 sm:px-4 sm:py-10">
+        <div className="page-wrap rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           Loading member...
         </div>
       </main>
@@ -168,8 +168,8 @@ function AdminMemberDetailPage() {
 
   if (!member) {
     return (
-      <main className="px-4 py-10">
-        <div className="page-wrap rounded-2xl bg-white p-6 shadow-sm">
+      <main className="px-3 py-6 sm:px-4 sm:py-10">
+        <div className="page-wrap rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           Member not found.
         </div>
       </main>
@@ -177,9 +177,9 @@ function AdminMemberDetailPage() {
   }
 
   return (
-    <main className="px-4 py-10">
+    <main className="px-3 py-6 sm:px-4 sm:py-10">
       <div className="page-wrap space-y-6">
-        <header className="rounded-2xl bg-white p-6 shadow-sm">
+        <header className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           <Link
             to="/admin"
             className="text-sm font-medium text-emerald-700 no-underline"
@@ -209,7 +209,7 @@ function AdminMemberDetailPage() {
         ) : null}
 
         <section className="grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
             {photoUrl ? (
               <img
                 src={photoUrl}
@@ -290,17 +290,17 @@ function AdminMemberDetailPage() {
         </section>
 
         {member.status === 'pending' ? (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
+          <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
             <h2 className="text-lg font-semibold text-slate-900">
               Review Application
             </h2>
 
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
               <button
                 type="button"
                 onClick={handleApprove}
                 disabled={actionLoading}
-                className="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
+                className="h-11 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
               >
                 {actionLoading ? 'Processing...' : 'Approve Member'}
               </button>
@@ -314,7 +314,7 @@ function AdminMemberDetailPage() {
                 <textarea
                   value={rejectionReason}
                   onChange={(event) => setRejectionReason(event.target.value)}
-                  className="input min-h-28"
+                  className="input min-h-28 text-base sm:text-sm"
                   placeholder="Write reason before rejecting..."
                 />
               </label>
@@ -323,7 +323,7 @@ function AdminMemberDetailPage() {
                 type="button"
                 onClick={handleReject}
                 disabled={actionLoading || rejectionReason.trim().length < 3}
-                className="mt-3 rounded-lg bg-red-700 px-5 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+                className="mt-3 h-11 w-full rounded-lg bg-red-700 px-5 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60 sm:w-auto"
               >
                 Reject Member
               </button>

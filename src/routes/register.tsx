@@ -1020,6 +1020,7 @@ const styles = `
 
   .reg-page {
     min-height: 100vh;
+    min-height: 100dvh;
     background: var(--reg-cream);
     background-image:
       radial-gradient(circle at 80% 10%, rgba(27,94,59,0.06) 0%, transparent 50%),
@@ -1241,7 +1242,8 @@ const styles = `
 
   .reg-input {
     width: 100%;
-    padding: 0.6rem 0.875rem;
+    min-height: 44px;
+    padding: 0.7rem 0.875rem;
     border: 1.5px solid var(--reg-border);
     border-radius: 8px;
     background: white;
@@ -1339,6 +1341,7 @@ const styles = `
     background: var(--reg-green-bg);
     transition: border-color 0.15s, background 0.15s;
     max-width: 280px;
+    min-height: 44px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1481,7 +1484,11 @@ const styles = `
 
   @media (max-width: 640px) {
     .reg-page {
-      padding: 1.5rem 0.75rem 3rem;
+      padding: 1rem 0.75rem 2.5rem;
+    }
+
+    .reg-card {
+      border-radius: 16px;
     }
 
     .reg-header {
@@ -1511,6 +1518,25 @@ const styles = `
 
     .reg-photo-row {
       flex-direction: column;
+    }
+
+    .reg-photo-upload,
+    .reg-upload-btn,
+    .reg-actions,
+    .reg-btn-primary,
+    .reg-btn-secondary {
+      width: 100%;
+      max-width: none;
+    }
+
+    .reg-actions {
+      flex-direction: column;
+    }
+
+    .reg-btn-primary,
+    .reg-btn-secondary {
+      justify-content: center;
+      min-height: 46px;
     }
   }
 `

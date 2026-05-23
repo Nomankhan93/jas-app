@@ -44,7 +44,9 @@ function CardPage() {
   useEffect(() => {
     const updateScale = () => {
       const stageWidth = visibleStageRef.current?.clientWidth || CARD_WIDTH
-      const nextScale = Math.min(1, stageWidth / CARD_WIDTH)
+      const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : stageWidth
+      const minReadableScale = viewportWidth < 640 ? 0.44 : 0.58
+      const nextScale = Math.min(1, Math.max(minReadableScale, stageWidth / CARD_WIDTH))
       setCardScale(Number(nextScale.toFixed(4)))
     }
 
@@ -222,9 +224,9 @@ function CardPage() {
   }
 
   return (
-    <main className="px-4 py-10">
-      <div className="page-wrap space-y-6">
-        <header className="rounded-2xl bg-white p-6 shadow-sm">
+    <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <div className="page-wrap space-y-5 sm:space-y-6">
+        <header className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           <Link
             to="/dashboard"
             className="text-sm font-medium text-emerald-700 no-underline"
@@ -259,8 +261,9 @@ function CardPage() {
 
         {member?.status === 'approved' && member.member_no ? (
           <>
-            <section className="pb-2">
-              <div ref={visibleStageRef} className="w-full">
+            <section className="rounded-2xl bg-white/70 p-3 pb-2 shadow-sm sm:bg-transparent sm:p-0 sm:shadow-none">
+              <p className="mb-2 text-center text-xs font-medium text-slate-500 sm:hidden">Swipe sideways to preview the full card.</p>
+              <div ref={visibleStageRef} className="w-full overflow-x-auto pb-2">
                 <ScaledCardShell scale={cardScale}>
                   <MembershipCard
                     side={selectedSide}
@@ -275,12 +278,12 @@ function CardPage() {
               </div>
             </section>
 
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
               <button
                 type="button"
                 onClick={() => handleDownload('front')}
                 disabled={downloadingSide !== null}
-                className="rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
+                className="h-11 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
               >
                 {downloadingSide === 'front'
                   ? 'Downloading front...'
@@ -291,7 +294,7 @@ function CardPage() {
                 type="button"
                 onClick={() => handleDownload('back')}
                 disabled={downloadingSide !== null}
-                className="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                className="h-11 rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
               >
                 {downloadingSide === 'back'
                   ? 'Downloading back...'
@@ -301,7 +304,7 @@ function CardPage() {
               <Link
                 to="/verify/$memberNo"
                 params={{ memberNo: member.member_no }}
-                className="rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50"
+                className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50"
               >
                 Open Verification Page
               </Link>

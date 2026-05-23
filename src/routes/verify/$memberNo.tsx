@@ -57,8 +57,8 @@ function VerifyMemberPage() {
 
   if (loading) {
     return (
-      <main className="px-4 py-10">
-        <div className="page-wrap rounded-2xl bg-white p-6 shadow-sm">
+      <main className="px-3 py-6 sm:px-4 sm:py-10">
+        <div className="page-wrap rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           Verifying membership...
         </div>
       </main>
@@ -66,13 +66,13 @@ function VerifyMemberPage() {
   }
 
   return (
-    <main className="px-4 py-10">
-      <div className="page-wrap space-y-6">
-        <header className="rounded-2xl bg-white p-6 text-center shadow-sm">
+    <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <div className="page-wrap space-y-5 sm:space-y-6">
+        <header className="rounded-2xl bg-white p-5 text-center shadow-sm sm:p-6">
           <p className="text-sm font-medium text-emerald-700">
             Jatt Alliance Sindh
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-900">
+          <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
             Membership Verification
           </h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -87,12 +87,12 @@ function VerifyMemberPage() {
         ) : null}
 
         {!result?.found ? (
-          <section className="rounded-2xl bg-white p-8 text-center shadow-sm">
+          <section className="rounded-2xl bg-white p-5 text-center shadow-sm sm:p-8">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-3xl">
               ×
             </div>
 
-            <h2 className="mt-5 text-2xl font-bold text-slate-900">
+            <h2 className="mt-5 text-xl font-bold text-slate-900 sm:text-2xl">
               Member Not Found
             </h2>
 
@@ -105,14 +105,14 @@ function VerifyMemberPage() {
             </p>
           </section>
         ) : result.verified && result.member ? (
-          <section className="rounded-2xl bg-white p-8 shadow-sm">
+          <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-8">
             <div className="flex flex-col items-center gap-6 text-center">
               <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 text-4xl text-emerald-700">
                 ✓
               </div>
 
               <div>
-                <h2 className="text-3xl font-bold text-emerald-700">
+                <h2 className="text-2xl font-bold text-emerald-700 sm:text-3xl">
                   Verified Member
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
@@ -145,12 +145,12 @@ function VerifyMemberPage() {
             </div>
           </section>
         ) : (
-          <section className="rounded-2xl bg-white p-8 text-center shadow-sm">
+          <section className="rounded-2xl bg-white p-5 text-center shadow-sm sm:p-8">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 text-3xl text-amber-700">
               !
             </div>
 
-            <h2 className="mt-5 text-2xl font-bold text-slate-900">
+            <h2 className="mt-5 text-xl font-bold text-slate-900 sm:text-2xl">
               Not a Verified Member
             </h2>
 
@@ -171,7 +171,7 @@ function VerifyMemberPage() {
         <div className="text-center">
           <Link
             to="/"
-            className="inline-flex rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 no-underline hover:bg-slate-50"
           >
             Go to JAS Home
           </Link>

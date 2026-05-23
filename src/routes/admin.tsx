@@ -133,8 +133,8 @@ function AdminPage() {
 
   if (loading) {
     return (
-      <main className="px-4 py-10">
-        <div className="page-wrap rounded-2xl bg-white p-6 shadow-sm">
+      <main className="px-3 py-6 sm:px-4 sm:py-10">
+        <div className="page-wrap rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           Loading admin panel...
         </div>
       </main>
@@ -142,9 +142,9 @@ function AdminPage() {
   }
 
   return (
-    <main className="px-4 py-10">
+    <main className="px-3 py-6 sm:px-4 sm:py-10">
       <div className="page-wrap space-y-6">
-        <header className="rounded-2xl bg-white p-6 shadow-sm">
+        <header className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           <p className="text-sm font-medium text-emerald-700">
             Jatt Alliance Sindh
           </p>
@@ -162,19 +162,19 @@ function AdminPage() {
           </div>
         ) : null}
 
-        <section className="rounded-2xl bg-white p-5 shadow-sm">
+        <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="input md:max-w-md"
+              className="input min-h-11 text-base md:max-w-md md:text-sm"
               placeholder="Search name, CNIC, mobile, district, taluka, member no..."
             />
 
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="input md:max-w-xs"
+              className="input min-h-11 text-base md:max-w-xs md:text-sm"
             >
               <option value="all">All statuses</option>
               <option value="pending">Pending</option>
@@ -183,7 +183,69 @@ function AdminPage() {
             </select>
           </div>
 
-          <div className="mt-5 overflow-x-auto">
+          <div className="mt-5 grid gap-3 md:hidden">
+            {filteredMembers.map((member) => (
+              <article
+                key={member.id}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  {photoUrls[member.id] ? (
+                    <img
+                      src={photoUrls[member.id]}
+                      alt={member.full_name}
+                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <div className="h-14 w-14 shrink-0 rounded-xl bg-slate-100" />
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <h2 className="min-w-0 text-base font-semibold leading-tight text-slate-900">
+                        {member.full_name}
+                      </h2>
+                      <StatusBadge status={member.status} />
+                    </div>
+                    <p className="mt-1 break-all text-xs font-medium text-slate-500">
+                      {member.cnic}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">District</p>
+                    <p className="mt-1 font-medium text-slate-900">{member.district}</p>
+                    <p className="text-xs text-slate-500">{member.taluka || 'No taluka'}</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Member No</p>
+                    <p className="mt-1 break-all font-medium text-slate-900">{member.member_no ?? '—'}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(member.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  to="/admin/members/$id"
+                  params={{ id: member.id }}
+                  className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-medium text-white no-underline hover:bg-slate-800"
+                >
+                  View application
+                </Link>
+              </article>
+            ))}
+
+            {filteredMembers.length === 0 ? (
+              <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">
+                No members found.
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-5 hidden overflow-x-auto md:block">
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead>
                 <tr className="border-b text-xs uppercase tracking-wide text-slate-500">

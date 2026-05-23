@@ -9,7 +9,7 @@ import {
 } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { LogOut } from 'lucide-react'
+import { LogOut, Menu, X } from 'lucide-react'
 import { supabase } from '../lib/supabase/client'
 import appCss from '../styles.css?url'
 
@@ -74,6 +74,11 @@ function Header() {
   const [authLoading, setAuthLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     let mounted = true
@@ -145,6 +150,7 @@ function Header() {
 
   async function handleLogout() {
     await supabase.auth.signOut()
+    setMobileOpen(false)
     setIsLoggedIn(false)
     setIsAdmin(false)
     await navigate({ to: '/login', replace: true })
@@ -160,106 +166,71 @@ function Header() {
   const navActive = 'text-emerald-800'
   const navInactive = 'text-stone-700'
 
+  const navItems: Array<{ to: string; label: string }> = [{ to: '/', label: 'Home' }]
+
+  if (!authLoading && !isLoggedIn) {
+    navItems.push({ to: '/signup', label: 'Signup' }, { to: '/login', label: 'Login' })
+  }
+
+  if (!authLoading && isLoggedIn) {
+    navItems.push(
+      { to: '/dashboard', label: 'Dashboard' },
+      { to: '/register', label: 'Register' },
+    )
+
+    if (isAdmin) {
+      navItems.push({ to: '/admin', label: 'Admin' })
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-stone-200 bg-stone-50/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-3 sm:px-6 md:gap-6 md:py-5 lg:px-8">
         <Link
           to="/"
-          className="inline-flex items-center gap-3 rounded-full bg-emerald-900 px-4 py-2 text-white shadow-lg shadow-emerald-950/10 transition-transform hover:scale-[1.01]"
+          className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-full bg-emerald-900 px-3 py-2 text-white shadow-lg shadow-emerald-950/10 transition-transform hover:scale-[1.01] sm:flex-none sm:gap-3 sm:px-4"
         >
-          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20">
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
             <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
           </span>
 
-          <span className="text-sm font-bold uppercase tracking-wide !text-white">
+          <span className="min-w-0 truncate text-xs font-bold uppercase tracking-wide !text-white sm:text-sm">
             Jatt Alliance Sindh
           </span>
 
-          <span className="rounded-md bg-white/15 px-2.5 py-1 text-xs font-bold uppercase tracking-widest !text-white">
+          <span className="shrink-0 rounded-md bg-white/15 px-2 py-1 text-[0.65rem] font-bold uppercase tracking-widest !text-white sm:px-2.5 sm:text-xs">
             JAS
           </span>
         </Link>
 
         <nav className="hidden items-center gap-7 md:flex">
-          <NavLink
-            to="/"
-            label="Home"
-            active={isActive('/')}
-            baseClass={navBase}
-            activeClass={navActive}
-            inactiveClass={navInactive}
-          />
-
-          {!authLoading && !isLoggedIn ? (
-            <>
-              <NavLink
-                to="/signup"
-                label="Signup"
-                active={isActive('/signup')}
-                baseClass={navBase}
-                activeClass={navActive}
-                inactiveClass={navInactive}
-              />
-
-              <NavLink
-                to="/login"
-                label="Login"
-                active={isActive('/login')}
-                baseClass={navBase}
-                activeClass={navActive}
-                inactiveClass={navInactive}
-              />
-            </>
-          ) : null}
-
-          {!authLoading && isLoggedIn ? (
-            <>
-              <NavLink
-                to="/dashboard"
-                label="Dashboard"
-                active={isActive('/dashboard')}
-                baseClass={navBase}
-                activeClass={navActive}
-                inactiveClass={navInactive}
-              />
-
-              <NavLink
-                to="/register"
-                label="Register"
-                active={isActive('/register')}
-                baseClass={navBase}
-                activeClass={navActive}
-                inactiveClass={navInactive}
-              />
-
-              {isAdmin ? (
-                <NavLink
-                  to="/admin"
-                  label="Admin"
-                  active={isActive('/admin')}
-                  baseClass={navBase}
-                  activeClass={navActive}
-                  inactiveClass={navInactive}
-                />
-              ) : null}
-            </>
-          ) : null}
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              label={item.label}
+              active={isActive(item.to)}
+              baseClass={navBase}
+              activeClass={navActive}
+              inactiveClass={navInactive}
+            />
+          ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="ml-auto hidden items-center gap-3 md:flex">
           {authLoading ? null : isLoggedIn ? (
             <>
               {isAdmin ? (
                 <Link
                   to="/admin"
-                  className="hidden rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-semibold !text-white transition-colors hover:bg-emerald-900 sm:inline-flex"
+                  className="rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-semibold !text-white transition-colors hover:bg-emerald-900"
                 >
                   Admin
                 </Link>
               ) : (
                 <Link
                   to="/dashboard"
-                  className="hidden rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-semibold !text-white transition-colors hover:bg-emerald-900 sm:inline-flex"
+                  className="rounded-xl bg-emerald-800 px-5 py-2.5 text-sm font-semibold !text-white transition-colors hover:bg-emerald-900"
                 >
                   Dashboard
                 </Link>
@@ -292,7 +263,67 @@ function Header() {
             </>
           )}
         </div>
+
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-900 shadow-sm md:hidden"
+          onClick={() => setMobileOpen((open) => !open)}
+          aria-expanded={mobileOpen}
+          aria-label="Toggle navigation menu"
+        >
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {mobileOpen ? (
+        <div className="border-t border-stone-200 bg-stone-50 px-3 py-3 shadow-lg md:hidden">
+          <nav className="mx-auto grid max-w-7xl gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`rounded-xl px-4 py-3 text-sm font-semibold no-underline transition-colors ${
+                  isActive(item.to)
+                    ? 'bg-emerald-50 text-emerald-800'
+                    : 'text-stone-700 hover:bg-white hover:text-emerald-800'
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {!authLoading ? (
+            <div className="mx-auto mt-3 grid max-w-7xl gap-2 border-t border-stone-200 pt-3">
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-900 shadow-sm"
+                >
+                  <LogOut size={16} aria-hidden="true" />
+                  Logout
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    className="inline-flex h-11 items-center justify-center rounded-xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-900 shadow-sm"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/signup"
+                    className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-800 px-4 text-sm font-semibold !text-white shadow-sm"
+                  >
+                    Join Now
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </header>
   )
 }
