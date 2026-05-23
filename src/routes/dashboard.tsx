@@ -1,8 +1,10 @@
+// src/routes/dashboard.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import {
   AlertCircle,
+  ArrowRight,
   BadgeCheck,
   Check,
   CheckCircle2,
@@ -12,10 +14,12 @@ import {
   Hourglass,
   IdCard,
   LogOut,
+  MapPin,
   Pencil,
   RefreshCw,
   ShieldCheck,
   User,
+  Users,
   XCircle,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase/client'
@@ -24,14 +28,29 @@ export const Route = createFileRoute('/dashboard')({
   component: DashboardPage,
 })
 
-// ── Brand tokens ────────────────────────────────────────────────────────────
-const G = '#0C2B1C'
-const GM = '#1A4530'
-const GOLD = '#C4912C'
-const GOLD_LT = '#FBF0D9'
-const CREAM = '#F6F3EC'
+const TOKENS = {
+  green900: '#0B2A1D',
+  green800: '#123726',
+  green700: '#1D4B34',
+  green100: '#EAF4EE',
+  gold700: '#B88427',
+  gold600: '#C4912C',
+  gold100: '#FBF2DF',
+  cream: '#F6F3EC',
+  creamDeep: '#EEE7DA',
+  text: '#1E1B18',
+  textSoft: '#6E675F',
+  textMuted: '#9E958B',
+  white: '#FFFFFF',
+  border: 'rgba(11,42,29,0.10)',
+  borderSoft: '#ECE4D8',
+  shadow: '0 20px 55px rgba(11,42,29,0.09)',
+  shadowStrong: '0 24px 70px rgba(11,42,29,0.14)',
+  radiusLg: '30px',
+  radiusMd: '22px',
+  radiusSm: '16px',
+}
 
-// ── Types ────────────────────────────────────────────────────────────────────
 type Member = {
   id: string
   user_id: string
@@ -86,8 +105,9 @@ const STATUS_STEPS: StatusStep[] = [
     key: 'approval',
     label: 'Approval & ID issue',
     sub: (m) => {
-      if (m.status === 'approved')
+      if (m.status === 'approved') {
         return m.approved_at ? `Approved ${formatDate(m.approved_at)}` : 'Approved'
+      }
       if (m.status === 'rejected') return 'Not approved'
       return 'Awaiting approval'
     },
@@ -96,16 +116,16 @@ const STATUS_STEPS: StatusStep[] = [
     key: 'card',
     label: 'Digital card ready',
     sub: (m) => {
-      if (m.status === 'approved' && m.member_no) return 'Ready to download'
+      if (m.status === 'approved' && m.member_no) return 'Ready to open'
       if (m.status === 'rejected') return 'Unavailable'
       return 'After approval'
     },
   },
 ]
 
-function getActiveStep(m: Member) {
-  if (m.status === 'pending' || m.status === 'rejected') return 1
-  if (m.status === 'approved') return m.member_no ? 3 : 2
+function getActiveStep(member: Member) {
+  if (member.status === 'pending' || member.status === 'rejected') return 1
+  if (member.status === 'approved') return member.member_no ? 3 : 2
   return 0
 }
 
@@ -114,50 +134,44 @@ const DASHBOARD_CSS = `
   to { transform: rotate(360deg); }
 }
 
-.jas-dashboard,
-.jas-dashboard * {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
 .jas-dashboard {
   min-height: 100vh;
-  font-family: 'Raleway', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #1c1917;
+  color: ${TOKENS.text};
+  font-family: 'Inter', 'Raleway', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(196,145,44,0.20), transparent 32rem),
-    radial-gradient(circle at top right, rgba(12,43,28,0.16), transparent 30rem),
-    ${CREAM};
+    radial-gradient(circle at top left, rgba(196,145,44,0.18), transparent 26rem),
+    radial-gradient(circle at right top, rgba(11,42,29,0.12), transparent 28rem),
+    linear-gradient(180deg, #faf8f3 0%, ${TOKENS.cream} 55%, #f7f4ee 100%);
 }
 
-.jas-topbar {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(135deg, rgba(12,43,28,0.98), rgba(26,69,48,0.96)),
-    ${G};
-  border-bottom: 1px solid rgba(255,255,255,0.10);
-}
-
-.jas-topbar::after {
-  content: '';
-  position: absolute;
-  inset: auto -10% -55% auto;
-  width: 34rem;
-  height: 34rem;
-  border-radius: 999px;
-  background: rgba(196,145,44,0.12);
-  pointer-events: none;
+.jas-dashboard,
+.jas-dashboard a,
+.jas-dashboard button {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .jas-container {
-  width: min(1160px, calc(100% - 40px));
+  width: min(1220px, calc(100% - 40px));
   margin: 0 auto;
 }
 
+.jas-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(18px);
+  background: linear-gradient(180deg, rgba(11,42,29,0.88), rgba(18,55,38,0.84));
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+
 .jas-nav {
-  position: relative;
-  z-index: 1;
-  min-height: 76px;
+  min-height: 78px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -168,72 +182,78 @@ const DASHBOARD_CSS = `
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .jas-brand-mark {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.16);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  flex: 0 0 auto;
+}
+
+.jas-brand-copy {
+  min-width: 0;
 }
 
 .jas-brand-title {
   margin: 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.01em;
   color: white;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 29px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .jas-brand-subtitle {
   margin: 6px 0 0;
+  color: rgba(255,255,255,0.60);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.52);
 }
 
 .jas-logout {
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  min-height: 42px;
+  border-radius: 999px;
+  padding: 0 16px;
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  min-height: 40px;
-  padding: 0 16px;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  color: white;
   font: inherit;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
 }
 
 .jas-logout:hover {
   transform: translateY(-1px);
-  background: rgba(255,255,255,0.13);
+  background: rgba(255,255,255,0.14);
   border-color: rgba(255,255,255,0.28);
 }
 
 .jas-content {
-  padding: 34px 0 48px;
+  padding: 28px 0 54px;
 }
 
 .jas-loading {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: ${CREAM};
-  font-family: 'Raleway', system-ui, sans-serif;
+  background: ${TOKENS.cream};
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .jas-loading-card {
@@ -241,18 +261,18 @@ const DASHBOARD_CSS = `
   align-items: center;
   gap: 14px;
   padding: 18px 22px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.78);
-  border: 1px solid rgba(12,43,28,0.08);
-  box-shadow: 0 18px 45px rgba(12,43,28,0.08);
-  color: ${GM};
+  border-radius: 20px;
+  background: rgba(255,255,255,0.86);
+  border: 1px solid ${TOKENS.border};
+  box-shadow: ${TOKENS.shadow};
+  color: ${TOKENS.green800};
 }
 
 .jas-spinner {
   width: 22px;
   height: 22px;
   border-radius: 999px;
-  border: 2px solid ${GOLD};
+  border: 2px solid ${TOKENS.gold600};
   border-top-color: transparent;
   animation: jas-spin 0.75s linear infinite;
 }
@@ -263,80 +283,92 @@ const DASHBOARD_CSS = `
   gap: 10px;
   margin-bottom: 18px;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 18px;
   background: #fff1f2;
   border: 1px solid #fecdd3;
   color: #9f1239;
+  box-shadow: 0 12px 30px rgba(159,18,57,0.08);
   font-size: 13px;
   line-height: 1.55;
-  box-shadow: 0 12px 30px rgba(159,18,57,0.08);
+}
+
+.jas-grid {
+  display: grid;
+  gap: 20px;
 }
 
 .jas-hero {
   position: relative;
   overflow: hidden;
-  margin-bottom: 20px;
-  padding: 28px;
-  border-radius: 28px;
+  border-radius: ${TOKENS.radiusLg};
   background:
-    linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,251,242,0.92)),
+    linear-gradient(135deg, rgba(255,255,255,0.98), rgba(255,250,241,0.95)),
     white;
-  border: 1px solid rgba(12,43,28,0.09);
-  box-shadow: 0 22px 60px rgba(12,43,28,0.10);
+  border: 1px solid ${TOKENS.border};
+  box-shadow: ${TOKENS.shadowStrong};
+}
+
+.jas-hero::before {
+  content: '';
+  position: absolute;
+  right: -7rem;
+  top: -8rem;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(196,145,44,0.20), transparent 62%);
+  pointer-events: none;
 }
 
 .jas-hero::after {
   content: '';
   position: absolute;
-  right: -5rem;
-  top: -7rem;
-  width: 22rem;
-  height: 22rem;
+  left: -5rem;
+  bottom: -7rem;
+  width: 18rem;
+  height: 18rem;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(196,145,44,0.20), transparent 65%);
+  background: radial-gradient(circle, rgba(11,42,29,0.10), transparent 68%);
   pointer-events: none;
 }
 
 .jas-hero-inner {
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 22px;
-}
-
-.jas-hero-copy {
-  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 360px);
+  gap: 18px;
+  padding: 28px;
 }
 
 .jas-eyebrow {
   margin: 0;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1;
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: ${GOLD};
+  color: ${TOKENS.gold600};
 }
 
-.jas-hero h1 {
-  margin: 8px 0 8px;
+.jas-hero-title {
+  margin: 10px 0 10px;
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: clamp(34px, 5vw, 48px);
-  line-height: 0.95;
-  color: ${G};
+  font-size: clamp(36px, 6vw, 52px);
+  line-height: 0.94;
   letter-spacing: -0.02em;
+  color: ${TOKENS.green900};
 }
 
 .jas-hero-text {
-  max-width: 680px;
+  max-width: 700px;
   margin: 0;
-  color: #71695f;
+  color: ${TOKENS.textSoft};
   font-size: 14px;
   line-height: 1.75;
 }
 
-.jas-hero-meta {
+.jas-meta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -344,80 +376,52 @@ const DASHBOARD_CSS = `
 }
 
 .jas-chip {
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 34px;
   padding: 0 12px;
   border-radius: 999px;
-  background: rgba(12,43,28,0.06);
-  border: 1px solid rgba(12,43,28,0.08);
-  color: ${G};
+  background: rgba(11,42,29,0.06);
+  border: 1px solid rgba(11,42,29,0.08);
+  color: ${TOKENS.green900};
   font-size: 12px;
   font-weight: 700;
 }
 
-.jas-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 336px;
-  gap: 20px;
-  align-items: start;
-}
-
-.jas-card {
+.jas-hero-panel {
+  padding: 18px;
   border-radius: 24px;
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(12,43,28,0.09);
-  box-shadow: 0 16px 46px rgba(12,43,28,0.075);
-  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(11,42,29,0.98), rgba(18,55,38,0.96)),
+    ${TOKENS.green900};
+  color: white;
+  box-shadow: 0 20px 45px rgba(11,42,29,0.22);
+  display: grid;
+  gap: 14px;
+  align-content: start;
 }
 
-.jas-card-header {
+.jas-hero-profile {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 24px;
-  border-bottom: 1px solid #efe9df;
-  background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(251,248,242,0.92));
-}
-
-.jas-card-title {
-  margin: 4px 0 0;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 24px;
-  line-height: 1;
-  font-weight: 700;
-  color: ${G};
-}
-
-.jas-card-body {
-  padding: 24px;
-}
-
-.jas-profile-intro {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
-  margin-bottom: 22px;
+  gap: 14px;
 }
 
 .jas-avatar-wrap {
   position: relative;
-  width: 112px;
-  height: 112px;
+  width: 84px;
+  height: 84px;
+  flex: 0 0 auto;
 }
 
 .jas-avatar,
 .jas-avatar-fallback {
-  width: 112px;
-  height: 112px;
-  border-radius: 28px;
-  border: 4px solid white;
-  box-shadow:
-    0 14px 30px rgba(12,43,28,0.14),
-    0 0 0 1px rgba(12,43,28,0.10);
+  width: 84px;
+  height: 84px;
+  border-radius: 24px;
+  border: 3px solid rgba(255,255,255,0.95);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
 }
 
 .jas-avatar {
@@ -427,52 +431,206 @@ const DASHBOARD_CSS = `
 .jas-avatar-fallback {
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #f2eee6, #fffaf0);
+  background: linear-gradient(135deg, #f1ece3, #fff9ef);
 }
 
 .jas-verified-dot {
   position: absolute;
-  right: -3px;
-  bottom: -3px;
-  width: 30px;
-  height: 30px;
+  right: -4px;
+  bottom: -4px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #059669;
+  background: #10b981;
   border: 3px solid white;
-  box-shadow: 0 8px 18px rgba(5,150,105,0.25);
+}
+
+.jas-hero-name {
+  margin: 0;
+  color: white;
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.jas-hero-sub {
+  margin: 5px 0 0;
+  color: rgba(255,255,255,0.72);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.jas-hero-panel-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.jas-mini-card {
+  padding: 12px 13px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.jas-mini-label {
+  margin: 0 0 4px;
+  color: rgba(255,255,255,0.56);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.jas-mini-value {
+  margin: 0;
+  color: white;
+  font-size: 13px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.jas-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.jas-stat-card {
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid ${TOKENS.border};
+  box-shadow: ${TOKENS.shadow};
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.jas-stat-card:hover,
+.jas-info-item:hover,
+.jas-profile-section:hover,
+.jas-side-card:hover,
+.jas-help-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 55px rgba(11,42,29,0.11);
+  border-color: rgba(11,42,29,0.16);
+}
+
+.jas-stat-copy {
+  min-width: 0;
+}
+
+.jas-stat-label {
+  margin: 0 0 6px;
+  color: ${TOKENS.textMuted};
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.jas-stat-value {
+  margin: 0;
+  color: ${TOKENS.green900};
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.jas-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.jas-card,
+.jas-side-card,
+.jas-help-card {
+  border-radius: 28px;
+  background: rgba(255,255,255,0.94);
+  border: 1px solid ${TOKENS.border};
+  box-shadow: ${TOKENS.shadow};
+  overflow: hidden;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.jas-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(251,248,242,0.92));
+  border-bottom: 1px solid ${TOKENS.borderSoft};
+}
+
+.jas-card-title {
+  margin: 6px 0 0;
+  color: ${TOKENS.green900};
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.jas-card-subtitle {
+  margin: 8px 0 0;
+  color: ${TOKENS.textSoft};
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.jas-card-body {
+  padding: 24px;
+}
+
+.jas-profile-grid {
+  display: grid;
+  gap: 16px;
 }
 
 .jas-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
 }
 
 .jas-info-item {
   min-width: 0;
-  padding: 13px 14px;
-  border-radius: 16px;
-  background: #fbfaf7;
-  border: 1px solid #efe9df;
+  padding: 14px 15px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fffdf9, #faf7f1);
+  border: 1px solid ${TOKENS.borderSoft};
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .jas-info-label {
   margin: 0 0 6px;
+  color: ${TOKENS.textMuted};
   font-size: 10px;
+  line-height: 1;
   font-weight: 800;
-  letter-spacing: 0.10em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: #9d9285;
 }
 
 .jas-info-value {
   margin: 0;
-  color: #1c1917;
+  color: ${TOKENS.text};
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.52;
   overflow-wrap: anywhere;
+}
+
+.jas-empty-value {
+  color: #b9b0a4;
+  font-style: italic;
 }
 
 .jas-mono {
@@ -481,26 +639,22 @@ const DASHBOARD_CSS = `
   letter-spacing: -0.01em;
 }
 
-.jas-empty-value {
-  color: #c0b6aa;
-  font-style: italic;
-}
-
-.jas-sections {
+.jas-section-stack {
   display: grid;
   gap: 14px;
 }
 
 .jas-profile-section {
   padding: 18px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #fffdf8, #fbfaf7);
-  border: 1px solid #efe9df;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fffdf9, #faf7f1);
+  border: 1px solid ${TOKENS.borderSoft};
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .jas-section-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -510,41 +664,41 @@ const DASHBOARD_CSS = `
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 18px;
-  padding: 18px;
-  border-radius: 20px;
+  padding: 20px;
+  border-radius: 22px;
   background: var(--member-bg);
   border: 1px solid var(--member-border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45);
 }
 
 .jas-member-no {
-  margin: 6px 0 0;
+  margin: 7px 0 0;
+  color: ${TOKENS.green900};
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: clamp(22px, 4vw, 30px);
+  line-height: 1.1;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: ${G};
 }
 
 .jas-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 18px;
 }
 
 .jas-action {
+  min-height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
-  min-height: 44px;
   padding: 0 18px;
-  border-radius: 14px;
+  border-radius: 15px;
   text-decoration: none;
   font-size: 13px;
   font-weight: 800;
-  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
 }
 
 .jas-action:hover {
@@ -552,36 +706,28 @@ const DASHBOARD_CSS = `
 }
 
 .jas-action-primary {
-  background: ${G};
+  background: ${TOKENS.green900};
   color: white;
-  box-shadow: 0 12px 24px rgba(12,43,28,0.18);
+  box-shadow: 0 14px 28px rgba(11,42,29,0.20);
 }
 
 .jas-action-secondary {
   background: white;
-  color: ${G};
-  border: 1px solid rgba(12,43,28,0.18);
+  color: ${TOKENS.green900};
+  border: 1px solid rgba(11,42,29,0.16);
 }
 
 .jas-action-gold {
-  background: ${GOLD};
-  color: ${G};
-  box-shadow: 0 12px 24px rgba(196,145,44,0.20);
+  background: ${TOKENS.gold600};
+  color: ${TOKENS.green900};
+  box-shadow: 0 14px 28px rgba(196,145,44,0.20);
 }
 
 .jas-side {
+  position: sticky;
+  top: 96px;
   display: grid;
   gap: 14px;
-  position: sticky;
-  top: 18px;
-}
-
-.jas-side-card {
-  padding: 20px;
-  border-radius: 24px;
-  background: rgba(255,255,255,0.92);
-  border: 1px solid rgba(12,43,28,0.09);
-  box-shadow: 0 16px 46px rgba(12,43,28,0.075);
 }
 
 .jas-progress-list {
@@ -592,7 +738,7 @@ const DASHBOARD_CSS = `
 
 .jas-progress-item {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -603,12 +749,11 @@ const DASHBOARD_CSS = `
 }
 
 .jas-progress-dot {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  border-radius: 999px;
   background: var(--dot-bg);
   box-shadow: var(--dot-shadow);
 }
@@ -616,8 +761,8 @@ const DASHBOARD_CSS = `
 .jas-progress-line {
   width: 2px;
   flex: 1;
-  min-height: 28px;
-  margin: 4px 0;
+  min-height: 30px;
+  margin: 5px 0;
   border-radius: 999px;
   background: var(--line-bg);
 }
@@ -632,17 +777,18 @@ const DASHBOARD_CSS = `
 
 .jas-progress-label {
   margin: 0;
-  font-size: 13px;
-  font-weight: 800;
   color: var(--step-color);
-  line-height: 1.3;
+  font-size: 13px;
+  line-height: 1.35;
+  font-weight: 800;
 }
 
 .jas-progress-sub {
   margin: 4px 0 0;
-  font-size: 12px;
-  font-weight: 600;
   color: var(--step-sub-color);
+  font-size: 12px;
+  line-height: 1.55;
+  font-weight: 600;
 }
 
 .jas-status-card {
@@ -650,7 +796,7 @@ const DASHBOARD_CSS = `
   border-radius: 22px;
   background: var(--status-bg);
   border: 1px solid var(--status-border);
-  box-shadow: 0 16px 38px var(--status-shadow);
+  box-shadow: 0 16px 36px var(--status-shadow);
 }
 
 .jas-status-head {
@@ -662,23 +808,24 @@ const DASHBOARD_CSS = `
 
 .jas-status-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 800;
   color: var(--status-title);
+  font-size: 14px;
+  line-height: 1.3;
+  font-weight: 800;
 }
 
 .jas-status-text {
   margin: 0;
   color: var(--status-text);
   font-size: 12px;
-  line-height: 1.65;
+  line-height: 1.7;
 }
 
 .jas-badge {
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 32px;
   padding: 0 13px;
   border-radius: 999px;
   background: var(--badge-bg);
@@ -689,48 +836,66 @@ const DASHBOARD_CSS = `
   white-space: nowrap;
 }
 
+.jas-help-card {
+  padding: 18px;
+}
+
+.jas-help-text {
+  margin: 10px 0 0;
+  color: ${TOKENS.textSoft};
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.jas-help-link {
+  margin-top: 14px;
+}
+
 .jas-empty-state {
   position: relative;
   overflow: hidden;
-  padding: 70px 32px;
+  padding: 72px 32px;
   text-align: center;
-  border-radius: 28px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,250,241,0.94)),
-    white;
-  border: 1px solid rgba(12,43,28,0.09);
-  box-shadow: 0 22px 60px rgba(12,43,28,0.10);
+  border-radius: ${TOKENS.radiusLg};
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,250,241,0.95));
+  border: 1px solid ${TOKENS.border};
+  box-shadow: ${TOKENS.shadowStrong};
 }
 
 .jas-empty-icon {
-  width: 76px;
-  height: 76px;
+  width: 78px;
+  height: 78px;
   display: grid;
   place-items: center;
   margin: 0 auto 22px;
   border-radius: 24px;
-  background: ${GOLD_LT};
+  background: ${TOKENS.gold100};
   border: 1px solid rgba(196,145,44,0.24);
-  color: ${GOLD};
+  color: ${TOKENS.gold600};
 }
 
-.jas-empty-state h2 {
+.jas-empty-title {
   margin: 0 0 10px;
+  color: ${TOKENS.green900};
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 34px;
+  font-size: 36px;
   line-height: 1;
-  color: ${G};
+  font-weight: 700;
 }
 
-.jas-empty-state p {
-  max-width: 440px;
+.jas-empty-text {
+  max-width: 460px;
   margin: 0 auto 28px;
-  color: #71695f;
+  color: ${TOKENS.textSoft};
   font-size: 14px;
   line-height: 1.75;
 }
 
-@media (max-width: 920px) {
+@media (max-width: 1080px) {
+  .jas-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .jas-layout {
     grid-template-columns: 1fr;
   }
@@ -740,131 +905,68 @@ const DASHBOARD_CSS = `
   }
 }
 
+@media (max-width: 860px) {
+  .jas-hero-inner {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 680px) {
   .jas-container {
-    width: min(100% - 24px, 1160px);
-  }
-
-  .jas-content {
-    padding: 22px 0 36px;
+    width: min(100% - 24px, 1220px);
   }
 
   .jas-nav {
-    min-height: 64px;
-    gap: 10px;
-    padding: 12px 0;
-  }
-
-  .jas-brand {
-    min-width: 0;
-    gap: 10px;
-  }
-
-  .jas-brand-mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 14px;
+    min-height: 74px;
+    padding: 10px 0;
   }
 
   .jas-brand-title {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 21px;
-  }
-
-  .jas-brand-subtitle {
-    margin-top: 4px;
-    font-size: 9px;
-    letter-spacing: 0.14em;
-  }
-
-  .jas-logout {
-    min-height: 42px;
-    width: 42px;
-    justify-content: center;
-    padding: 0;
+    font-size: 24px;
   }
 
   .jas-logout span {
     display: none;
   }
 
-  .jas-hero {
-    padding: 20px;
-    border-radius: 24px;
+  .jas-content {
+    padding-top: 18px;
   }
 
   .jas-hero-inner,
-  .jas-card-header,
-  .jas-member-number {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .jas-hero h1 {
-    font-size: clamp(30px, 11vw, 40px);
-    overflow-wrap: anywhere;
-  }
-
-  .jas-chip,
-  .jas-badge {
-    width: 100%;
-    justify-content: center;
-    white-space: normal;
-    text-align: center;
-  }
-
-  .jas-profile-intro {
-    grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
-  .jas-info-grid,
-  .jas-section-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .jas-avatar-wrap {
-    width: 96px;
-    height: 96px;
-  }
-
-  .jas-avatar,
-  .jas-avatar-fallback {
-    width: 96px;
-    height: 96px;
-    border-radius: 24px;
-  }
-
-  .jas-card,
-  .jas-side-card,
-  .jas-status-card {
-    border-radius: 20px;
-  }
-
   .jas-card-body,
-  .jas-card-header,
-  .jas-side-card {
+  .jas-card-header {
     padding: 18px;
+  }
+
+  .jas-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .jas-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .jas-actions {
+    flex-direction: column;
   }
 
   .jas-action {
     width: 100%;
-    min-height: 48px;
+  }
+
+  .jas-member-number {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .jas-empty-state {
-    padding: 44px 20px;
-  }
-
-  .jas-empty-state h2 {
-    font-size: 29px;
+    padding: 54px 20px;
   }
 }
 `
 
-// ── Page ─────────────────────────────────────────────────────────────────────
 function DashboardPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -873,13 +975,13 @@ function DashboardPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const ID = 'jas-gfonts'
-    if (!document.getElementById(ID)) {
+    const id = 'jas-gfonts'
+    if (!document.getElementById(id)) {
       const el = document.createElement('link')
-      el.id = ID
+      el.id = id
       el.rel = 'stylesheet'
       el.href =
-        'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Raleway:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap'
+        'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap'
       document.head.appendChild(el)
     }
   }, [])
@@ -944,7 +1046,7 @@ function DashboardPage() {
       return
     }
 
-    const data = rawData as unknown as Member | null
+    const data = rawData as Member | null
     setMember(data)
 
     if (data?.photo_url) {
@@ -962,6 +1064,33 @@ function DashboardPage() {
     await supabase.auth.signOut()
     await navigate({ to: '/login', replace: true })
   }
+
+  const statItems = useMemo(() => {
+    if (!member) return []
+
+    return [
+      {
+        label: 'Application status',
+        value: getStatusText(member.status),
+        icon: <ShieldCheck size={18} color={TOKENS.green700} />,
+      },
+      {
+        label: 'Member number',
+        value: member.member_no || 'Pending issue',
+        icon: <IdCard size={18} color={TOKENS.gold700} />,
+      },
+      {
+        label: 'District',
+        value: member.taluka ? `${member.district} / ${member.taluka}` : member.district,
+        icon: <MapPin size={18} color={TOKENS.green700} />,
+      },
+      {
+        label: 'Submitted',
+        value: formatDate(member.created_at),
+        icon: <Clock size={18} color={TOKENS.gold700} />,
+      },
+    ]
+  }, [member])
 
   if (loading) {
     return (
@@ -983,9 +1112,10 @@ function DashboardPage() {
         <div className="jas-container jas-nav">
           <div className="jas-brand">
             <div className="jas-brand-mark">
-              <ShieldCheck size={21} color={GOLD} strokeWidth={2.2} />
+              <ShieldCheck size={21} color={TOKENS.gold600} strokeWidth={2.2} />
             </div>
-            <div>
+
+            <div className="jas-brand-copy">
               <p className="jas-brand-title">Jatt Alliance Sindh</p>
               <p className="jas-brand-subtitle">Member Portal</p>
             </div>
@@ -1009,20 +1139,20 @@ function DashboardPage() {
         {!member ? (
           <EmptyState />
         ) : (
-          <>
+          <div className="jas-grid">
             <section className="jas-hero">
               <div className="jas-hero-inner">
-                <div className="jas-hero-copy">
+                <div>
                   <p className="jas-eyebrow">Dashboard overview</p>
-                  <h1>{member.full_name}</h1>
+                  <h1 className="jas-hero-title">Welcome back, {member.full_name}</h1>
                   <p className="jas-hero-text">
                     Track your membership application, review your submitted profile, and access your
-                    digital card once approved.
+                    digital member card as soon as your application is approved.
                   </p>
 
-                  <div className="jas-hero-meta">
+                  <div className="jas-meta-row">
                     <span className="jas-chip">
-                      <IdCard size={14} />
+                      <Users size={14} />
                       {member.member_no || 'Member no. pending'}
                     </span>
                     <span className="jas-chip">
@@ -1030,45 +1160,82 @@ function DashboardPage() {
                       Submitted {formatDate(member.created_at)}
                     </span>
                     <span className="jas-chip">
-                      <ShieldCheck size={14} />
+                      <MapPin size={14} />
                       {member.district}
                       {member.taluka ? ` / ${member.taluka}` : ''}
                     </span>
                   </div>
                 </div>
 
-                <StatusBadge status={member.status} />
+                <div className="jas-hero-panel">
+                  <div className="jas-hero-profile">
+                    <div className="jas-avatar-wrap">
+                      {photoSignedUrl ? (
+                        <img className="jas-avatar" src={photoSignedUrl} alt={member.full_name} />
+                      ) : (
+                        <div className="jas-avatar-fallback">
+                          <User size={34} color="#C4BAAD" />
+                        </div>
+                      )}
+
+                      {member.status === 'approved' ? (
+                        <span className="jas-verified-dot">
+                          <Check size={12} color="white" strokeWidth={3} />
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div>
+                      <p className="jas-hero-name">{member.full_name}</p>
+                      <p className="jas-hero-sub">{member.profession || 'Member profile created'}</p>
+                    </div>
+                  </div>
+
+                  <StatusBadge status={member.status} />
+
+                  <div className="jas-hero-panel-grid">
+                    <div className="jas-mini-card">
+                      <p className="jas-mini-label">Member number</p>
+                      <p className="jas-mini-value">{member.member_no || 'Not issued yet'}</p>
+                    </div>
+
+                    <div className="jas-mini-card">
+                      <p className="jas-mini-label">Application state</p>
+                      <p className="jas-mini-value">{getStatusDescription(member)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
+            </section>
+
+            <section className="jas-stat-grid">
+              {statItems.map((item) => (
+                <article key={item.label} className="jas-stat-card">
+                  <div className="jas-stat-copy">
+                    <p className="jas-stat-label">{item.label}</p>
+                    <p className="jas-stat-value">{item.value}</p>
+                  </div>
+                  {item.icon}
+                </article>
+              ))}
             </section>
 
             <div className="jas-layout">
               <section className="jas-card">
                 <div className="jas-card-header">
                   <div>
-                    <Label text="Membership profile" color={GOLD} />
+                    <Label text="Membership profile" color={TOKENS.gold600} />
                     <p className="jas-card-title">Personal information</p>
+                    <p className="jas-card-subtitle">
+                      Review your submitted details below. Update the form if your application is still
+                      pending or needs resubmission.
+                    </p>
                   </div>
                   <StatusBadge status={member.status} />
                 </div>
 
                 <div className="jas-card-body">
-                  <div className="jas-profile-intro">
-                    <div className="jas-avatar-wrap">
-                      {photoSignedUrl ? (
-                        <img className="jas-avatar" src={photoSignedUrl} alt={member.full_name} />
-                      ) : (
-                        <div className="jas-avatar-fallback">
-                          <User size={42} color="#C4BAAD" />
-                        </div>
-                      )}
-
-                      {member.status === 'approved' ? (
-                        <span className="jas-verified-dot">
-                          <Check size={13} color="white" strokeWidth={3} />
-                        </span>
-                      ) : null}
-                    </div>
-
+                  <div className="jas-profile-grid">
                     <div className="jas-info-grid">
                       <InfoItem label="Full name" value={member.full_name} />
                       <InfoItem label="Father name" value={member.father_name} />
@@ -1079,70 +1246,98 @@ function DashboardPage() {
                       <InfoItem label="Profession" value={member.profession} />
                       <InfoItem label="Caste branch" value={member.caste_branch} />
                     </div>
-                  </div>
 
-                  <div className="jas-sections">
-                    <ProfileSection title="Additional details">
-                      <InfoItem label="Date of birth" value={formatNullableDate(member.date_of_birth)} />
-                      <InfoItem label="Gender" value={member.gender} />
-                      <InfoItem label="Education" value={member.education} />
-                      <InfoItem label="Blood group" value={member.blood_group} />
-                    </ProfileSection>
+                    <div className="jas-section-stack">
+                      <ProfileSection title="Additional details">
+                        <InfoItem label="Date of birth" value={formatNullableDate(member.date_of_birth)} />
+                        <InfoItem label="Gender" value={member.gender} />
+                        <InfoItem label="Education" value={member.education} />
+                        <InfoItem label="Blood group" value={member.blood_group} />
+                      </ProfileSection>
 
-                    <ProfileSection title="Residential address">
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <InfoItem label="Complete address" value={member.address} />
-                      </div>
-                    </ProfileSection>
+                      <ProfileSection title="Residential address">
+                        <div style={{ gridColumn: '1 / -1' }}>
+                          <InfoItem label="Complete address" value={member.address} />
+                        </div>
+                      </ProfileSection>
 
-                    <ProfileSection title="Emergency contact">
-                      <InfoItem label="Contact name" value={member.emergency_contact_name} />
-                      <InfoItem label="Relation" value={member.emergency_contact_relation} />
-                      <InfoItem label="Mobile" value={member.emergency_contact_mobile} mono />
-                      <InfoItem
-                        label="Declaration"
-                        value={member.declaration_accepted ? 'Accepted' : 'Not accepted'}
-                      />
-                    </ProfileSection>
-                  </div>
+                      <ProfileSection title="Emergency contact">
+                        <InfoItem label="Contact name" value={member.emergency_contact_name} />
+                        <InfoItem label="Relation" value={member.emergency_contact_relation} />
+                        <InfoItem label="Mobile" value={member.emergency_contact_mobile} mono />
+                        <InfoItem
+                          label="Declaration"
+                          value={member.declaration_accepted ? 'Accepted' : 'Not accepted'}
+                        />
+                      </ProfileSection>
+                    </div>
 
-                  <MemberNumberCard member={member} />
+                    <MemberNumberCard member={member} />
 
-                  <div className="jas-actions">
-                    {member.status === 'pending' ? (
-                      <ActionLink to="/register" variant="secondary" icon={<Pencil size={15} />}>
-                        Edit pending form
-                      </ActionLink>
-                    ) : null}
+                    <div className="jas-actions">
+                      {member.status === 'pending' ? (
+                        <ActionLink to="/register" variant="secondary" icon={<Pencil size={15} />}>
+                          Edit pending form
+                        </ActionLink>
+                      ) : null}
 
-                    {member.status === 'approved' ? (
-                      <ActionLink to="/card" variant="primary" icon={<CreditCard size={16} />}>
-                        View digital card
-                      </ActionLink>
-                    ) : null}
+                      {member.status === 'approved' ? (
+                        <ActionLink to="/card" variant="primary" icon={<CreditCard size={16} />}>
+                          View digital card
+                        </ActionLink>
+                      ) : null}
 
-                    {member.status === 'rejected' ? (
-                      <ActionLink to="/register" variant="gold" icon={<RefreshCw size={16} />}>
-                        Resubmit application
-                      </ActionLink>
-                    ) : null}
+                      {member.status === 'rejected' ? (
+                        <ActionLink to="/register" variant="gold" icon={<RefreshCw size={16} />}>
+                          Resubmit application
+                        </ActionLink>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </section>
 
               <aside className="jas-side">
-                <ProgressTracker member={member} />
+                <div className="jas-side-card" style={{ padding: '20px' }}>
+                  <Label text="Application progress" color={TOKENS.gold600} />
+                  <ol className="jas-progress-list">
+                    <ProgressTracker member={member} />
+                  </ol>
+                </div>
+
                 <StatusMessage member={member} />
+
+                <div className="jas-help-card">
+                  <Label text="Quick access" color={TOKENS.gold600} />
+                  <p className="jas-help-text">
+                    {member.status === 'approved'
+                      ? 'Your profile is approved. Open your digital card to verify your membership details.'
+                      : member.status === 'rejected'
+                        ? 'Your application needs updates before it can be reconsidered. Please review the rejection message and resubmit.'
+                        : 'Your application is in review. You can still edit submitted details while the form remains pending.'}
+                  </p>
+
+                  <div className="jas-help-link">
+                    {member.status === 'approved' ? (
+                      <ActionLink to="/card" variant="primary" icon={<ArrowRight size={15} />}>
+                        Open member card
+                      </ActionLink>
+                    ) : (
+                      <ActionLink to="/register" variant="secondary" icon={<ArrowRight size={15} />}>
+                        Open application
+                      </ActionLink>
+                    )}
+                  </div>
+                </div>
               </aside>
             </div>
-          </>
+          </div>
         )}
       </div>
     </main>
   )
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
 function EmptyState() {
   return (
     <section className="jas-empty-state">
@@ -1150,8 +1345,8 @@ function EmptyState() {
         <FileText size={34} />
       </div>
 
-      <h2>Complete your membership</h2>
-      <p>
+      <h2 className="jas-empty-title">Complete your membership</h2>
+      <p className="jas-empty-text">
         Your account is ready. Submit your membership form to become an official Jatt Alliance Sindh
         member.
       </p>
@@ -1174,7 +1369,7 @@ function Label({ text, color }: { text: string; color: string }) {
 function ProfileSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="jas-profile-section">
-      <Label text={title} color={GOLD} />
+      <Label text={title} color={TOKENS.gold600} />
       <div className="jas-section-grid">{children}</div>
     </section>
   )
@@ -1248,7 +1443,7 @@ function StatusMessage({ member }: { member: Member }) {
     pending: {
       Icon: Hourglass,
       title: 'Under review',
-      text: 'Your application is being reviewed. Your digital card will be issued once an admin approves it.',
+      text: 'Your application is currently being reviewed by the admin team. Your digital card will be issued after approval.',
       bg: '#FFFBEB',
       border: '#FDE68A',
       shadow: 'rgba(146,64,14,0.08)',
@@ -1260,8 +1455,8 @@ function StatusMessage({ member }: { member: Member }) {
       Icon: CheckCircle2,
       title: 'Verified member',
       text: member.approved_at
-        ? `Approved on ${formatDate(member.approved_at)}`
-        : 'Your membership has been approved.',
+        ? `Approved on ${formatDate(member.approved_at)}. Your profile is active and your membership record is verified.`
+        : 'Your membership has been approved and verified.',
       bg: '#ECFDF5',
       border: '#A7F3D0',
       shadow: 'rgba(5,150,105,0.08)',
@@ -1274,7 +1469,7 @@ function StatusMessage({ member }: { member: Member }) {
       title: 'Application rejected',
       text:
         member.rejection_reason ||
-        'No reason was provided. Please update and resubmit your application.',
+        'No reason was provided. Please update your information and submit the application again.',
       bg: '#FEF2F2',
       border: '#FECACA',
       shadow: 'rgba(185,28,28,0.08)',
@@ -1313,61 +1508,57 @@ function ProgressTracker({ member }: { member: Member }) {
   const activeIndex = getActiveStep(member)
 
   return (
-    <div className="jas-side-card">
-      <Label text="Application progress" color={GOLD} />
+    <>
+      {STATUS_STEPS.map((step, index) => {
+        const isDone = index < activeIndex
+        const isActive = index === activeIndex
+        const isLast = index === STATUS_STEPS.length - 1
 
-      <ol className="jas-progress-list">
-        {STATUS_STEPS.map((step, index) => {
-          const isDone = index < activeIndex
-          const isActive = index === activeIndex
-          const isLast = index === STATUS_STEPS.length - 1
-
-          return (
-            <li key={step.key} className="jas-progress-item">
-              <div className="jas-progress-track">
-                <div
-                  className="jas-progress-dot"
-                  style={
-                    {
-                      '--dot-bg': isDone ? G : isActive ? GOLD : '#EDE8E0',
-                      '--dot-shadow': isActive
-                        ? `0 0 0 4px ${GOLD_LT}, 0 0 0 7px rgba(196,145,44,0.26)`
-                        : 'none',
-                    } as CSSProperties
-                  }
-                >
-                  {isDone ? <Check size={12} color="white" strokeWidth={3} /> : null}
-                </div>
-
-                {!isLast ? (
-                  <div
-                    className="jas-progress-line"
-                    style={
-                      {
-                        '--line-bg': isDone ? G : '#E8E2D8',
-                      } as CSSProperties
-                    }
-                  />
-                ) : null}
-              </div>
-
+        return (
+          <li key={step.key} className="jas-progress-item">
+            <div className="jas-progress-track">
               <div
-                className="jas-progress-copy"
+                className="jas-progress-dot"
                 style={
                   {
-                    '--step-color': isActive || isDone ? G : '#A89E92',
-                    '--step-sub-color': isActive ? GOLD : '#A89E92',
+                    '--dot-bg': isDone ? TOKENS.green900 : isActive ? TOKENS.gold600 : '#EDE8E0',
+                    '--dot-shadow': isActive
+                      ? `0 0 0 4px ${TOKENS.gold100}, 0 0 0 7px rgba(196,145,44,0.24)`
+                      : 'none',
                   } as CSSProperties
                 }
               >
-                <p className="jas-progress-label">{step.label}</p>
-                <p className="jas-progress-sub">{step.sub(member)}</p>
+                {isDone ? <Check size={12} color="white" strokeWidth={3} /> : null}
               </div>
-            </li>
-          )
-        })}
-      </ol>
-    </div>
+
+              {!isLast ? (
+                <div
+                  className="jas-progress-line"
+                  style={
+                    {
+                      '--line-bg': isDone ? TOKENS.green900 : '#E8E2D8',
+                    } as CSSProperties
+                  }
+                />
+              ) : null}
+            </div>
+
+            <div
+              className="jas-progress-copy"
+              style={
+                {
+                  '--step-color': isActive || isDone ? TOKENS.green900 : '#A89E92',
+                  '--step-sub-color': isActive ? TOKENS.gold700 : '#A89E92',
+                } as CSSProperties
+              }
+            >
+              <p className="jas-progress-label">{step.label}</p>
+              <p className="jas-progress-sub">{step.sub(member)}</p>
+            </div>
+          </li>
+        )
+      })}
+    </>
   )
 }
 
@@ -1382,7 +1573,7 @@ function MemberNumberCard({ member }: { member: Member }) {
           '--member-bg': hasMemberNo
             ? 'linear-gradient(135deg, #FBF0D9, #FFF9EC)'
             : 'linear-gradient(135deg, #F9F7F4, #FFFFFF)',
-          '--member-border': hasMemberNo ? '#E2C06A' : '#E8E2D8',
+          '--member-border': hasMemberNo ? '#E2C06A' : TOKENS.creamDeep,
         } as CSSProperties
       }
     >
@@ -1391,13 +1582,13 @@ function MemberNumberCard({ member }: { member: Member }) {
         {member.member_no ? (
           <p className="jas-member-no">{member.member_no}</p>
         ) : (
-          <p className="jas-info-value jas-mono" style={{ marginTop: 6, color: '#A89E92' }}>
+          <p className="jas-info-value jas-mono" style={{ marginTop: 7, color: '#A89E92' }}>
             Not issued yet
           </p>
         )}
       </div>
 
-      <IdCard size={34} color={hasMemberNo ? GOLD : '#C8C0B4'} />
+      <IdCard size={36} color={hasMemberNo ? TOKENS.gold600 : '#C8C0B4'} />
     </div>
   )
 }
@@ -1421,7 +1612,28 @@ function ActionLink({
   )
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+function getStatusText(status: Member['status']) {
+  switch (status) {
+    case 'approved':
+      return 'Approved'
+    case 'rejected':
+      return 'Rejected'
+    default:
+      return 'Pending review'
+  }
+}
+
+function getStatusDescription(member: Member) {
+  switch (member.status) {
+    case 'approved':
+      return member.member_no ? 'Card available' : 'Approval complete'
+    case 'rejected':
+      return 'Needs resubmission'
+    default:
+      return 'Awaiting admin review'
+  }
+}
+
 function formatNullableDate(value: string | null | undefined) {
   if (!value) return null
   return formatDate(value)
