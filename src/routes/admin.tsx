@@ -1,3 +1,4 @@
+// src/routes/admin.tsx
 import {
   createFileRoute,
   Link,
@@ -5,12 +6,15 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase/client'
 
 export const Route = createFileRoute('/admin')({
   component: AdminPage,
 })
+
+type MemberStatus = 'pending' | 'approved' | 'rejected'
+type StatusFilter = 'all' | MemberStatus
 
 type Member = {
   id: string
@@ -19,10 +23,84 @@ type Member = {
   mobile: string
   district: string
   taluka: string | null
-  photo_url: string
-  status: 'pending' | 'approved' | 'rejected'
+  photo_url: string | null
+  status: MemberStatus
   member_no: string | null
   created_at: string
+}
+
+type AdminAccessResult =
+  | { ok: true }
+  | { ok: false; redirectTo: '/login' | '/dashboard' }
+
+const MEMBER_PHOTO_BUCKET = 'member-photos'
+const SIGNED_URL_TTL_SECONDS = 60 * 60
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString()
+}
+
+function buildMemberSearchText(member: Member) {
+  return [
+    member.full_name,
+    member.cnic,
+    member.mobile,
+    member.district,
+    member.taluka ?? '',
+    member.member_no ?? '',
+  ]
+    .join(' ')
+    .toLowerCase()
+}
+
+async function ensureAdminAccess(): Promise<AdminAccessResult> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    return { ok: false, redirectTo: '/login' }
+  }
+
+  const { data: role, error: roleError } = await supabase
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle()
+
+  if (roleError || !role) {
+    return { ok: false, redirectTo: '/dashboard' }
+  }
+
+  return { ok: true }
+}
+
+async function createSignedPhotoUrls(
+  members: Member[],
+): Promise<Record<string, string>> {
+  const entries = await Promise.all(
+    members.map(async (member) => {
+      if (!member.photo_url) {
+        return null
+      }
+
+      const { data, error } = await supabase.storage
+        .from(MEMBER_PHOTO_BUCKET)
+        .createSignedUrl(member.photo_url, SIGNED_URL_TTL_SECONDS)
+
+      if (error || !data?.signedUrl) {
+        return null
+      }
+
+      return [member.id, data.signedUrl] as const
+    }),
+  )
+
+  return Object.fromEntries(
+    entries.filter(Boolean) as Array<readonly [string, string]>,
+  )
 }
 
 function AdminPage() {
@@ -37,98 +115,88 @@ function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<Member[]>([])
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (!isMemberDetailPage) {
-      loadAdmin()
-    }
-  }, [isMemberDetailPage])
-
   const filteredMembers = useMemo(() => {
+    const query = search.trim().toLowerCase()
+
     return members.filter((member) => {
       const matchesStatus =
         statusFilter === 'all' || member.status === statusFilter
 
-      const query = search.trim().toLowerCase()
-
       const matchesSearch =
-        !query ||
-        member.full_name.toLowerCase().includes(query) ||
-        member.cnic.toLowerCase().includes(query) ||
-        member.mobile.toLowerCase().includes(query) ||
-        member.district.toLowerCase().includes(query) ||
-        (member.taluka?.toLowerCase().includes(query) ?? false) ||
-        (member.member_no ?? '').toLowerCase().includes(query)
+        query.length === 0 || buildMemberSearchText(member).includes(query)
 
       return matchesStatus && matchesSearch
     })
   }, [members, search, statusFilter])
 
+  const loadAdmin = useCallback(
+    async (cancelledRef?: { current: boolean }) => {
+      setLoading(true)
+      setError('')
+
+      try {
+        const access = await ensureAdminAccess()
+
+        if (!access.ok) {
+          if (!cancelledRef?.current) {
+            navigate({ to: access.redirectTo })
+          }
+          return
+        }
+
+        const { data, error: membersError } = await supabase
+          .from('members')
+          .select(
+            'id, full_name, cnic, mobile, district, taluka, photo_url, status, member_no, created_at',
+          )
+          .order('created_at', { ascending: false })
+
+        if (membersError) {
+          throw membersError
+        }
+
+        const safeMembers = (data ?? []) as Member[]
+        const signedUrls = await createSignedPhotoUrls(safeMembers)
+
+        if (!cancelledRef?.current) {
+          setMembers(safeMembers)
+          setPhotoUrls(signedUrls)
+        }
+      } catch (err) {
+        if (!cancelledRef?.current) {
+          setError(
+            err instanceof Error ? err.message : 'Failed to load admin members.',
+          )
+        }
+      } finally {
+        if (!cancelledRef?.current) {
+          setLoading(false)
+        }
+      }
+    },
+    [navigate],
+  )
+
+  useEffect(() => {
+    if (isMemberDetailPage) {
+      return
+    }
+
+    const cancelledRef = { current: false }
+
+    void loadAdmin(cancelledRef)
+
+    return () => {
+      cancelledRef.current = true
+    }
+  }, [isMemberDetailPage, loadAdmin])
+
   if (isMemberDetailPage) {
     return <Outlet />
-  }
-
-  async function loadAdmin() {
-    setLoading(true)
-    setError('')
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      navigate({ to: '/login' })
-      return
-    }
-
-    const { data: role } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle()
-
-    if (!role) {
-      navigate({ to: '/dashboard' })
-      return
-    }
-
-    const { data, error } = await supabase
-      .from('members')
-      .select(
-        'id, full_name, cnic, mobile, district, taluka, photo_url, status, member_no, created_at',
-      )
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    setMembers(data ?? [])
-
-    const signedMap: Record<string, string> = {}
-
-    await Promise.all(
-      (data ?? []).map(async (member) => {
-        if (!member.photo_url) return
-
-        const { data: signed } = await supabase.storage
-          .from('member-photos')
-          .createSignedUrl(member.photo_url, 60 * 60)
-
-        if (signed?.signedUrl) {
-          signedMap[member.id] = signed.signedUrl
-        }
-      }),
-    )
-
-    setPhotoUrls(signedMap)
-    setLoading(false)
   }
 
   if (loading) {
@@ -169,12 +237,16 @@ function AdminPage() {
               onChange={(event) => setSearch(event.target.value)}
               className="input min-h-11 text-base md:max-w-md md:text-sm"
               placeholder="Search name, CNIC, mobile, district, taluka, member no..."
+              aria-label="Search members"
             />
 
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value)}
+              onChange={(event) =>
+                setStatusFilter(event.target.value as StatusFilter)
+              }
               className="input min-h-11 text-base md:max-w-xs md:text-sm"
+              aria-label="Filter members by status"
             >
               <option value="all">All statuses</option>
               <option value="pending">Pending</option>
@@ -190,15 +262,12 @@ function AdminPage() {
                 className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex items-start gap-3">
-                  {photoUrls[member.id] ? (
-                    <img
-                      src={photoUrls[member.id]}
-                      alt={member.full_name}
-                      className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 shrink-0 rounded-xl bg-slate-100" />
-                  )}
+                  <MemberPhoto
+                    src={photoUrls[member.id]}
+                    alt={member.full_name}
+                    className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                    fallbackClassName="h-14 w-14 shrink-0 rounded-xl bg-slate-100"
+                  />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-start justify-between gap-2">
@@ -215,15 +284,26 @@ function AdminPage() {
 
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">District</p>
-                    <p className="mt-1 font-medium text-slate-900">{member.district}</p>
-                    <p className="text-xs text-slate-500">{member.taluka || 'No taluka'}</p>
-                  </div>
-                  <div className="rounded-xl bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Member No</p>
-                    <p className="mt-1 break-all font-medium text-slate-900">{member.member_no ?? '—'}</p>
+                    <p className="text-xs font-semibold uppercase text-slate-500">
+                      District
+                    </p>
+                    <p className="mt-1 font-medium text-slate-900">
+                      {member.district}
+                    </p>
                     <p className="text-xs text-slate-500">
-                      {new Date(member.created_at).toLocaleDateString()}
+                      {member.taluka || 'No taluka'}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">
+                      Member No
+                    </p>
+                    <p className="mt-1 break-all font-medium text-slate-900">
+                      {member.member_no ?? '—'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {formatDate(member.created_at)}
                     </p>
                   </div>
                 </div>
@@ -239,9 +319,7 @@ function AdminPage() {
             ))}
 
             {filteredMembers.length === 0 ? (
-              <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">
-                No members found.
-              </div>
+              <EmptyState message="No members found." />
             ) : null}
           </div>
 
@@ -264,15 +342,12 @@ function AdminPage() {
                 {filteredMembers.map((member) => (
                   <tr key={member.id} className="border-b last:border-0">
                     <td className="py-3">
-                      {photoUrls[member.id] ? (
-                        <img
-                          src={photoUrls[member.id]}
-                          alt={member.full_name}
-                          className="h-12 w-12 rounded-xl object-cover"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-xl bg-slate-100" />
-                      )}
+                      <MemberPhoto
+                        src={photoUrls[member.id]}
+                        alt={member.full_name}
+                        className="h-12 w-12 rounded-xl object-cover"
+                        fallbackClassName="h-12 w-12 rounded-xl bg-slate-100"
+                      />
                     </td>
 
                     <td className="py-3 font-medium text-slate-900">
@@ -280,6 +355,7 @@ function AdminPage() {
                     </td>
 
                     <td className="py-3 text-slate-700">{member.cnic}</td>
+
                     <td className="py-3 text-slate-700">
                       <div className="font-medium">{member.district}</div>
                       <div className="text-xs text-slate-500">
@@ -296,7 +372,7 @@ function AdminPage() {
                     </td>
 
                     <td className="py-3 text-slate-700">
-                      {new Date(member.created_at).toLocaleDateString()}
+                      {formatDate(member.created_at)}
                     </td>
 
                     <td className="py-3">
@@ -313,8 +389,8 @@ function AdminPage() {
 
                 {filteredMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500">
-                      No members found.
+                    <td colSpan={8} className="py-8">
+                      <EmptyState message="No members found." />
                     </td>
                   </tr>
                 ) : null}
@@ -327,12 +403,34 @@ function AdminPage() {
   )
 }
 
-function StatusBadge({
-  status,
+function MemberPhoto({
+  src,
+  alt,
+  className,
+  fallbackClassName,
 }: {
-  status: 'pending' | 'approved' | 'rejected'
+  src?: string
+  alt: string
+  className: string
+  fallbackClassName: string
 }) {
-  const styles = {
+  if (!src) {
+    return <div className={fallbackClassName} />
+  }
+
+  return <img src={src} alt={alt} className={className} />
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500">
+      {message}
+    </div>
+  )
+}
+
+function StatusBadge({ status }: { status: MemberStatus }) {
+  const styles: Record<MemberStatus, string> = {
     pending: 'bg-amber-50 text-amber-700 ring-amber-200',
     approved: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
     rejected: 'bg-red-50 text-red-700 ring-red-200',

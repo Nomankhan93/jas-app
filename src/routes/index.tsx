@@ -1,3 +1,4 @@
+// src/routes/index.tsx
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   ArrowRight,
@@ -8,6 +9,7 @@ import {
   HeartPulse,
   QrCode,
   ShieldCheck,
+  Sparkles,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -67,10 +69,16 @@ const focusAreas: Array<{
   },
 ]
 
+const highlights = [
+  { label: 'Verified Digital ID', value: 'QR Based' },
+  { label: 'Application Review', value: 'Admin Approved' },
+  { label: 'Community Scope', value: 'Across Sindh' },
+]
+
 function HomePage() {
   return (
     <main className="overflow-hidden">
-      <div className="page-wrap flex flex-col gap-20 pb-20 pt-12">
+      <div className="page-wrap flex flex-col gap-20 pb-24 pt-10 lg:gap-24 lg:pt-12">
         <HeroSection />
         <TrustStrip />
         <MissionSection />
@@ -83,69 +91,66 @@ function HomePage() {
 
 function HeroSection() {
   return (
-    <section className="relative overflow-hidden rounded-[2.5rem] border border-[var(--line-mid)] bg-[linear-gradient(140deg,#FFFEF9_0%,#F5F0E6_55%,#EDF4EE_100%)] p-[clamp(2rem,5vw,4rem)] shadow-[var(--shadow-xl)]">
-      <div
-        className="pointer-events-none absolute -right-20 -top-20 h-[400px] w-[400px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(201,149,47,0.15) 0%, transparent 70%)',
-        }}
-      />
-      <div
-        className="pointer-events-none absolute -bottom-24 -left-16 h-[450px] w-[450px] rounded-full"
-        style={{
-          background:
-            'radial-gradient(circle, rgba(26,77,46,0.1) 0%, transparent 70%)',
-        }}
-      />
+    <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2.5rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.5rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(196,145,44,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(11,42,29,0.10),transparent_30%)]" />
+      <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-bl-[5rem] bg-[rgba(255,255,255,0.28)]" />
+      <AjrakPattern className="absolute right-[-2rem] top-[-2rem] h-64 w-64 opacity-[0.05]" />
 
-      <AjrakPattern className="absolute right-0 top-0 opacity-[0.06]" />
-
-      <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[1fr_420px]">
+      <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
         <div>
-          <div className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-[rgba(26,77,46,0.2)] bg-[rgba(26,77,46,0.06)] px-3.5 py-2">
-            <span className="relative inline-flex h-2.5 w-2.5">
-              <span className="absolute inset-0 animate-ping rounded-full bg-[var(--gold-light)] opacity-40" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--gold-light)]" />
-            </span>
-            <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-[var(--forest)]">
+          <div className="animate-fade-up glass-strip inline-flex items-center gap-2.5 rounded-full border border-emerald-900/10 px-3.5 py-2 shadow-sm backdrop-blur">
+            <span className="brand-dot" />
+            <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-900">
               Official Membership Portal
             </span>
           </div>
 
-          <p className="mb-3 text-[0.72rem] font-extrabold uppercase tracking-[0.25em] text-[var(--ink-muted)]">
+          <p className="animate-fade-up delay-1 mt-7 text-[0.72rem] font-extrabold uppercase tracking-[0.24em] text-stone-500">
             Jatt Alliance Sindh · JAS
           </p>
 
-          <h1 className="display-title m-0 text-[clamp(2.8rem,6vw,5rem)]">
+          <h1 className="display-title text-balance animate-fade-up delay-2 mt-3 text-[clamp(3rem,6vw,5.3rem)]">
             Unity,
             <br />
-            <em className="text-[var(--forest)]">Welfare</em>
+            <span className="text-[var(--forest)]">Welfare</span>
             <br />
-            &amp; Digital ID
+            &amp; Digital Identity
           </h1>
 
-          <div className="ajrak-rule my-6" />
+          <div className="ajrak-rule animate-fade-in delay-2 my-6" />
 
-          <p className="m-0 max-w-[520px] text-[1.05rem] leading-8 text-[var(--ink-soft)]">
-            A disciplined, transparent, and dignified digital platform for
-            organizing the Jatt community across Sindh — through education,
-            health, welfare, and verified membership.
+          <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[600px] text-[1.02rem] leading-8 text-stone-600">
+            A disciplined, transparent, and dignified digital platform for organizing the Jatt
+            community across Sindh through education, health, welfare, and verified membership.
           </p>
 
-          <div className="mt-9 flex flex-wrap gap-3.5">
-            <Link to="/signup" className="primary-btn">
+          <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
+            <Link to="/signup" className="primary-btn pressable lift-hover">
               Become a Member
               <ArrowRight size={16} />
             </Link>
 
-            <Link to="/login" className="secondary-btn">
+            <Link to="/login" className="secondary-btn pressable lift-hover">
               Login to Dashboard
             </Link>
           </div>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            {highlights.map((item, index) => (
+              <div
+                key={item.label}
+                className={`soft-panel animate-fade-up ${getDelayClass(index)} rounded-[1.25rem] border-white/70 bg-white/72 px-4 py-3 shadow-sm backdrop-blur`}
+              >
+                <p className="m-0 text-[0.66rem] font-extrabold uppercase tracking-[0.18em] text-stone-400">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-sm font-black text-stone-950">{item.value}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="animate-scale-in delay-3 flex justify-center lg:justify-end">
           <MemberCardPreview />
         </div>
       </div>
@@ -155,15 +160,16 @@ function HeroSection() {
 
 function MemberCardPreview() {
   return (
-    <div className="w-full max-w-[410px]">
-      <div className="overflow-hidden rounded-[1.75rem] border border-emerald-900/20 bg-white shadow-[0_30px_80px_rgba(10,30,20,0.26)]">
-        <div className="relative overflow-hidden bg-[linear-gradient(135deg,#052e22,#064e3b,#0f766e)] p-5 text-white">
-          <div className="absolute right-0 top-0 h-28 w-28 rounded-bl-full bg-yellow-300/15" />
-          <div className="absolute bottom-0 left-0 h-20 w-20 rounded-tr-full bg-white/10" />
+    <div className="lift-hover w-full max-w-[420px]">
+      <div className="overflow-hidden rounded-[2rem] border border-emerald-950/15 bg-white shadow-[0_36px_90px_rgba(11,42,29,0.22)]">
+        <div className="relative overflow-hidden bg-[linear-gradient(135deg,#06281b,#0b3a28,#115d46)] px-5 pb-6 pt-5 text-white">
+          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[#d8a949]/15" />
+          <div className="absolute bottom-0 left-0 h-24 w-24 rounded-tr-[3rem] bg-white/10" />
+          <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
 
           <div className="relative flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-yellow-300 bg-white p-0.5 shadow-xl">
+              <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 border-[#d8a949] bg-white p-0.5 shadow-xl">
                 <img
                   src="/jas/logo.jpeg"
                   alt="Jatt Alliance Sindh logo"
@@ -172,19 +178,19 @@ function MemberCardPreview() {
               </div>
 
               <div>
-                <p className="m-0 text-[0.6rem] font-black uppercase tracking-[0.22em] text-yellow-300">
+                <p className="m-0 text-[0.6rem] font-black uppercase tracking-[0.22em] text-[#f2d48f]">
                   Digital Member ID
                 </p>
                 <p className="mt-1 text-[0.92rem] font-black uppercase tracking-wide text-white">
                   JATT ALLIANCE SINDH
                 </p>
-                <p className="mt-1 text-[0.7rem] font-medium text-emerald-50">
+                <p className="mt-1 text-[0.72rem] font-medium text-emerald-50/80">
                   Official verified membership card
                 </p>
               </div>
             </div>
 
-            <span className="inline-flex items-center gap-1 rounded-full bg-yellow-300 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-wide text-emerald-950">
+            <span className="badge-soft rounded-full bg-[#f2d48f] px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-wide text-emerald-950">
               <CheckCircle2 size={11} />
               Verified
             </span>
@@ -198,19 +204,17 @@ function MemberCardPreview() {
             className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full object-cover opacity-[0.04]"
           />
 
-          <div className="relative grid grid-cols-[92px_1fr] gap-4">
+          <div className="relative grid grid-cols-[96px_1fr] gap-4">
             <div>
-              <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-white bg-slate-100 shadow-lg ring-2 ring-yellow-300/70">
+              <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] border-4 border-white bg-slate-100 shadow-lg ring-2 ring-[#f2d48f]/70">
                 <Users size={36} className="text-slate-300" />
               </div>
 
-              <div className="mt-3 rounded-2xl border border-yellow-300 bg-emerald-950 p-2 text-center">
-                <p className="text-[0.55rem] font-black uppercase tracking-wide text-yellow-300">
+              <div className="mt-3 rounded-[1.25rem] border border-[#f2d48f] bg-emerald-950 p-2.5 text-center">
+                <p className="text-[0.55rem] font-black uppercase tracking-wide text-[#f2d48f]">
                   Member No
                 </p>
-                <p className="mt-1 text-[0.72rem] font-black text-white">
-                  JAS-2026-001
-                </p>
+                <p className="mt-1 text-[0.74rem] font-black text-white">JAS-2026-001</p>
               </div>
             </div>
 
@@ -231,9 +235,9 @@ function MemberCardPreview() {
             </div>
           </div>
 
-          <div className="relative mt-5 flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="soft-panel mt-5 flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
             <div>
-              <p className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-emerald-800">
+              <p className="m-0 text-[0.65rem] font-black uppercase tracking-[0.18em] text-emerald-800">
                 QR Verification
               </p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -241,32 +245,25 @@ function MemberCardPreview() {
               </p>
             </div>
 
-            <div className="rounded-xl bg-white p-2 shadow-sm">
+            <div className="soft-panel lift-hover rounded-xl bg-white p-2 shadow-sm">
               <QrCode size={42} color="#052e22" />
             </div>
           </div>
         </div>
 
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
-          <p className="m-0 text-[0.7rem] leading-5 text-slate-500">
-            Digital ID is issued after admin approval and verified through a QR
-            code.
+          <p className="m-0 text-[0.72rem] leading-5 text-slate-500">
+            Digital ID is issued after admin approval and verified through a QR code.
           </p>
         </div>
       </div>
 
-      <div className="relative z-10 mx-auto -mt-4 flex w-fit items-center gap-2 rounded-xl border border-[var(--line-mid)] bg-white px-4 py-2 shadow-[var(--shadow-md)]">
-        <span className="text-[0.72rem] font-bold text-[var(--ink-soft)]">
-          Signup
-        </span>
-        <ArrowRight size={10} color="var(--ink-muted)" />
-        <span className="text-[0.72rem] font-bold text-[var(--ink-soft)]">
-          Review
-        </span>
-        <ArrowRight size={10} color="var(--ink-muted)" />
-        <span className="text-[0.72rem] font-bold text-[var(--forest)]">
-          Digital Card
-        </span>
+      <div className="soft-panel animate-fade-up delay-4 relative z-10 mx-auto -mt-4 flex w-fit items-center gap-2 rounded-2xl bg-white px-4 py-2 shadow-[0_14px_28px_rgba(15,23,42,0.08)]">
+        <span className="text-[0.72rem] font-bold text-stone-600">Signup</span>
+        <ArrowRight size={10} className="text-stone-400" />
+        <span className="text-[0.72rem] font-bold text-stone-600">Review</span>
+        <ArrowRight size={10} className="text-stone-400" />
+        <span className="text-[0.72rem] font-bold text-emerald-900">Digital Card</span>
       </div>
     </div>
   )
@@ -274,13 +271,11 @@ function MemberCardPreview() {
 
 function PreviewInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white/80 p-2">
+    <div className="soft-panel lift-hover rounded-xl border border-slate-200 bg-white/90 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
       <p className="m-0 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-slate-400">
         {label}
       </p>
-      <p className="m-0 mt-1 text-[0.78rem] font-bold text-slate-950">
-        {value}
-      </p>
+      <p className="m-0 mt-1 text-[0.78rem] font-bold text-slate-950">{value}</p>
     </div>
   )
 }
@@ -295,13 +290,14 @@ function TrustStrip() {
   ]
 
   return (
-    <section className="rounded-[1.25rem] border border-[var(--line)] bg-[linear-gradient(90deg,rgba(26,77,46,0.03),rgba(255,255,255,0.7),rgba(176,125,42,0.04))] px-8 py-4 backdrop-blur">
-      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
+    <section className="glass-strip animate-fade-up rounded-[1.5rem] border border-[#e8e0d1] px-6 py-5 shadow-sm sm:px-8">
+      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
         {items.map((item) => (
           <span
             key={item}
-            className="text-[0.8rem] font-bold uppercase tracking-[0.06em] text-[var(--ink-soft)]"
+            className="inline-flex items-center gap-2 text-[0.78rem] font-extrabold uppercase tracking-[0.08em] text-stone-600"
           >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#c4912c]" />
             {item}
           </span>
         ))}
@@ -312,27 +308,26 @@ function TrustStrip() {
 
 function MissionSection() {
   return (
-    <section className="relative grid items-center gap-12 overflow-hidden rounded-[2rem] border border-[var(--line)] bg-[var(--paper)] p-[clamp(2rem,4vw,3.5rem)] shadow-[var(--shadow-sm)] md:grid-cols-[0.85fr_1.15fr]">
-      <div className="absolute left-0 top-0 h-full w-1.5 bg-[linear-gradient(180deg,var(--forest),var(--teal),var(--gold-light))]" />
+    <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2rem] border border-[#e8e0d1] bg-white/90 p-[clamp(2rem,4vw,3.5rem)] shadow-[0_20px_55px_rgba(11,42,29,0.07)]">
+      <div className="absolute left-0 top-0 h-full w-1.5 bg-[linear-gradient(180deg,#1a4d2e,#2e8b78,#d8a949)]" />
 
-      <div className="pl-4">
-        <p className="section-eyebrow mb-4">Our Mission</p>
-        <h2 className="section-title">
-          A transparent platform for community welfare
-        </h2>
-        <div className="ajrak-rule mt-5" />
-      </div>
+      <div className="grid items-center gap-12 md:grid-cols-[0.85fr_1.15fr]">
+        <div className="pl-4">
+          <p className="section-eyebrow mb-4">Our Mission</p>
+          <h2 className="section-title text-balance">
+            A transparent platform for community welfare
+          </h2>
+          <div className="ajrak-rule mt-5" />
+        </div>
 
-      <div>
-        <p className="m-0 font-[var(--font-display)] text-[clamp(1.1rem,2.2vw,1.35rem)] italic leading-8 text-[var(--ink-soft)]">
-          <strong className="not-italic text-[var(--forest)]">
-            Jatt Alliance Sindh
-          </strong>{' '}
-          is a non-political, non-profit, non-sectarian welfare organization
-          established to organize and support the Jatt community living across
-          Sindh in the fields of education, health, employment, social welfare,
-          unity, dignified representation, and service to humanity.
-        </p>
+        <div className="soft-panel lift-hover rounded-[1.5rem] border border-stone-200 bg-[linear-gradient(180deg,#fffdf9,#faf7f1)] p-6">
+          <p className="m-0 font-[Cormorant_Garamond,serif] text-[clamp(1.15rem,2.2vw,1.42rem)] italic leading-8 text-stone-600">
+            <strong className="not-italic text-emerald-900">Jatt Alliance Sindh</strong> is a
+            non-political, non-profit, non-sectarian welfare organization established to organize
+            and support the Jatt community living across Sindh in the fields of education, health,
+            employment, social welfare, unity, dignified representation, and service to humanity.
+          </p>
+        </div>
       </div>
     </section>
   )
@@ -340,20 +335,20 @@ function MissionSection() {
 
 function FocusAreas() {
   return (
-    <section>
+    <section className="animate-fade-up">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="section-eyebrow mb-3">Focus Areas</p>
-          <h2 className="section-title">
+          <h2 className="section-title text-balance">
             Building a stronger
             <br />
             community together
           </h2>
         </div>
 
-        <p className="m-0 max-w-sm text-sm leading-7 text-[var(--ink-soft)]">
-          JAS focuses on six pillars of welfare, unity, and structured
-          membership for long-term community development.
+        <p className="text-pretty m-0 max-w-sm text-sm leading-7 text-stone-600">
+          JAS focuses on six pillars of welfare, unity, and structured membership for long-term
+          community development.
         </p>
       </div>
 
@@ -382,33 +377,28 @@ function FeatureCard({
   index: number
 }) {
   return (
-    <article
-      className="feature-card p-7"
-      style={{ animationDelay: `${index * 0.07}s` }}
-    >
+    <article className={`feature-card animate-fade-up ${getDelayClass(index)} p-7`}>
       <div
-        className="mb-5 flex h-13 w-13 items-center justify-center rounded-2xl"
+        className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
         style={{ background: bg }}
       >
         <Icon size={22} color={color} strokeWidth={1.75} />
       </div>
 
-      <h3 className="mb-2 mt-0 font-[var(--font-display)] text-[1.35rem] font-bold tracking-tight text-[var(--ink)]">
+      <h3 className="mb-2 mt-0 font-[Cormorant_Garamond,serif] text-[1.5rem] font-bold tracking-tight text-stone-950">
         {title}
       </h3>
 
-      <p className="m-0 text-[0.875rem] leading-7 text-[var(--ink-soft)]">
-        {text}
-      </p>
+      <p className="m-0 text-[0.92rem] leading-7 text-stone-600">{text}</p>
 
-      <div
-        className="relative mt-6 h-0.5 overflow-hidden rounded-full"
-        style={{ background: bg }}
-      >
-        <div
-          className="absolute inset-0 rounded-full opacity-40"
-          style={{ background: color }}
-        />
+      <div className="mt-6 flex items-center justify-between">
+        <div className="h-0.5 flex-1 overflow-hidden rounded-full" style={{ background: bg }}>
+          <div className="h-full w-1/2 rounded-full opacity-50" style={{ background: color }} />
+        </div>
+
+        <span className="ml-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-50 text-stone-400 transition group-hover:bg-emerald-50 group-hover:text-emerald-900">
+          <ArrowRight size={16} />
+        </span>
       </div>
     </article>
   )
@@ -416,46 +406,40 @@ function FeatureCard({
 
 function FinalCTA() {
   return (
-    <section className="relative overflow-hidden rounded-[2.5rem] bg-[linear-gradient(140deg,#0B1F14_0%,#14321E_50%,#0E2A1A_100%)] p-[clamp(2.5rem,6vw,5rem)] text-center shadow-[0_40px_100px_rgba(10,28,18,0.35)]">
-      <div
-        className="pointer-events-none absolute -top-16 left-1/2 h-[300px] w-[600px] -translate-x-1/2 rounded-full"
-        style={{
-          background:
-            'radial-gradient(ellipse, rgba(26,77,46,0.6) 0%, transparent 70%)',
-        }}
-      />
-
+    <section className="animate-fade-up relative overflow-hidden rounded-[2.5rem] bg-[linear-gradient(140deg,#0b1f14_0%,#14321e_50%,#0e2a1a_100%)] p-[clamp(2.5rem,6vw,5rem)] text-center shadow-[0_40px_100px_rgba(10,28,18,0.35)]">
+      <div className="pointer-events-none absolute -top-16 left-1/2 h-[320px] w-[640px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(26,77,46,0.6)_0%,transparent_70%)]" />
       <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
-
-      <div className="absolute left-1/2 top-0 h-1 w-32 -translate-x-1/2 bg-[linear-gradient(90deg,transparent,var(--gold-light),transparent)]" />
+      <div className="absolute left-1/2 top-0 h-1 w-32 -translate-x-1/2 bg-[linear-gradient(90deg,transparent,#f2d48f,transparent)]" />
 
       <div className="relative z-10">
-        <p className="mb-5 text-[0.72rem] font-extrabold uppercase tracking-[0.25em] text-[var(--gold-light)]">
-          Join the Platform
-        </p>
+        <div className="badge-soft mb-5 border border-white/10 bg-white/5 px-3 py-1.5 text-[#f2d48f]">
+          <Sparkles size={14} />
+          <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.24em]">
+            Join the Platform
+          </span>
+        </div>
 
-        <h2 className="mx-auto mb-6 max-w-3xl font-[var(--font-display)] text-[clamp(2rem,5vw,4rem)] font-bold leading-tight tracking-tight text-white">
+        <h2 className="display-title text-balance mx-auto mb-6 max-w-3xl text-[clamp(2.2rem,5vw,4.3rem)] leading-tight text-white">
           Become part of a disciplined,
           <br />
-          <em className="text-[rgba(201,149,47,0.9)]">transparent</em>{' '}
-          platform
+          <em className="text-[#d8a949]">transparent</em> platform
         </h2>
 
-        <p className="mx-auto mb-10 max-w-xl text-base leading-8 text-white/65">
-          Create your account, submit your membership form, and receive your
-          official digital member ID after admin approval.
+        <p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">
+          Create your account, submit your membership form, and receive your official digital member
+          ID after admin approval.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             to="/signup"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[linear-gradient(135deg,var(--gold),var(--gold-light))] px-8 py-4 text-sm font-extrabold text-[#0B1F14] shadow-[0_8px_30px_rgba(176,125,42,0.4)] transition hover:-translate-y-0.5"
+            className="pressable lift-hover inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-8 py-4 text-sm font-extrabold text-[#0B1F14] shadow-[0_10px_30px_rgba(176,125,42,0.4)]"
           >
             Apply for Membership
             <ArrowRight size={16} />
           </Link>
 
-          <Link to="/login" className="ghost-btn">
+          <Link to="/login" className="ghost-btn pressable lift-hover">
             Login to Account
           </Link>
         </div>
@@ -489,4 +473,9 @@ function AjrakPattern({ className = '' }: { className?: string }) {
       )}
     </svg>
   )
+}
+
+function getDelayClass(index: number) {
+  const delays = ['delay-1', 'delay-2', 'delay-3', 'delay-4', 'delay-5']
+  return delays[index] ?? 'delay-5'
 }

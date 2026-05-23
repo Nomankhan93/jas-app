@@ -1,21 +1,66 @@
+// src/lib/verify/actions.ts
 import { createServerFn } from '@tanstack/react-start'
 import { createSupabaseAdminClient } from '../supabase/admin'
+
+const MEMBER_PHOTO_BUCKET = 'member-photos'
+const PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 10
+const MIN_MEMBER_NUMBER_LENGTH = 3
 
 type VerifyMemberInput = {
   memberNo: string
 }
 
-export const verifyMemberAction = createServerFn({ method: 'POST' })
-  .inputValidator((data: VerifyMemberInput) => {
-    if (!data.memberNo || data.memberNo.trim().length < 3) {
-      throw new Error('Member number is required.')
-    }
+type VerifyMemberResult = {
+  found: boolean
+  verified: boolean
+  member: {
+    id: string
+    member_no: string | null
+    full_name: string
+    district: string
+    taluka: string | null
+    status: 'pending' | 'approved' | 'rejected'
+    approved_at: string | null
+  } | null
+  photoSignedUrl: string | null
+}
 
-    return {
-      memberNo: data.memberNo.trim(),
-    }
-  })
-  .handler(async ({ data }) => {
+function normalizeMemberNo(memberNo: string) {
+  const normalized = memberNo.trim()
+
+  if (normalized.length < MIN_MEMBER_NUMBER_LENGTH) {
+    throw new Error(
+      `Member number must be at least ${MIN_MEMBER_NUMBER_LENGTH} characters.`,
+    )
+  }
+
+  return normalized
+}
+
+async function createMemberPhotoSignedUrl(
+  photoPath: string | null,
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+) {
+  if (!photoPath) {
+    return null
+  }
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(MEMBER_PHOTO_BUCKET)
+    .createSignedUrl(photoPath, PHOTO_SIGNED_URL_TTL_SECONDS)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data?.signedUrl ?? null
+}
+
+export const verifyMemberAction = createServerFn({ method: 'POST' })
+  .inputValidator((data: VerifyMemberInput) => ({
+    memberNo: normalizeMemberNo(data.memberNo),
+  }))
+  .handler(async ({ data }): Promise<VerifyMemberResult> => {
     const supabaseAdmin = createSupabaseAdminClient()
 
     const { data: member, error } = await supabaseAdmin
@@ -24,6 +69,7 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
         'id, member_no, full_name, district, taluka, photo_url, status, approved_at',
       )
       .eq('member_no', data.memberNo)
+      .limit(1)
       .maybeSingle()
 
     if (error) {
@@ -39,15 +85,10 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
       }
     }
 
-    let photoSignedUrl: string | null = null
-
-    if (member.photo_url) {
-      const { data: signed } = await supabaseAdmin.storage
-        .from('member-photos')
-        .createSignedUrl(member.photo_url, 60 * 10)
-
-      photoSignedUrl = signed?.signedUrl ?? null
-    }
+    const photoSignedUrl = await createMemberPhotoSignedUrl(
+      member.photo_url,
+      supabaseAdmin,
+    )
 
     return {
       found: true,
@@ -57,7 +98,6 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
         member_no: member.member_no,
         full_name: member.full_name,
         district: member.district,
-
         taluka: member.taluka ?? null,
         status: member.status,
         approved_at: member.approved_at,

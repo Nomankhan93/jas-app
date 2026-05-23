@@ -1,10 +1,13 @@
+// src/routes/verify/$memberNo.tsx
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { verifyMemberAction } from '../../lib/verify/actions'
 
 export const Route = createFileRoute('/verify/$memberNo')({
   component: VerifyMemberPage,
 })
+
+type MemberStatus = 'pending' | 'approved' | 'rejected'
 
 type VerifyResult = {
   found: boolean
@@ -15,10 +18,31 @@ type VerifyResult = {
     full_name: string
     district: string
     taluka: string | null
-    status: 'pending' | 'approved' | 'rejected'
+    status: MemberStatus
     approved_at: string | null
   } | null
   photoSignedUrl: string | null
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return 'N/A'
+  }
+
+  return new Date(value).toLocaleDateString()
+}
+
+function getStatusLabel(status: MemberStatus | undefined) {
+  switch (status) {
+    case 'approved':
+      return 'Approved'
+    case 'pending':
+      return 'Pending'
+    case 'rejected':
+      return 'Rejected'
+    default:
+      return 'Unknown'
+  }
 }
 
 function VerifyMemberPage() {
@@ -28,11 +52,7 @@ function VerifyMemberPage() {
   const [result, setResult] = useState<VerifyResult | null>(null)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    loadVerification()
-  }, [memberNo])
-
-  async function loadVerification() {
+  const loadVerification = useCallback(async (cancelledRef?: { current: boolean }) => {
     setLoading(true)
     setError('')
 
@@ -43,17 +63,32 @@ function VerifyMemberPage() {
         },
       })
 
-      setResult(data)
+      if (!cancelledRef?.current) {
+        setResult(data)
+      }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to verify membership.',
-      )
+      if (!cancelledRef?.current) {
+        setResult(null)
+        setError(
+          err instanceof Error ? err.message : 'Failed to verify membership.',
+        )
+      }
+    } finally {
+      if (!cancelledRef?.current) {
+        setLoading(false)
+      }
     }
+  }, [memberNo])
 
-    setLoading(false)
-  }
+  useEffect(() => {
+    const cancelledRef = { current: false }
+
+    void loadVerification(cancelledRef)
+
+    return () => {
+      cancelledRef.current = true
+    }
+  }, [loadVerification])
 
   if (loading) {
     return (
@@ -132,14 +167,13 @@ function VerifyMemberPage() {
                 <Info label="Member Name" value={result.member.full_name} />
                 <Info label="Member No" value={result.member.member_no ?? 'N/A'} />
                 <Info label="District" value={result.member.district} />
-                <Info label="Taluka" value={result.member.taluka || 'Not provided'} />
+                <Info
+                  label="Taluka"
+                  value={result.member.taluka || 'Not provided'}
+                />
                 <Info
                   label="Approved At"
-                  value={
-                    result.member.approved_at
-                      ? new Date(result.member.approved_at).toLocaleDateString()
-                      : 'N/A'
-                  }
+                  value={formatDate(result.member.approved_at)}
                 />
               </div>
             </div>
@@ -162,7 +196,7 @@ function VerifyMemberPage() {
               <Info label="Member No" value={memberNo} />
               <Info
                 label="Status"
-                value={result.member?.status ?? 'Unknown'}
+                value={getStatusLabel(result.member?.status)}
               />
             </div>
           </section>

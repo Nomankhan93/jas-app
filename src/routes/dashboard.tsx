@@ -13,7 +13,6 @@ import {
   FileText,
   Hourglass,
   IdCard,
-  LogOut,
   MapPin,
   Pencil,
   RefreshCw,
@@ -44,8 +43,8 @@ const TOKENS = {
   white: '#FFFFFF',
   border: 'rgba(11,42,29,0.10)',
   borderSoft: '#ECE4D8',
-  shadow: '0 20px 55px rgba(11,42,29,0.09)',
-  shadowStrong: '0 24px 70px rgba(11,42,29,0.14)',
+  shadow: '0 18px 46px rgba(11,42,29,0.08)',
+  shadowStrong: '0 22px 60px rgba(11,42,29,0.12)',
   radiusLg: '30px',
   radiusMd: '22px',
   radiusSm: '16px',
@@ -140,19 +139,16 @@ const DASHBOARD_CSS = `
   box-sizing: border-box;
 }
 
-.jas-dashboard {
-  min-height: 100vh;
+.jas-dashboard-page {
+  position: relative;
+  z-index: 1;
   color: ${TOKENS.text};
   font-family: 'Inter', 'Raleway', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(196,145,44,0.18), transparent 26rem),
-    radial-gradient(circle at right top, rgba(11,42,29,0.12), transparent 28rem),
-    linear-gradient(180deg, #faf8f3 0%, ${TOKENS.cream} 55%, #f7f4ee 100%);
 }
 
-.jas-dashboard,
-.jas-dashboard a,
-.jas-dashboard button {
+.jas-dashboard-page,
+.jas-dashboard-page a,
+.jas-dashboard-page button {
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -161,98 +157,14 @@ const DASHBOARD_CSS = `
   margin: 0 auto;
 }
 
-.jas-topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  backdrop-filter: blur(18px);
-  background: linear-gradient(180deg, rgba(11,42,29,0.88), rgba(18,55,38,0.84));
-  border-bottom: 1px solid rgba(255,255,255,0.10);
-}
-
-.jas-nav {
-  min-height: 78px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.jas-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.jas-brand-mark {
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.14);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
-  flex: 0 0 auto;
-}
-
-.jas-brand-copy {
-  min-width: 0;
-}
-
-.jas-brand-title {
-  margin: 0;
-  color: white;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 29px;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.jas-brand-subtitle {
-  margin: 6px 0 0;
-  color: rgba(255,255,255,0.60);
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.jas-logout {
-  border: 1px solid rgba(255,255,255,0.18);
-  background: rgba(255,255,255,0.08);
-  color: white;
-  min-height: 42px;
-  border-radius: 999px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-}
-
-.jas-logout:hover {
-  transform: translateY(-1px);
-  background: rgba(255,255,255,0.14);
-  border-color: rgba(255,255,255,0.28);
-}
-
 .jas-content {
-  padding: 28px 0 54px;
+  padding: 24px 0 54px;
 }
 
 .jas-loading {
-  min-height: 100vh;
+  min-height: calc(100vh - 104px);
   display: grid;
   place-items: center;
-  background: ${TOKENS.cream};
   font-family: 'Inter', system-ui, sans-serif;
 }
 
@@ -262,7 +174,7 @@ const DASHBOARD_CSS = `
   gap: 14px;
   padding: 18px 22px;
   border-radius: 20px;
-  background: rgba(255,255,255,0.86);
+  background: rgba(255,255,255,0.88);
   border: 1px solid ${TOKENS.border};
   box-shadow: ${TOKENS.shadow};
   color: ${TOKENS.green800};
@@ -725,7 +637,7 @@ const DASHBOARD_CSS = `
 
 .jas-side {
   position: sticky;
-  top: 96px;
+  top: 112px;
   display: grid;
   gap: 14px;
 }
@@ -854,12 +766,21 @@ const DASHBOARD_CSS = `
 .jas-empty-state {
   position: relative;
   overflow: hidden;
-  padding: 72px 32px;
+  min-height: calc(100vh - 180px);
+  display: grid;
+  place-items: center;
+  padding: 44px 24px;
   text-align: center;
   border-radius: ${TOKENS.radiusLg};
-  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,250,241,0.95));
+  background:
+    radial-gradient(circle at top, rgba(196,145,44,0.10), transparent 22rem),
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,250,241,0.95));
   border: 1px solid ${TOKENS.border};
   box-shadow: ${TOKENS.shadowStrong};
+}
+
+.jas-empty-content {
+  width: min(540px, 100%);
 }
 
 .jas-empty-icon {
@@ -878,7 +799,7 @@ const DASHBOARD_CSS = `
   margin: 0 0 10px;
   color: ${TOKENS.green900};
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 36px;
+  font-size: clamp(34px, 5vw, 48px);
   line-height: 1;
   font-weight: 700;
 }
@@ -887,7 +808,7 @@ const DASHBOARD_CSS = `
   max-width: 460px;
   margin: 0 auto 28px;
   color: ${TOKENS.textSoft};
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.75;
 }
 
@@ -916,21 +837,8 @@ const DASHBOARD_CSS = `
     width: min(100% - 24px, 1220px);
   }
 
-  .jas-nav {
-    min-height: 74px;
-    padding: 10px 0;
-  }
-
-  .jas-brand-title {
-    font-size: 24px;
-  }
-
-  .jas-logout span {
-    display: none;
-  }
-
   .jas-content {
-    padding-top: 18px;
+    padding: 16px 0 36px;
   }
 
   .jas-hero-inner,
@@ -962,7 +870,8 @@ const DASHBOARD_CSS = `
   }
 
   .jas-empty-state {
-    padding: 54px 20px;
+    min-height: calc(100vh - 150px);
+    padding: 36px 18px;
   }
 }
 `
@@ -1054,15 +963,12 @@ function DashboardPage() {
         .from('member-photos')
         .createSignedUrl(data.photo_url, 60 * 60)
 
-      if (!signedUrlError) setPhotoSignedUrl(signed?.signedUrl ?? null)
+      if (!signedUrlError) {
+        setPhotoSignedUrl(signed?.signedUrl ?? null)
+      }
     }
 
     setLoading(false)
-  }
-
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    await navigate({ to: '/login', replace: true })
   }
 
   const statItems = useMemo(() => {
@@ -1094,39 +1000,21 @@ function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="jas-loading">
+      <main className="jas-dashboard-page">
         <style>{DASHBOARD_CSS}</style>
-        <div className="jas-loading-card">
-          <div className="jas-spinner" />
-          <p style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>Loading dashboard…</p>
-        </div>
+        <section className="jas-loading">
+          <div className="jas-loading-card">
+            <div className="jas-spinner" />
+            <p style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>Loading dashboard…</p>
+          </div>
+        </section>
       </main>
     )
   }
 
   return (
-    <main className="jas-dashboard">
+    <main className="jas-dashboard-page">
       <style>{DASHBOARD_CSS}</style>
-
-      <header className="jas-topbar">
-        <div className="jas-container jas-nav">
-          <div className="jas-brand">
-            <div className="jas-brand-mark">
-              <ShieldCheck size={21} color={TOKENS.gold600} strokeWidth={2.2} />
-            </div>
-
-            <div className="jas-brand-copy">
-              <p className="jas-brand-title">Jatt Alliance Sindh</p>
-              <p className="jas-brand-subtitle">Member Portal</p>
-            </div>
-          </div>
-
-          <button type="button" className="jas-logout" onClick={handleLogout}>
-            <LogOut size={15} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
 
       <div className="jas-container jas-content">
         {error ? (
@@ -1341,19 +1229,21 @@ function DashboardPage() {
 function EmptyState() {
   return (
     <section className="jas-empty-state">
-      <div className="jas-empty-icon">
-        <FileText size={34} />
+      <div className="jas-empty-content">
+        <div className="jas-empty-icon">
+          <FileText size={34} />
+        </div>
+
+        <h2 className="jas-empty-title">Complete your membership</h2>
+        <p className="jas-empty-text">
+          Your account is ready. Submit your membership form to become an official Jatt Alliance Sindh
+          member.
+        </p>
+
+        <ActionLink to="/register" variant="primary" icon={<Pencil size={15} />}>
+          Fill membership form
+        </ActionLink>
       </div>
-
-      <h2 className="jas-empty-title">Complete your membership</h2>
-      <p className="jas-empty-text">
-        Your account is ready. Submit your membership form to become an official Jatt Alliance Sindh
-        member.
-      </p>
-
-      <ActionLink to="/register" variant="primary" icon={<Pencil size={15} />}>
-        Fill membership form
-      </ActionLink>
     </section>
   )
 }

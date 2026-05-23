@@ -1,11 +1,16 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { approveMemberAction, rejectMemberAction } from '../../../lib/admin/actions'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  approveMemberAction,
+  rejectMemberAction,
+} from '../../../lib/admin/actions'
 import { supabase } from '../../../lib/supabase/client'
 
 export const Route = createFileRoute('/admin/members/$id')({
   component: AdminMemberDetailPage,
 })
+
+type MemberStatus = 'pending' | 'approved' | 'rejected'
 
 type Member = {
   id: string
@@ -28,12 +33,83 @@ type Member = {
   taluka: string | null
   profession: string | null
   caste_branch: string | null
-  photo_url: string
-  status: 'pending' | 'approved' | 'rejected'
+  photo_url: string | null
+  status: MemberStatus
   rejection_reason: string | null
   reviewed_at: string | null
   approved_at: string | null
   created_at: string
+}
+
+type AdminAccessResult =
+  | { ok: true }
+  | { ok: false; redirectTo: '/login' | '/dashboard' }
+
+const MEMBER_PHOTO_BUCKET = 'member-photos'
+const SIGNED_URL_TTL_SECONDS = 60 * 60
+const MIN_REJECTION_REASON_LENGTH = 3
+
+function formatDate(value: string | null | undefined, withTime = false) {
+  if (!value) {
+    return null
+  }
+
+  return withTime
+    ? new Date(value).toLocaleString()
+    : new Date(value).toLocaleDateString()
+}
+
+async function ensureAdminAccess(): Promise<AdminAccessResult> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    return { ok: false, redirectTo: '/login' }
+  }
+
+  const { data: role, error: roleError } = await supabase
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle()
+
+  if (roleError || !role) {
+    return { ok: false, redirectTo: '/dashboard' }
+  }
+
+  return { ok: true }
+}
+
+async function getAccessToken() {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession()
+
+  if (error || !session?.access_token) {
+    throw new Error('Unable to get access token.')
+  }
+
+  return session.access_token
+}
+
+async function createSignedPhotoUrl(photoPath: string | null) {
+  if (!photoPath) {
+    return null
+  }
+
+  const { data, error } = await supabase.storage
+    .from(MEMBER_PHOTO_BUCKET)
+    .createSignedUrl(photoPath, SIGNED_URL_TTL_SECONDS)
+
+  if (error || !data?.signedUrl) {
+    return null
+  }
+
+  return data.signedUrl
 }
 
 function AdminMemberDetailPage() {
@@ -47,67 +123,111 @@ function AdminMemberDetailPage() {
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    loadMember()
-  }, [id])
+  const trimmedRejectionReason = useMemo(
+    () => rejectionReason.trim(),
+    [rejectionReason],
+  )
 
-  async function loadMember() {
+  const loadMember = useCallback(async () => {
     setLoading(true)
     setError('')
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    try {
+      const access = await ensureAdminAccess()
 
-    if (!user) {
-      navigate({ to: '/login' })
-      return
-    }
+      if (!access.ok) {
+        navigate({ to: access.redirectTo })
+        return
+      }
 
-    const { data: role } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle()
+      const { data, error: memberError } = await supabase
+        .from('members')
+        .select(
+          'id, user_id, member_no, address, date_of_birth, gender, education, blood_group, emergency_contact_name, emergency_contact_relation, emergency_contact_mobile, declaration_accepted, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, rejection_reason, reviewed_at, approved_at, created_at',
+        )
+        .eq('id', id)
+        .single()
 
-    if (!role) {
-      navigate({ to: '/dashboard' })
-      return
-    }
+      if (memberError) {
+        throw memberError
+      }
 
-    const { data, error } = await supabase
-      .from('members')
-      .select('id, user_id, member_no, address, date_of_birth, gender, education, blood_group, emergency_contact_name, emergency_contact_relation, emergency_contact_mobile, declaration_accepted, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, rejection_reason, reviewed_at, approved_at, created_at')
-      .eq('id', id)
-      .single()
+      const safeMember = data as Member
+      const signedPhotoUrl = await createSignedPhotoUrl(safeMember.photo_url)
 
-    if (error) {
-      setError(error.message)
+      setMember(safeMember)
+      setPhotoUrl(signedPhotoUrl)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load member.')
+      setMember(null)
+      setPhotoUrl(null)
+    } finally {
       setLoading(false)
-      return
+    }
+  }, [id, navigate])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function run() {
+      setLoading(true)
+      setError('')
+
+      try {
+        const access = await ensureAdminAccess()
+
+        if (!access.ok) {
+          if (!cancelled) {
+            navigate({ to: access.redirectTo })
+          }
+          return
+        }
+
+        const { data, error: memberError } = await supabase
+          .from('members')
+          .select(
+            'id, user_id, member_no, address, date_of_birth, gender, education, blood_group, emergency_contact_name, emergency_contact_relation, emergency_contact_mobile, declaration_accepted, full_name, father_name, cnic, mobile, district, taluka, profession, caste_branch, photo_url, status, rejection_reason, reviewed_at, approved_at, created_at',
+          )
+          .eq('id', id)
+          .single()
+
+        if (memberError) {
+          throw memberError
+        }
+
+        const safeMember = data as Member
+        const signedPhotoUrl = await createSignedPhotoUrl(safeMember.photo_url)
+
+        if (cancelled) {
+          return
+        }
+
+        setMember(safeMember)
+        setPhotoUrl(signedPhotoUrl)
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load member.')
+          setMember(null)
+          setPhotoUrl(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
     }
 
-    setMember(data)
+    void run()
 
-    if (data.photo_url) {
-      const { data: signed } = await supabase.storage
-        .from('member-photos')
-        .createSignedUrl(data.photo_url, 60 * 60)
-
-      setPhotoUrl(signed?.signedUrl ?? null)
+    return () => {
+      cancelled = true
     }
-
-    setLoading(false)
-  }
-
-  async function getAccessToken() {
-    const { data } = await supabase.auth.getSession()
-    return data.session?.access_token ?? ''
-  }
+  }, [id, navigate])
 
   async function handleApprove() {
-    if (!member) return
+    if (!member) {
+      return
+    }
 
     setActionLoading(true)
     setError('')
@@ -125,13 +245,15 @@ function AdminMemberDetailPage() {
       await loadMember()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to approve member.')
+    } finally {
+      setActionLoading(false)
     }
-
-    setActionLoading(false)
   }
 
   async function handleReject() {
-    if (!member) return
+    if (!member || trimmedRejectionReason.length < MIN_REJECTION_REASON_LENGTH) {
+      return
+    }
 
     setActionLoading(true)
     setError('')
@@ -142,7 +264,7 @@ function AdminMemberDetailPage() {
       await rejectMemberAction({
         data: {
           memberId: member.id,
-          rejectionReason,
+          rejectionReason: trimmedRejectionReason,
           accessToken,
         },
       })
@@ -151,9 +273,9 @@ function AdminMemberDetailPage() {
       await loadMember()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to reject member.')
+    } finally {
+      setActionLoading(false)
     }
-
-    setActionLoading(false)
   }
 
   if (loading) {
@@ -234,15 +356,11 @@ function AdminMemberDetailPage() {
               <InfoItem label="CNIC" value={member.cnic} />
               <InfoItem label="Mobile" value={member.mobile} />
               <InfoItem label="District" value={member.district} />
-              <InfoItem label="Taluka" value={member.taluka || 'Not provided'} />
+              <InfoItem label="Taluka" value={member.taluka} />
               <InfoItem label="Address" value={member.address} />
               <InfoItem
                 label="Date of Birth"
-                value={
-                  member.date_of_birth
-                    ? new Date(member.date_of_birth).toLocaleDateString()
-                    : null
-                }
+                value={formatDate(member.date_of_birth)}
               />
               <InfoItem label="Gender" value={member.gender} />
               <InfoItem label="Education" value={member.education} />
@@ -268,15 +386,15 @@ function AdminMemberDetailPage() {
               <InfoItem label="Member No" value={member.member_no} />
               <InfoItem
                 label="Submitted"
-                value={new Date(member.created_at).toLocaleString()}
+                value={formatDate(member.created_at, true)}
               />
               <InfoItem
                 label="Approved At"
-                value={
-                  member.approved_at
-                    ? new Date(member.approved_at).toLocaleString()
-                    : null
-                }
+                value={formatDate(member.approved_at, true)}
+              />
+              <InfoItem
+                label="Reviewed At"
+                value={formatDate(member.reviewed_at, true)}
               />
             </div>
 
@@ -322,10 +440,13 @@ function AdminMemberDetailPage() {
               <button
                 type="button"
                 onClick={handleReject}
-                disabled={actionLoading || rejectionReason.trim().length < 3}
+                disabled={
+                  actionLoading ||
+                  trimmedRejectionReason.length < MIN_REJECTION_REASON_LENGTH
+                }
                 className="mt-3 h-11 w-full rounded-lg bg-red-700 px-5 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60 sm:w-auto"
               >
-                Reject Member
+                {actionLoading ? 'Processing...' : 'Reject Member'}
               </button>
             </div>
           </section>
@@ -354,12 +475,8 @@ function InfoItem({
   )
 }
 
-function StatusBadge({
-  status,
-}: {
-  status: 'pending' | 'approved' | 'rejected'
-}) {
-  const styles = {
+function StatusBadge({ status }: { status: MemberStatus }) {
+  const styles: Record<MemberStatus, string> = {
     pending: 'bg-amber-50 text-amber-700 ring-amber-200',
     approved: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
     rejected: 'bg-red-50 text-red-700 ring-red-200',
