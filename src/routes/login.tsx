@@ -1,10 +1,16 @@
 // src/routes/login.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import {
+  AlertCircle,
   ArrowRight,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
+  Loader2,
+  Mail,
+  RotateCcw,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -18,20 +24,6 @@ export const Route = createFileRoute('/login')({
 type LoginMethod = 'email' | 'phone'
 type PhoneStep = 'phone' | 'otp'
 
-function normalizePakistanPhone(value: string) {
-  const digits = value.replace(/\D/g, '')
-
-  if (digits.startsWith('0092')) return digits.slice(2)
-  if (digits.startsWith('92')) return digits
-  if (digits.startsWith('0')) return `92${digits.slice(1)}`
-
-  return digits
-}
-
-function isValidPakistanMobile(value: string) {
-  return /^923\d{9}$/.test(value)
-}
-
 function LoginPage() {
   const navigate = useNavigate()
 
@@ -39,14 +31,41 @@ function LoginPage() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [phoneStep, setPhoneStep] = useState<PhoneStep>('phone')
 
+  const [checkingSession, setCheckingSession] = useState(true)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function checkSession() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (cancelled) return
+
+      if (user) {
+        await navigate({ to: '/dashboard', replace: true })
+        return
+      }
+
+      setCheckingSession(false)
+    }
+
+    void checkSession()
+
+    return () => {
+      cancelled = true
+    }
+  }, [navigate])
 
   function resetAlerts() {
     setError('')
@@ -62,38 +81,47 @@ function LoginPage() {
 
   async function handleEmailLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setLoading(true)
     resetAlerts()
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!isValidEmail(normalizedEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (!password.trim()) {
+      setError('Please enter your password.')
+      return
+    }
+
+    setLoading(true)
+
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
       password,
     })
 
     setLoading(false)
 
-    if (error) {
-      setError(error.message)
+    if (loginError) {
+      setError(toFriendlyAuthError(loginError.message))
       return
     }
 
-    navigate({ to: '/dashboard' })
+    await navigate({ to: '/dashboard', replace: true })
   }
 
-  async function handleSendOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setLoading(true)
-    resetAlerts()
-
-    const phoneNumber = normalizePakistanPhone(phone)
+  async function sendOtp(phoneInput: string) {
+    const phoneNumber = normalizePakistanPhone(phoneInput)
 
     if (!isValidPakistanMobile(phoneNumber)) {
-      setLoading(false)
-      setError('Please enter a valid Pakistan mobile number, for example 03341013222.')
-      return
+      throw new Error(
+        'Please enter a valid Pakistan mobile number, for example 03341013222.',
+      )
     }
 
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error: otpError } = await supabase.auth.signInWithOtp({
       phone: phoneNumber,
       options: {
         channel: 'sms',
@@ -101,37 +129,91 @@ function LoginPage() {
       },
     })
 
-    setLoading(false)
-
-    if (error) {
-      setError(error.message)
-      return
+    if (otpError) {
+      throw new Error(toFriendlyAuthError(otpError.message))
     }
 
-    setPhone(phoneNumber)
-    setPhoneStep('otp')
-    setMessage('OTP sent successfully. Please check your mobile phone.')
+    return phoneNumber
+  }
+
+  async function handleSendOtp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    resetAlerts()
+    setLoading(true)
+
+    try {
+      const phoneNumber = await sendOtp(phone)
+      setPhone(phoneNumber)
+      setPhoneStep('otp')
+      setMessage(
+        `OTP sent successfully to ${formatPakistanPhoneForDisplay(phoneNumber)}.`,
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send OTP.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleResendOtp() {
+    resetAlerts()
+    setLoading(true)
+
+    try {
+      const phoneNumber = await sendOtp(phone)
+      setPhone(phoneNumber)
+      setMessage(
+        `A new OTP was sent to ${formatPakistanPhoneForDisplay(phoneNumber)}.`,
+      )
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to resend OTP.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleVerifyOtp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setLoading(true)
     resetAlerts()
 
-    const { error } = await supabase.auth.verifyOtp({
-      phone,
-      token: otp.trim(),
+    const cleanOtp = otp.replace(/\D/g, '')
+
+    if (cleanOtp.length !== 6) {
+      setError('Please enter the 6-digit OTP code.')
+      return
+    }
+
+    setLoading(true)
+
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      phone: normalizePakistanPhone(phone),
+      token: cleanOtp,
       type: 'sms',
     })
 
     setLoading(false)
 
-    if (error) {
-      setError(error.message)
+    if (verifyError) {
+      setError(toFriendlyAuthError(verifyError.message))
       return
     }
 
-    navigate({ to: '/dashboard' })
+    await navigate({ to: '/dashboard', replace: true })
+  }
+
+  if (checkingSession) {
+    return (
+      <main className="page-main">
+        <div className="page-wrap">
+          <div className="rounded-[2rem] border border-[#e8e0d1] bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3 text-sm font-bold text-stone-700">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
+              Checking session...
+            </div>
+          </div>
+        </div>
+      </main>
+    )
   }
 
   return (
@@ -161,8 +243,8 @@ function LoginPage() {
                 <div className="home-hero-rule ajrak-rule animate-fade-in delay-2" />
 
                 <p className="home-hero-text text-pretty animate-fade-up delay-3">
-                  Login with email or mobile OTP to access your membership profile, application
-                  status, and digital member card.
+                  Login with email or mobile OTP to access your membership
+                  profile, application status, and digital member card.
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -191,9 +273,10 @@ function LoginPage() {
                     Need an account?
                   </p>
                   <p className="mt-2 text-sm leading-7 text-stone-600">
-                    Create your account to start your JAS membership journey and receive your
-                    verified digital member access.
+                    Create your account to start your JAS membership journey and
+                    receive your verified digital member access.
                   </p>
+
                   <div className="mt-4">
                     <Link to="/signup" className="secondary-btn pressable lift-hover">
                       Create account
@@ -213,69 +296,86 @@ function LoginPage() {
               </div>
 
               <h2 className="section-title mt-4">Login to JAS</h2>
+
               <p className="mt-3 text-sm leading-7 text-stone-600">
-                Access your membership dashboard using your preferred login method.
+                Access your membership dashboard using your preferred login
+                method.
               </p>
             </div>
 
             <div className="mb-6 rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-1">
               <div className="grid grid-cols-2 gap-1">
-                <button
-                  type="button"
+                <MethodTab
+                  active={method === 'email'}
                   onClick={() => switchMethod('email')}
-                  className={`rounded-[1rem] px-4 py-3 text-sm font-bold transition ${
-                    method === 'email'
-                      ? 'bg-white text-[var(--forest)] shadow-sm'
-                      : 'text-stone-600 hover:text-stone-900'
-                  }`}
+                  icon={<Mail size={15} />}
                 >
                   Email
-                </button>
+                </MethodTab>
 
-                <button
-                  type="button"
+                <MethodTab
+                  active={method === 'phone'}
                   onClick={() => switchMethod('phone')}
-                  className={`rounded-[1rem] px-4 py-3 text-sm font-bold transition ${
-                    method === 'phone'
-                      ? 'bg-white text-[var(--forest)] shadow-sm'
-                      : 'text-stone-600 hover:text-stone-900'
-                  }`}
+                  icon={<Smartphone size={15} />}
                 >
                   Mobile OTP
-                </button>
+                </MethodTab>
               </div>
             </div>
 
             {method === 'email' ? (
               <form onSubmit={handleEmailLogin} className="space-y-4">
-                <FormField label="Email">
+                <FormField label="Email" htmlFor="email">
                   <input
+                    id="email"
                     type="email"
                     autoComplete="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value)
+                      resetAlerts()
+                    }}
                     required
                     className="input-clean"
                     placeholder="you@example.com"
                   />
                 </FormField>
 
-                <FormField label="Password">
-                  <input
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    required
-                    className="input-clean"
-                    placeholder="Your password"
-                  />
+                <FormField label="Password" htmlFor="password">
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(event) => {
+                        setPassword(event.target.value)
+                        resetAlerts()
+                      }}
+                      required
+                      className="input-clean pr-12"
+                      placeholder="Your password"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
                 </FormField>
 
                 <AlertBlock error={error} message={message} />
 
-                <button type="submit" disabled={loading} className="primary-btn pressable w-full">
-                  <KeyRound size={16} />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                   {loading ? 'Logging in...' : 'Login'}
                 </button>
               </form>
@@ -292,26 +392,35 @@ function LoginPage() {
                   </p>
                 </div>
 
-                <FormField label="Mobile Number">
+                <FormField label="Mobile Number" htmlFor="phone">
                   <input
+                    id="phone"
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel"
                     value={phone}
-                    onChange={(event) => setPhone(event.target.value)}
+                    onChange={(event) => {
+                      setPhone(event.target.value)
+                      resetAlerts()
+                    }}
                     required
                     className="input-clean"
                     placeholder="03341013222"
                   />
-                  <p className="mt-2 text-xs text-stone-500">
-                    Enter 03XXXXXXXXX. App will convert it to 923XXXXXXXXX.
+                  <p className="mt-2 text-xs leading-5 text-stone-500">
+                    Enter 03XXXXXXXXX. The app will convert it to
+                    923XXXXXXXXX for Supabase OTP.
                   </p>
                 </FormField>
 
                 <AlertBlock error={error} message={message} />
 
-                <button type="submit" disabled={loading} className="primary-btn pressable w-full">
-                  <Smartphone size={16} />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Smartphone size={16} />}
                   {loading ? 'Sending OTP...' : 'Send OTP'}
                 </button>
               </form>
@@ -324,21 +433,26 @@ function LoginPage() {
                     Step 2
                   </p>
                   <p className="mt-1 text-sm font-semibold text-emerald-900">
-                    Enter the 6-digit OTP sent to {phone}.
+                    Enter the 6-digit OTP sent to{' '}
+                    {formatPakistanPhoneForDisplay(phone)}.
                   </p>
                 </div>
 
-                <FormField label="Enter OTP">
+                <FormField label="Enter OTP" htmlFor="otp">
                   <input
+                    id="otp"
                     type="text"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     value={otp}
-                    onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))}
+                    onChange={(event) => {
+                      setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))
+                      resetAlerts()
+                    }}
                     required
                     minLength={6}
                     maxLength={6}
-                    className="input-clean"
+                    className="input-clean text-center text-xl tracking-[0.35em]"
                     placeholder="123456"
                   />
                 </FormField>
@@ -348,23 +462,36 @@ function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6}
-                  className="primary-btn pressable w-full"
+                  className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <ShieldCheck size={16} />
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
                   {loading ? 'Verifying...' : 'Verify & Login'}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOtp('')
-                    setPhoneStep('phone')
-                    resetAlerts()
-                  }}
-                  className="secondary-btn pressable w-full"
-                >
-                  Change Number
-                </button>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RotateCcw size={16} />
+                    Resend OTP
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtp('')
+                      setPhoneStep('phone')
+                      resetAlerts()
+                    }}
+                    disabled={loading}
+                    className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Change Number
+                  </button>
+                </div>
               </form>
             ) : null}
 
@@ -381,18 +508,53 @@ function LoginPage() {
   )
 }
 
+function MethodTab({
+  active,
+  onClick,
+  icon,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  icon: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center justify-center gap-2 rounded-[1rem] px-4 py-3 text-sm font-bold transition ${
+        active
+          ? 'bg-white text-[var(--forest)] shadow-sm'
+          : 'text-stone-600 hover:text-stone-900'
+      }`}
+      aria-pressed={active}
+    >
+      {icon}
+      {children}
+    </button>
+  )
+}
+
 function FormField({
   label,
+  htmlFor,
   children,
 }: {
   label: string
-  children: React.ReactNode
+  htmlFor: string
+  children: ReactNode
 }) {
   return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-stone-700">{label}</span>
+    <div className="block">
+      <label
+        htmlFor={htmlFor}
+        className="mb-2 block text-sm font-semibold text-stone-700"
+      >
+        {label}
+      </label>
       {children}
-    </label>
+    </div>
   )
 }
 
@@ -406,15 +568,23 @@ function AlertBlock({
   return (
     <>
       {error ? (
-        <p className="rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
+        <div
+          className="flex items-start gap-2 rounded-[1rem] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
+          <AlertCircle size={16} className="mt-0.5 shrink-0" />
+          <span>{error}</span>
+        </div>
       ) : null}
 
       {message ? (
-        <p className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {message}
-        </p>
+        <div
+          className="flex items-start gap-2 rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+          role="status"
+        >
+          <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+          <span>{message}</span>
+        </div>
       ) : null}
     </>
   )
@@ -426,7 +596,7 @@ function FeaturePill({
   text,
   delay,
 }: {
-  icon: React.ReactNode
+  icon: ReactNode
   title: string
   text: string
   delay: string
@@ -442,4 +612,55 @@ function FeaturePill({
       <p className="mt-1 text-xs text-stone-500">{text}</p>
     </div>
   )
+}
+
+function normalizePakistanPhone(value: string) {
+  const digits = value.replace(/\D/g, '')
+
+  if (digits.startsWith('0092')) return `92${digits.slice(4, 14)}`
+  if (digits.startsWith('92')) return digits.slice(0, 12)
+  if (digits.startsWith('0')) return `92${digits.slice(1, 11)}`
+  if (digits.startsWith('3')) return `92${digits.slice(0, 10)}`
+
+  return digits
+}
+
+function isValidPakistanMobile(value: string) {
+  return /^923\d{9}$/.test(value)
+}
+
+function formatPakistanPhoneForDisplay(value: string) {
+  const phone = normalizePakistanPhone(value)
+
+  if (/^923\d{9}$/.test(phone)) {
+    return `0${phone.slice(2)}`
+  }
+
+  return value
+}
+
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+function toFriendlyAuthError(message: string) {
+  const lower = message.toLowerCase()
+
+  if (lower.includes('invalid login credentials')) {
+    return 'Invalid email or password. Please check your details and try again.'
+  }
+
+  if (lower.includes('email not confirmed')) {
+    return 'Please confirm your email address before logging in.'
+  }
+
+  if (lower.includes('otp')) {
+    return 'Invalid or expired OTP. Please request a new code and try again.'
+  }
+
+  if (lower.includes('phone')) {
+    return 'Phone login failed. Please check your mobile number and try again.'
+  }
+
+  return message
 }

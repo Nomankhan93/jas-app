@@ -2,7 +2,10 @@
 import { createServerFn } from '@tanstack/react-start'
 import { createSupabaseAdminClient } from '../supabase/admin'
 
-const MIN_REJECTION_REASON_LENGTH = 3
+const MIN_REJECTION_REASON_LENGTH = 10
+const MAX_REJECTION_REASON_LENGTH = 500
+
+type MemberStatus = 'pending' | 'approved' | 'rejected'
 
 type AdminActionInput = {
   memberId: string
@@ -13,11 +16,28 @@ type RejectMemberInput = AdminActionInput & {
   rejectionReason: string
 }
 
+type MemberReviewRow = {
+  id: string
+  full_name: string
+  status: MemberStatus
+  member_no: string | null
+}
+
 function toErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
 
-function requireNonEmptyString(value: string, fieldName: string) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function readString(data: Record<string, unknown>, fieldName: string) {
+  const value = data[fieldName]
+
+  if (typeof value !== 'string') {
+    throw new Error(`${fieldName} must be a string.`)
+  }
+
   const normalized = value.trim()
 
   if (!normalized) {
@@ -27,23 +47,59 @@ function requireNonEmptyString(value: string, fieldName: string) {
   return normalized
 }
 
-function validateApproveInput(data: AdminActionInput): AdminActionInput {
-  return {
-    memberId: requireNonEmptyString(data.memberId, 'Member ID'),
-    accessToken: requireNonEmptyString(data.accessToken, 'Access token'),
+function requireUuid(value: string, fieldName: string) {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+  if (!uuidRegex.test(value)) {
+    throw new Error(`${fieldName} is not valid.`)
   }
+
+  return value
 }
 
-function validateRejectInput(data: RejectMemberInput): RejectMemberInput {
-  const memberId = requireNonEmptyString(data.memberId, 'Member ID')
-  const accessToken = requireNonEmptyString(data.accessToken, 'Access token')
-  const rejectionReason = data.rejectionReason.trim()
+function normalizeRejectionReason(value: string) {
+  const normalized = value.trim().replace(/\s+/g, ' ')
 
-  if (rejectionReason.length < MIN_REJECTION_REASON_LENGTH) {
+  if (normalized.length < MIN_REJECTION_REASON_LENGTH) {
     throw new Error(
       `Rejection reason must be at least ${MIN_REJECTION_REASON_LENGTH} characters.`,
     )
   }
+
+  if (normalized.length > MAX_REJECTION_REASON_LENGTH) {
+    throw new Error(
+      `Rejection reason must be less than ${MAX_REJECTION_REASON_LENGTH} characters.`,
+    )
+  }
+
+  return normalized
+}
+
+function validateApproveInput(data: unknown): AdminActionInput {
+  if (!isRecord(data)) {
+    throw new Error('Invalid approval request.')
+  }
+
+  const memberId = requireUuid(readString(data, 'memberId'), 'Member ID')
+  const accessToken = readString(data, 'accessToken')
+
+  return {
+    memberId,
+    accessToken,
+  }
+}
+
+function validateRejectInput(data: unknown): RejectMemberInput {
+  if (!isRecord(data)) {
+    throw new Error('Invalid rejection request.')
+  }
+
+  const memberId = requireUuid(readString(data, 'memberId'), 'Member ID')
+  const accessToken = readString(data, 'accessToken')
+  const rejectionReason = normalizeRejectionReason(
+    readString(data, 'rejectionReason'),
+  )
 
   return {
     memberId,
@@ -53,18 +109,17 @@ function validateRejectInput(data: RejectMemberInput): RejectMemberInput {
 }
 
 async function requireAdmin(accessToken: string) {
-  const normalizedAccessToken = requireNonEmptyString(accessToken, 'Access token')
   const supabaseAdmin = createSupabaseAdminClient()
 
   const { data: userData, error: userError } =
-    await supabaseAdmin.auth.getUser(normalizedAccessToken)
+    await supabaseAdmin.auth.getUser(accessToken)
 
   if (userError) {
     throw new Error(userError.message)
   }
 
   if (!userData.user) {
-    throw new Error('Invalid session.')
+    throw new Error('Invalid or expired session.')
   }
 
   const { data: role, error: roleError } = await supabaseAdmin
@@ -88,11 +143,53 @@ async function requireAdmin(accessToken: string) {
   }
 }
 
+async function getMemberForReview(
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+  memberId: string,
+) {
+  const { data, error } = await supabaseAdmin
+    .from('members')
+    .select('id, full_name, status, member_no')
+    .eq('id', memberId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  if (!data) {
+    throw new Error('Member record not found.')
+  }
+
+  return data as MemberReviewRow
+}
+
+function requirePendingMember(member: MemberReviewRow, action: 'approve' | 'reject') {
+  if (member.status === 'approved') {
+    throw new Error(
+      `${member.full_name} is already approved. This application cannot be ${action}d again.`,
+    )
+  }
+
+  if (member.status === 'rejected') {
+    throw new Error(
+      `${member.full_name} is already rejected. Ask the member to update and resubmit the application first.`,
+    )
+  }
+
+  if (member.status !== 'pending') {
+    throw new Error('Only pending applications can be reviewed.')
+  }
+}
+
 export const approveMemberAction = createServerFn({ method: 'POST' })
   .inputValidator(validateApproveInput)
   .handler(async ({ data }) => {
     try {
       const { supabaseAdmin, user } = await requireAdmin(data.accessToken)
+
+      const member = await getMemberForReview(supabaseAdmin, data.memberId)
+      requirePendingMember(member, 'approve')
 
       const { data: approved, error } = await supabaseAdmin.rpc(
         'approve_member',
@@ -106,7 +203,13 @@ export const approveMemberAction = createServerFn({ method: 'POST' })
         throw new Error(error.message)
       }
 
-      return approved
+      return {
+        ok: true,
+        action: 'approved' as const,
+        memberId: data.memberId,
+        reviewedBy: user.id,
+        result: approved,
+      }
     } catch (error) {
       throw new Error(toErrorMessage(error, 'Failed to approve member.'))
     }
@@ -117,6 +220,9 @@ export const rejectMemberAction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     try {
       const { supabaseAdmin, user } = await requireAdmin(data.accessToken)
+
+      const member = await getMemberForReview(supabaseAdmin, data.memberId)
+      requirePendingMember(member, 'reject')
 
       const { data: rejected, error } = await supabaseAdmin.rpc(
         'reject_member',
@@ -131,7 +237,14 @@ export const rejectMemberAction = createServerFn({ method: 'POST' })
         throw new Error(error.message)
       }
 
-      return rejected
+      return {
+        ok: true,
+        action: 'rejected' as const,
+        memberId: data.memberId,
+        reviewedBy: user.id,
+        rejectionReason: data.rejectionReason,
+        result: rejected,
+      }
     } catch (error) {
       throw new Error(toErrorMessage(error, 'Failed to reject member.'))
     }

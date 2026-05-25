@@ -6,7 +6,10 @@ import {
   BookOpen,
   Briefcase,
   CheckCircle2,
+  ClipboardCheck,
+  FileCheck2,
   HeartPulse,
+  IdCard,
   QrCode,
   ShieldCheck,
   Sparkles,
@@ -18,6 +21,48 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
+const highlights = [
+  { label: 'Verified Digital ID', value: 'QR Based' },
+  { label: 'Application Review', value: 'Admin Approved' },
+  { label: 'Community Scope', value: 'Across Sindh' },
+]
+
+const trustItems = [
+  'Non-Political',
+  'Non-Profit',
+  'Non-Sectarian',
+  'Welfare Organization',
+  'Admin Approved',
+  'QR Verified ID',
+]
+
+const membershipSteps: Array<{
+  title: string
+  text: string
+  icon: LucideIcon
+}> = [
+  {
+    title: 'Create Account',
+    text: 'Signup with email or mobile OTP to access the member portal.',
+    icon: Users,
+  },
+  {
+    title: 'Submit Form',
+    text: 'Complete your membership profile, address, district and photo.',
+    icon: FileCheck2,
+  },
+  {
+    title: 'Admin Review',
+    text: 'JAS admin verifies the application before approval.',
+    icon: ClipboardCheck,
+  },
+  {
+    title: 'Digital Card',
+    text: 'Approved members receive a QR-based digital membership card.',
+    icon: IdCard,
+  },
+]
+
 const focusAreas: Array<{
   title: string
   text: string
@@ -27,52 +72,46 @@ const focusAreas: Array<{
 }> = [
   {
     title: 'Education Support',
-    text: 'Scholarships, guidance, and academic support for deserving students across all districts.',
+    text: 'Scholarships, guidance, and academic support for deserving students across Sindh.',
     icon: BookOpen,
     color: '#1A4D2E',
     bg: 'rgba(26,77,46,0.07)',
   },
   {
     title: 'Health Assistance',
-    text: 'Helping families access healthcare, awareness programs, and emergency medical aid.',
+    text: 'Healthcare awareness, support guidance, and emergency medical help for families.',
     icon: HeartPulse,
     color: '#C0392B',
     bg: 'rgba(192,57,43,0.07)',
   },
   {
     title: 'Employment Guidance',
-    text: 'Skills development, career counselling, and economic empowerment for the youth.',
+    text: 'Skills development, career counselling, and economic empowerment for youth.',
     icon: Briefcase,
     color: '#B07D2A',
     bg: 'rgba(176,125,42,0.08)',
   },
   {
     title: 'Social Welfare',
-    text: 'Transparent welfare support for vulnerable families and those in dire need.',
+    text: 'Transparent welfare support for vulnerable families and deserving community members.',
     icon: ShieldCheck,
     color: '#2E8B78',
     bg: 'rgba(46,139,120,0.08)',
   },
   {
     title: 'Community Unity',
-    text: 'Fostering brotherhood, discipline, and mutual respect across the Jatt community in Sindh.',
+    text: 'Promoting brotherhood, discipline, mutual respect, and organized community connection.',
     icon: Users,
     color: '#6B3E9C',
     bg: 'rgba(107,62,156,0.07)',
   },
   {
     title: 'Dignified Representation',
-    text: 'A structured platform for verified membership and organized, dignified representation.',
+    text: 'A structured platform for verified membership and respectful community representation.',
     icon: Award,
     color: '#1A4D2E',
     bg: 'rgba(26,77,46,0.07)',
   },
-]
-
-const highlights = [
-  { label: 'Verified Digital ID', value: 'QR Based' },
-  { label: 'Application Review', value: 'Admin Approved' },
-  { label: 'Community Scope', value: 'Across Sindh' },
 ]
 
 function HomePage() {
@@ -81,6 +120,7 @@ function HomePage() {
       <div className="page-wrap flex flex-col gap-20 pb-24 pt-10 lg:gap-24 lg:pt-12">
         <HeroSection />
         <TrustStrip />
+        <MembershipFlow />
         <MissionSection />
         <FocusAreas />
         <FinalCTA />
@@ -92,8 +132,14 @@ function HomePage() {
 function HeroSection() {
   return (
     <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2.5rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.5rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(196,145,44,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(11,42,29,0.10),transparent_30%)]" />
-      <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-bl-[5rem] bg-[rgba(255,255,255,0.28)]" />
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(196,145,44,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(11,42,29,0.10),transparent_30%)]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-bl-[5rem] bg-[rgba(255,255,255,0.28)]"
+        aria-hidden="true"
+      />
       <AjrakPattern className="absolute right-[-2rem] top-[-2rem] h-64 w-64 opacity-[0.05]" />
 
       <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
@@ -119,9 +165,10 @@ function HeroSection() {
 
           <div className="ajrak-rule animate-fade-in delay-2 my-6" />
 
-          <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[600px] text-[1.02rem] leading-8 text-stone-600">
-            A disciplined, transparent, and dignified digital platform for organizing the Jatt
-            community across Sindh through education, health, welfare, and verified membership.
+          <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[620px] text-[1.02rem] leading-8 text-stone-600">
+            A disciplined, transparent, and dignified platform for organizing the
+            Jatt community across Sindh through verified membership, admin
+            approval, QR verification, and digital member cards.
           </p>
 
           <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
@@ -144,7 +191,9 @@ function HeroSection() {
                 <p className="m-0 text-[0.66rem] font-extrabold uppercase tracking-[0.18em] text-stone-400">
                   {item.label}
                 </p>
-                <p className="mt-1 text-sm font-black text-stone-950">{item.value}</p>
+                <p className="mt-1 text-sm font-black text-stone-950">
+                  {item.value}
+                </p>
               </div>
             ))}
           </div>
@@ -163,8 +212,14 @@ function MemberCardPreview() {
     <div className="lift-hover w-full max-w-[420px]">
       <div className="overflow-hidden rounded-[2rem] border border-emerald-950/15 bg-white shadow-[0_36px_90px_rgba(11,42,29,0.22)]">
         <div className="relative overflow-hidden bg-[linear-gradient(135deg,#06281b,#0b3a28,#115d46)] px-5 pb-6 pt-5 text-white">
-          <div className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[#d8a949]/15" />
-          <div className="absolute bottom-0 left-0 h-24 w-24 rounded-tr-[3rem] bg-white/10" />
+          <div
+            className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[#d8a949]/15"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute bottom-0 left-0 h-24 w-24 rounded-tr-[3rem] bg-white/10"
+            aria-hidden="true"
+          />
           <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
 
           <div className="relative flex items-start justify-between gap-4">
@@ -214,7 +269,9 @@ function MemberCardPreview() {
                 <p className="text-[0.55rem] font-black uppercase tracking-wide text-[#f2d48f]">
                   Member No
                 </p>
-                <p className="mt-1 text-[0.74rem] font-black text-white">JAS-2026-001</p>
+                <p className="mt-1 text-[0.74rem] font-black text-white">
+                  JAS-2026-001
+                </p>
               </div>
             </div>
 
@@ -253,7 +310,8 @@ function MemberCardPreview() {
 
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
           <p className="m-0 text-[0.72rem] leading-5 text-slate-500">
-            Digital ID is issued after admin approval and verified through a QR code.
+            Digital ID is issued after admin approval and verified through a QR
+            code.
           </p>
         </div>
       </div>
@@ -263,36 +321,19 @@ function MemberCardPreview() {
         <ArrowRight size={10} className="text-stone-400" />
         <span className="text-[0.72rem] font-bold text-stone-600">Review</span>
         <ArrowRight size={10} className="text-stone-400" />
-        <span className="text-[0.72rem] font-bold text-emerald-900">Digital Card</span>
+        <span className="text-[0.72rem] font-bold text-emerald-900">
+          Digital Card
+        </span>
       </div>
     </div>
   )
 }
 
-function PreviewInfo({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="soft-panel lift-hover rounded-xl border border-slate-200 bg-white/90 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
-      <p className="m-0 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-slate-400">
-        {label}
-      </p>
-      <p className="m-0 mt-1 text-[0.78rem] font-bold text-slate-950">{value}</p>
-    </div>
-  )
-}
-
 function TrustStrip() {
-  const items = [
-    'Non-Political',
-    'Non-Profit',
-    'Non-Sectarian',
-    'Welfare Organization',
-    'QR Verified ID',
-  ]
-
   return (
     <section className="glass-strip animate-fade-up rounded-[1.5rem] border border-[#e8e0d1] px-6 py-5 shadow-sm sm:px-8">
       <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-        {items.map((item) => (
+        {trustItems.map((item) => (
           <span
             key={item}
             className="inline-flex items-center gap-2 text-[0.78rem] font-extrabold uppercase tracking-[0.08em] text-stone-600"
@@ -301,6 +342,64 @@ function TrustStrip() {
             {item}
           </span>
         ))}
+      </div>
+    </section>
+  )
+}
+
+function MembershipFlow() {
+  return (
+    <section className="animate-fade-up">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p className="section-eyebrow mb-3">How Membership Works</p>
+          <h2 className="section-title text-balance">
+            Simple, verified,
+            <br />
+            and transparent process
+          </h2>
+        </div>
+
+        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
+          JAS membership portal focuses on registration, admin approval, digital
+          ID card generation, and public QR verification.
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        {membershipSteps.map((step, index) => {
+          const Icon = step.icon
+
+          return (
+            <article
+              key={step.title}
+              className={`soft-panel animate-fade-up ${getDelayClass(index)} relative overflow-hidden rounded-[1.5rem] border border-[#e8e0d1] bg-white/90 p-5 shadow-sm`}
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+                  <Icon size={20} />
+                </div>
+
+                <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-black text-stone-500">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+              </div>
+
+              <h3 className="font-[Cormorant_Garamond,serif] text-2xl font-bold tracking-tight text-stone-950">
+                {step.title}
+              </h3>
+
+              <p className="mt-2 text-sm leading-7 text-stone-600">{step.text}</p>
+
+              {index < membershipSteps.length - 1 ? (
+                <ArrowRight
+                  size={18}
+                  className="absolute right-4 top-1/2 hidden -translate-y-1/2 text-stone-300 md:block"
+                />
+              ) : null}
+            </article>
+          )
+        })}
       </div>
     </section>
   )
@@ -322,10 +421,13 @@ function MissionSection() {
 
         <div className="soft-panel lift-hover rounded-[1.5rem] border border-stone-200 bg-[linear-gradient(180deg,#fffdf9,#faf7f1)] p-6">
           <p className="m-0 font-[Cormorant_Garamond,serif] text-[clamp(1.15rem,2.2vw,1.42rem)] italic leading-8 text-stone-600">
-            <strong className="not-italic text-emerald-900">Jatt Alliance Sindh</strong> is a
-            non-political, non-profit, non-sectarian welfare organization established to organize
-            and support the Jatt community living across Sindh in the fields of education, health,
-            employment, social welfare, unity, dignified representation, and service to humanity.
+            <strong className="not-italic text-emerald-900">
+              Jatt Alliance Sindh
+            </strong>{' '}
+            is a non-political, non-profit, non-sectarian welfare organization
+            established to organize and support the Jatt community living across
+            Sindh in the fields of education, health, employment, social
+            welfare, unity, dignified representation, and service to humanity.
           </p>
         </div>
       </div>
@@ -347,8 +449,8 @@ function FocusAreas() {
         </div>
 
         <p className="text-pretty m-0 max-w-sm text-sm leading-7 text-stone-600">
-          JAS focuses on six pillars of welfare, unity, and structured membership for long-term
-          community development.
+          JAS focuses on six pillars of welfare, unity, and structured
+          membership for long-term community development.
         </p>
       </div>
 
@@ -377,7 +479,7 @@ function FeatureCard({
   index: number
 }) {
   return (
-    <article className={`feature-card animate-fade-up ${getDelayClass(index)} p-7`}>
+    <article className={`feature-card group animate-fade-up ${getDelayClass(index)} p-7`}>
       <div
         className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
         style={{ background: bg }}
@@ -392,8 +494,14 @@ function FeatureCard({
       <p className="m-0 text-[0.92rem] leading-7 text-stone-600">{text}</p>
 
       <div className="mt-6 flex items-center justify-between">
-        <div className="h-0.5 flex-1 overflow-hidden rounded-full" style={{ background: bg }}>
-          <div className="h-full w-1/2 rounded-full opacity-50" style={{ background: color }} />
+        <div
+          className="h-0.5 flex-1 overflow-hidden rounded-full"
+          style={{ background: bg }}
+        >
+          <div
+            className="h-full w-1/2 rounded-full opacity-50"
+            style={{ background: color }}
+          />
         </div>
 
         <span className="ml-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-50 text-stone-400 transition group-hover:bg-emerald-50 group-hover:text-emerald-900">
@@ -426,8 +534,8 @@ function FinalCTA() {
         </h2>
 
         <p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">
-          Create your account, submit your membership form, and receive your official digital member
-          ID after admin approval.
+          Create your account, submit your membership form, and receive your
+          official digital member ID after admin approval.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
@@ -445,6 +553,19 @@ function FinalCTA() {
         </div>
       </div>
     </section>
+  )
+}
+
+function PreviewInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="soft-panel lift-hover rounded-xl border border-slate-200 bg-white/90 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+      <p className="m-0 text-[0.55rem] font-bold uppercase tracking-[0.14em] text-slate-400">
+        {label}
+      </p>
+      <p className="m-0 mt-1 text-[0.78rem] font-bold text-slate-950">
+        {value}
+      </p>
+    </div>
   )
 }
 
