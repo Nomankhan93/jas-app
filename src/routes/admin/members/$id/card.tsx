@@ -1,19 +1,19 @@
-// src/routes/card.tsx
+// src/routes/admin/members/$id/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { toPng } from 'html-to-image'
 import QRCode from 'qrcode'
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   CARD_HEIGHT,
   CARD_WIDTH,
   MembershipCard,
   type CardSide,
   type MembershipCardMember,
-} from '../components/MembershipCard'
-import { supabase } from '../lib/supabase/client'
+} from '../../../../components/MembershipCard'
+import { supabase } from '../../../../lib/supabase/client'
 
-export const Route = createFileRoute('/card')({
-  component: CardPage,
+export const Route = createFileRoute('/admin/members/$id/card')({
+  component: AdminMemberCardPage,
 })
 
 const JAS_LOGO_PATH = '/jas/logo.jpeg'
@@ -21,8 +21,10 @@ const JAS_FLAG_PATH = '/jas/flag.jpeg'
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
 
-function CardPage() {
+function AdminMemberCardPage() {
+  const { id } = Route.useParams()
   const navigate = useNavigate()
+
   const visibleStageRef = useRef<HTMLDivElement>(null)
   const frontExportRef = useRef<HTMLDivElement>(null)
   const backExportRef = useRef<HTMLDivElement>(null)
@@ -31,6 +33,7 @@ function CardPage() {
   const [selectedSide, setSelectedSide] = useState<CardSide>('front')
   const [loading, setLoading] = useState(true)
   const [downloadingSide, setDownloadingSide] = useState<CardSide | null>(null)
+
   const [member, setMember] = useState<MembershipCardMember | null>(null)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
@@ -42,7 +45,7 @@ function CardPage() {
   useEffect(() => {
     void loadCard()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [id])
 
   useEffect(() => {
     const updateScale = () => {
@@ -78,6 +81,32 @@ function CardPage() {
     }
   }, [])
 
+  async function ensureAdminAccess() {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      navigate({ to: '/login' })
+      return false
+    }
+
+    const { data: roleRow, error: roleError } = await supabase
+      .from('user_roles')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle()
+
+    if (roleError || !roleRow) {
+      navigate({ to: '/dashboard' })
+      return false
+    }
+
+    return true
+  }
+
   async function loadCard() {
     setLoading(true)
     setError('')
@@ -86,114 +115,103 @@ function CardPage() {
     setQrUrl(null)
     setVerifyUrl('')
 
-    try {
-      const [logoDataUrl, flagDataUrl] = await Promise.all([
-        imageUrlToDataUrl(JAS_LOGO_PATH),
-        imageUrlToDataUrl(JAS_FLAG_PATH),
-      ])
+    const isAdmin = await ensureAdminAccess()
 
-      setLogoUrl(logoDataUrl || JAS_LOGO_PATH)
-      setFlagUrl(flagDataUrl || JAS_FLAG_PATH)
-
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-
-      if (userError || !user) {
-        navigate({ to: '/login' })
-        return
-      }
-
-      const { data: rawData, error: memberError } = await supabase
-        .from('members')
-        .select(
-          [
-            'id',
-            'member_no',
-            'full_name',
-            'father_name',
-            'cnic',
-            'mobile',
-            'district',
-            'taluka',
-            'profession',
-            'caste_branch',
-            'photo_url',
-            'status',
-            'approved_at',
-            'address',
-            'date_of_birth',
-            'gender',
-            'education',
-            'blood_group',
-            'emergency_contact_name',
-            'emergency_contact_relation',
-            'emergency_contact_mobile',
-            'declaration_accepted',
-          ].join(', '),
-        )
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      if (memberError) {
-        throw memberError
-      }
-
-      const data = rawData as unknown as MembershipCardMember | null
-
-      if (!data) {
-        setError('Membership form not found.')
-        return
-      }
-
-      setMember(data)
-
-      if (data.status !== 'approved' || !data.member_no) {
-        setError('Your membership is not approved yet.')
-        return
-      }
-
-      const publicVerifyUrl = `${window.location.origin}/verify/${encodeURIComponent(
-        data.member_no,
-      )}`
-
-      setVerifyUrl(publicVerifyUrl)
-
-      const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
-        width: 280,
-        margin: 1,
-        color: {
-          dark: '#111827',
-          light: '#ffffff',
-        },
-      })
-
-      setQrUrl(generatedQr)
-
-      if (data.photo_url) {
-        const { data: signed, error: signedError } = await supabase.storage
-          .from(MEMBER_PHOTO_BUCKET)
-          .createSignedUrl(data.photo_url, SIGNED_URL_TTL_SECONDS)
-
-        if (!signedError && signed?.signedUrl) {
-          const dataUrl = await imageUrlToDataUrl(signed.signedUrl)
-          setPhotoUrl(dataUrl || signed.signedUrl)
-        } else {
-          setPhotoUrl(null)
-        }
-      } else {
-        setPhotoUrl(null)
-      }
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to load digital membership card.',
-      )
-    } finally {
+    if (!isAdmin) {
       setLoading(false)
+      return
     }
+
+    const [logoDataUrl, flagDataUrl] = await Promise.all([
+      imageUrlToDataUrl(JAS_LOGO_PATH),
+      imageUrlToDataUrl(JAS_FLAG_PATH),
+    ])
+
+    setLogoUrl(logoDataUrl || JAS_LOGO_PATH)
+    setFlagUrl(flagDataUrl || JAS_FLAG_PATH)
+
+    const { data: rawData, error } = await supabase
+      .from('members')
+      .select(
+        [
+          'id',
+          'member_no',
+          'full_name',
+          'father_name',
+          'cnic',
+          'mobile',
+          'district',
+          'taluka',
+          'profession',
+          'caste_branch',
+          'photo_url',
+          'status',
+          'approved_at',
+          'address',
+          'date_of_birth',
+          'gender',
+          'education',
+          'blood_group',
+          'emergency_contact_name',
+          'emergency_contact_relation',
+          'emergency_contact_mobile',
+          'declaration_accepted',
+        ].join(', '),
+      )
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+      return
+    }
+
+    const data = rawData as unknown as MembershipCardMember | null
+
+    if (!data) {
+      setError('Member record not found.')
+      setLoading(false)
+      return
+    }
+
+    setMember(data)
+
+    if (data.status !== 'approved' || !data.member_no) {
+      setError('This member card will be available after admin approval.')
+      setLoading(false)
+      return
+    }
+
+    const publicVerifyUrl = `${window.location.origin}/verify/${encodeURIComponent(
+      data.member_no,
+    )}`
+
+    setVerifyUrl(publicVerifyUrl)
+
+    const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
+      width: 280,
+      margin: 1,
+      color: {
+        dark: '#111827',
+        light: '#ffffff',
+      },
+    })
+
+    setQrUrl(generatedQr)
+
+    if (data.photo_url) {
+      const { data: signed } = await supabase.storage
+        .from(MEMBER_PHOTO_BUCKET)
+        .createSignedUrl(data.photo_url, SIGNED_URL_TTL_SECONDS)
+
+      if (signed?.signedUrl) {
+        const dataUrl = await imageUrlToDataUrl(signed.signedUrl)
+        setPhotoUrl(dataUrl || signed.signedUrl)
+      }
+    }
+
+    setLoading(false)
   }
 
   async function handleDownload(side: CardSide) {
@@ -251,10 +269,11 @@ function CardPage() {
       <div className="page-wrap space-y-5 sm:space-y-6">
         <header className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
           <Link
-            to="/dashboard"
+            to="/admin/members/$id"
+            params={{ id }}
             className="text-sm font-medium text-emerald-700 no-underline"
           >
-            Back to Dashboard
+            Back to Member Details
           </Link>
 
           <div className="mt-4 flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -263,7 +282,8 @@ function CardPage() {
                 Digital Membership Card
               </h1>
               <p className="mt-1 text-sm text-slate-600">
-                Download the front or back side of your official JAS card.
+                Download the front or back side of this member&apos;s official
+                JAS card.
               </p>
             </div>
 
@@ -307,7 +327,7 @@ function CardPage() {
             <div className="grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
               <button
                 type="button"
-                onClick={() => void handleDownload('front')}
+                onClick={() => handleDownload('front')}
                 disabled={downloadingSide !== null}
                 className="h-11 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60"
               >
@@ -318,7 +338,7 @@ function CardPage() {
 
               <button
                 type="button"
-                onClick={() => void handleDownload('back')}
+                onClick={() => handleDownload('back')}
                 disabled={downloadingSide !== null}
                 className="h-11 rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                 style={{ color: '#ffffff' }}
@@ -351,7 +371,7 @@ function CardPage() {
         ) : (
           <div className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-slate-700">
-              Your digital card will be available after admin approval.
+              This digital card will be available after admin approval.
             </p>
           </div>
         )}
@@ -397,7 +417,7 @@ function ScaledCardShell({
   children,
 }: {
   scale: number
-  children: ReactNode
+  children: React.ReactNode
 }) {
   return (
     <div
@@ -437,8 +457,8 @@ function ExportCards({
   flagUrl: string | null
   qrUrl: string | null
   verifyUrl: string
-  frontRef: RefObject<HTMLDivElement | null>
-  backRef: RefObject<HTMLDivElement | null>
+  frontRef: React.RefObject<HTMLDivElement | null>
+  backRef: React.RefObject<HTMLDivElement | null>
 }) {
   return (
     <div

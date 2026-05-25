@@ -18,6 +18,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyMemberNoRouteImport } from './routes/verify/$memberNo'
 import { Route as AdminMembersIdRouteImport } from './routes/admin/members/$id'
+import { Route as AdminMembersIdCardRouteImport } from './routes/admin/members/$id/card'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -64,6 +65,11 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
   path: '/members/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminMembersIdCardRoute = AdminMembersIdCardRouteImport.update({
+  id: '/card',
+  path: '/card',
+  getParentRoute: () => AdminMembersIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,7 +80,8 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/verify/$memberNo': typeof VerifyMemberNoRoute
-  '/admin/members/$id': typeof AdminMembersIdRoute
+  '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
+  '/admin/members/$id/card': typeof AdminMembersIdCardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -85,7 +92,8 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/verify/$memberNo': typeof VerifyMemberNoRoute
-  '/admin/members/$id': typeof AdminMembersIdRoute
+  '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
+  '/admin/members/$id/card': typeof AdminMembersIdCardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -97,7 +105,8 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/verify/$memberNo': typeof VerifyMemberNoRoute
-  '/admin/members/$id': typeof AdminMembersIdRoute
+  '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
+  '/admin/members/$id/card': typeof AdminMembersIdCardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify/$memberNo'
     | '/admin/members/$id'
+    | '/admin/members/$id/card'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify/$memberNo'
     | '/admin/members/$id'
+    | '/admin/members/$id/card'
   id:
     | '__root__'
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/verify/$memberNo'
     | '/admin/members/$id'
+    | '/admin/members/$id/card'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -211,15 +223,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/members/$id/card': {
+      id: '/admin/members/$id/card'
+      path: '/card'
+      fullPath: '/admin/members/$id/card'
+      preLoaderRoute: typeof AdminMembersIdCardRouteImport
+      parentRoute: typeof AdminMembersIdRoute
+    }
   }
 }
 
+interface AdminMembersIdRouteChildren {
+  AdminMembersIdCardRoute: typeof AdminMembersIdCardRoute
+}
+
+const AdminMembersIdRouteChildren: AdminMembersIdRouteChildren = {
+  AdminMembersIdCardRoute: AdminMembersIdCardRoute,
+}
+
+const AdminMembersIdRouteWithChildren = AdminMembersIdRoute._addFileChildren(
+  AdminMembersIdRouteChildren,
+)
+
 interface AdminRouteChildren {
-  AdminMembersIdRoute: typeof AdminMembersIdRoute
+  AdminMembersIdRoute: typeof AdminMembersIdRouteWithChildren
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminMembersIdRoute: AdminMembersIdRoute,
+  AdminMembersIdRoute: AdminMembersIdRouteWithChildren,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

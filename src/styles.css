@@ -1620,3 +1620,16 @@ canvas {
     padding-inline: 0;
   }
 }
+
+.jas-dark-action-link,
+.jas-dark-action-link:visited,
+.jas-dark-action-link:hover,
+.jas-dark-action-link:focus,
+.jas-dark-action-link:active {
+  color: #ffffff !important;
+  background: #0f172a;
+}
+
+.jas-dark-action-link:hover {
+  background: #1e293b;
+}

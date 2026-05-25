@@ -17,7 +17,7 @@ export type MembershipCardMember = {
   taluka: string | null
   profession: string | null
   caste_branch: string | null
-  photo_url: string
+  photo_url: string | null
   status: 'pending' | 'approved' | 'rejected'
   approved_at: string | null
 
@@ -41,6 +41,8 @@ type MembershipCardProps = {
   qrUrl: string | null
   verifyUrl: string
 }
+
+const SIGNATURE_PATH = '/jas/signature.png'
 
 export function MembershipCard({
   side,
@@ -113,6 +115,7 @@ function CardFront({
                 src={photoUrl}
                 alt={member.full_name}
                 className="h-[240px] w-[240px] rounded-[2rem] border-4 border-white object-cover shadow-lg ring-2 ring-yellow-300/80"
+                draggable={false}
               />
             ) : (
               <div className="flex h-[240px] w-[240px] items-center justify-center rounded-[2rem] bg-slate-100 text-sm text-slate-500 shadow-sm ring-2 ring-yellow-300/60">
@@ -125,7 +128,7 @@ function CardFront({
                 Member No
               </p>
               <p className="mt-1 text-[20px] font-black text-white">
-                {member.member_no}
+                {member.member_no || 'Not issued'}
               </p>
             </div>
           </div>
@@ -215,7 +218,8 @@ function CardBack({
                     {member.emergency_contact_name || 'Name not provided'}
                   </p>
                   <p>
-                    {member.emergency_contact_relation || 'Relation not provided'}
+                    {member.emergency_contact_relation ||
+                      'Relation not provided'}
                   </p>
                   <p className="font-bold text-slate-950">
                     {member.emergency_contact_mobile || 'Mobile not provided'}
@@ -269,7 +273,17 @@ function CardBack({
             </BackPanel>
 
             <BackPanel title="Issuing Authority">
-              <div className="mt-5 h-px w-56 bg-slate-400" />
+              <div className="mt-1 flex h-[66px] items-end">
+                <img
+                  src={SIGNATURE_PATH}
+                  alt="Authorized Signature"
+                  className="h-[66px] max-w-[245px] object-contain object-left-bottom"
+                  draggable={false}
+                />
+              </div>
+
+              <div className="mt-1 h-px w-64 bg-slate-400" />
+
               <p className="mt-2 font-black text-slate-950">
                 Authorized Signature
               </p>
@@ -496,6 +510,6 @@ function QrPanel({ qrUrl }: { qrUrl: string | null }) {
   )
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null | undefined) {
   return value ? new Date(value).toLocaleDateString() : 'N/A'
 }
