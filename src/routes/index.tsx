@@ -2,17 +2,14 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   ArrowRight,
-  Award,
-  BookOpen,
-  Briefcase,
   CheckCircle2,
   ClipboardCheck,
   FileCheck2,
-  HeartPulse,
   IdCard,
+  LayoutDashboard,
   QrCode,
   ShieldCheck,
-  Sparkles,
+  UserPlus,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -21,19 +18,10 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
-const highlights = [
-  { label: 'Verified Digital ID', value: 'QR Based' },
-  { label: 'Application Review', value: 'Admin Approved' },
-  { label: 'Community Scope', value: 'Across Sindh' },
-]
-
-const trustItems = [
-  'Non-Political',
-  'Non-Profit',
-  'Non-Sectarian',
-  'Welfare Organization',
-  'Admin Approved',
-  'QR Verified ID',
+const portalStats = [
+  { label: 'Portal Type', value: 'Membership Only' },
+  { label: 'Approval Flow', value: 'Admin Reviewed' },
+  { label: 'Digital Card', value: 'QR Verified' },
 ]
 
 const membershipSteps: Array<{
@@ -43,17 +31,17 @@ const membershipSteps: Array<{
 }> = [
   {
     title: 'Create Account',
-    text: 'Signup with email or mobile OTP to access the member portal.',
-    icon: Users,
+    text: 'Signup with email or mobile OTP to start your membership application.',
+    icon: UserPlus,
   },
   {
-    title: 'Submit Form',
-    text: 'Complete your membership profile, address, district and photo.',
+    title: 'Submit Application',
+    text: 'Fill your personal details, district, taluka, address and upload photo.',
     icon: FileCheck2,
   },
   {
     title: 'Admin Review',
-    text: 'JAS admin verifies the application before approval.',
+    text: 'JAS admin verifies the submitted application before approval.',
     icon: ClipboardCheck,
   },
   {
@@ -63,66 +51,36 @@ const membershipSteps: Array<{
   },
 ]
 
-const focusAreas: Array<{
+const portalFeatures: Array<{
   title: string
   text: string
   icon: LucideIcon
-  color: string
-  bg: string
 }> = [
   {
-    title: 'Education Support',
-    text: 'Scholarships, guidance, and academic support for deserving students across Sindh.',
-    icon: BookOpen,
-    color: '#1A4D2E',
-    bg: 'rgba(26,77,46,0.07)',
+    title: 'Membership Registration',
+    text: 'A focused registration flow for collecting member profile, location and photo details.',
+    icon: FileCheck2,
   },
   {
-    title: 'Health Assistance',
-    text: 'Healthcare awareness, support guidance, and emergency medical help for families.',
-    icon: HeartPulse,
-    color: '#C0392B',
-    bg: 'rgba(192,57,43,0.07)',
+    title: 'Status Dashboard',
+    text: 'Members can track pending, approved or rejected application status from their dashboard.',
+    icon: LayoutDashboard,
   },
   {
-    title: 'Employment Guidance',
-    text: 'Skills development, career counselling, and economic empowerment for youth.',
-    icon: Briefcase,
-    color: '#B07D2A',
-    bg: 'rgba(176,125,42,0.08)',
-  },
-  {
-    title: 'Social Welfare',
-    text: 'Transparent welfare support for vulnerable families and deserving community members.',
-    icon: ShieldCheck,
-    color: '#2E8B78',
-    bg: 'rgba(46,139,120,0.08)',
-  },
-  {
-    title: 'Community Unity',
-    text: 'Promoting brotherhood, discipline, mutual respect, and organized community connection.',
-    icon: Users,
-    color: '#6B3E9C',
-    bg: 'rgba(107,62,156,0.07)',
-  },
-  {
-    title: 'Dignified Representation',
-    text: 'A structured platform for verified membership and respectful community representation.',
-    icon: Award,
-    color: '#1A4D2E',
-    bg: 'rgba(26,77,46,0.07)',
+    title: 'QR Verification',
+    text: 'Every approved digital card links to a public verification page for authenticity.',
+    icon: QrCode,
   },
 ]
 
 function HomePage() {
   return (
     <main className="overflow-hidden">
-      <div className="page-wrap flex flex-col gap-20 pb-24 pt-10 lg:gap-24 lg:pt-12">
+      <div className="page-wrap flex flex-col gap-16 pb-24 pt-10 lg:gap-20 lg:pt-12">
         <HeroSection />
         <TrustStrip />
         <MembershipFlow />
-        <MissionSection />
-        <FocusAreas />
+        <PortalFeatures />
         <FinalCTA />
       </div>
     </main>
@@ -131,18 +89,15 @@ function HomePage() {
 
 function HeroSection() {
   return (
-    <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2.5rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.5rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
+    <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.5rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(196,145,44,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(11,42,29,0.10),transparent_30%)]"
         aria-hidden="true"
       />
-      <div
-        className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-bl-[5rem] bg-[rgba(255,255,255,0.28)]"
-        aria-hidden="true"
-      />
+
       <AjrakPattern className="absolute right-[-2rem] top-[-2rem] h-64 w-64 opacity-[0.05]" />
 
-      <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_430px]">
         <div>
           <div className="animate-fade-up glass-strip inline-flex items-center gap-2.5 rounded-full border border-emerald-900/10 px-3.5 py-2 shadow-sm backdrop-blur">
             <span className="brand-dot" />
@@ -155,25 +110,22 @@ function HeroSection() {
             Jatt Alliance Sindh · JAS
           </p>
 
-          <h1 className="display-title text-balance animate-fade-up delay-2 mt-3 text-[clamp(3rem,6vw,5.3rem)]">
-            Unity,
+          <h1 className="animate-fade-up delay-2 mt-4 max-w-[760px] text-[clamp(2.8rem,5.8vw,5.6rem)] font-black uppercase leading-[0.94] tracking-[-0.06em] text-stone-950">
+            Jatt Alliance
             <br />
-            <span className="text-[var(--forest)]">Welfare</span>
-            <br />
-            &amp; Digital Identity
+            <span className="text-[var(--forest)]">Sindh</span>
           </h1>
 
           <div className="ajrak-rule animate-fade-in delay-2 my-6" />
 
-          <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[620px] text-[1.02rem] leading-8 text-stone-600">
-            A disciplined, transparent, and dignified platform for organizing the
-            Jatt community across Sindh through verified membership, admin
-            approval, QR verification, and digital member cards.
+          <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[650px] text-[1.08rem] font-medium leading-8 text-stone-600">
+            Digital membership portal for registration, admin approval, member
+            dashboard, QR verification, and official JAS member cards.
           </p>
 
           <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
             <Link to="/signup" className="primary-btn pressable lift-hover">
-              Become a Member
+              Apply for Membership
               <ArrowRight size={16} />
             </Link>
 
@@ -183,10 +135,12 @@ function HeroSection() {
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            {highlights.map((item, index) => (
+            {portalStats.map((item, index) => (
               <div
                 key={item.label}
-                className={`soft-panel animate-fade-up ${getDelayClass(index)} rounded-[1.25rem] border-white/70 bg-white/72 px-4 py-3 shadow-sm backdrop-blur`}
+                className={`soft-panel animate-fade-up ${getDelayClass(
+                  index,
+                )} rounded-[1.1rem] border-white/70 bg-white/72 px-4 py-3 shadow-sm backdrop-blur`}
               >
                 <p className="m-0 text-[0.66rem] font-extrabold uppercase tracking-[0.18em] text-stone-400">
                   {item.label}
@@ -200,24 +154,20 @@ function HeroSection() {
         </div>
 
         <div className="animate-scale-in delay-3 flex justify-center lg:justify-end">
-          <MemberCardPreview />
+          <PortalCardPreview />
         </div>
       </div>
     </section>
   )
 }
 
-function MemberCardPreview() {
+function PortalCardPreview() {
   return (
-    <div className="lift-hover w-full max-w-[420px]">
-      <div className="overflow-hidden rounded-[2rem] border border-emerald-950/15 bg-white shadow-[0_36px_90px_rgba(11,42,29,0.22)]">
+    <div className="lift-hover w-full max-w-[430px]">
+      <div className="overflow-hidden rounded-[1.75rem] border border-emerald-950/15 bg-white shadow-[0_36px_90px_rgba(11,42,29,0.22)]">
         <div className="relative overflow-hidden bg-[linear-gradient(135deg,#06281b,#0b3a28,#115d46)] px-5 pb-6 pt-5 text-white">
           <div
             className="absolute -right-10 -top-10 h-36 w-36 rounded-full bg-[#d8a949]/15"
-            aria-hidden="true"
-          />
-          <div
-            className="absolute bottom-0 left-0 h-24 w-24 rounded-tr-[3rem] bg-white/10"
             aria-hidden="true"
           />
           <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
@@ -236,7 +186,7 @@ function MemberCardPreview() {
                 <p className="m-0 text-[0.6rem] font-black uppercase tracking-[0.22em] text-[#f2d48f]">
                   Digital Member ID
                 </p>
-                <p className="mt-1 text-[0.92rem] font-black uppercase tracking-wide text-white">
+                <p className="mt-1 text-[0.92rem] font-extrabold uppercase tracking-[-0.01em] text-white">
                   JATT ALLIANCE SINDH
                 </p>
                 <p className="mt-1 text-[0.72rem] font-medium text-emerald-50/80">
@@ -261,11 +211,11 @@ function MemberCardPreview() {
 
           <div className="relative grid grid-cols-[96px_1fr] gap-4">
             <div>
-              <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] border-4 border-white bg-slate-100 shadow-lg ring-2 ring-[#f2d48f]/70">
+              <div className="flex h-24 w-24 items-center justify-center rounded-[1.35rem] border-4 border-white bg-slate-100 shadow-lg ring-2 ring-[#f2d48f]/70">
                 <Users size={36} className="text-slate-300" />
               </div>
 
-              <div className="mt-3 rounded-[1.25rem] border border-[#f2d48f] bg-emerald-950 p-2.5 text-center">
+              <div className="mt-3 rounded-[1rem] border border-[#f2d48f] bg-emerald-950 p-2.5 text-center">
                 <p className="text-[0.55rem] font-black uppercase tracking-wide text-[#f2d48f]">
                   Member No
                 </p>
@@ -279,20 +229,20 @@ function MemberCardPreview() {
               <p className="text-[0.62rem] font-bold uppercase tracking-wide text-slate-500">
                 Member Name
               </p>
-              <h3 className="mt-1 text-2xl font-black leading-tight text-slate-950">
+              <h3 className="mt-1 text-2xl font-extrabold leading-tight tracking-[-0.03em] text-slate-950">
                 Approved Member
               </h3>
 
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <PreviewInfo label="District" value="Sindh" />
                 <PreviewInfo label="Status" value="Approved" />
-                <PreviewInfo label="Taluka" value="Verified" />
+                <PreviewInfo label="Card" value="Active" />
+                <PreviewInfo label="District" value="Sindh" />
                 <PreviewInfo label="QR" value="Enabled" />
               </div>
             </div>
           </div>
 
-          <div className="soft-panel mt-5 flex items-center justify-between rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+          <div className="soft-panel mt-5 flex items-center justify-between rounded-[1.1rem] border border-slate-200 bg-slate-50 p-4">
             <div>
               <p className="m-0 text-[0.65rem] font-black uppercase tracking-[0.18em] text-emerald-800">
                 QR Verification
@@ -310,8 +260,7 @@ function MemberCardPreview() {
 
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
           <p className="m-0 text-[0.72rem] leading-5 text-slate-500">
-            Digital ID is issued after admin approval and verified through a QR
-            code.
+            Digital ID is issued only after admin approval.
           </p>
         </div>
       </div>
@@ -330,10 +279,18 @@ function MemberCardPreview() {
 }
 
 function TrustStrip() {
+  const items = [
+    'Membership Registration',
+    'Admin Approval',
+    'Digital Card',
+    'QR Verification',
+    'Member Dashboard',
+  ]
+
   return (
-    <section className="glass-strip animate-fade-up rounded-[1.5rem] border border-[#e8e0d1] px-6 py-5 shadow-sm sm:px-8">
+    <section className="glass-strip animate-fade-up rounded-[1.35rem] border border-[#e8e0d1] px-6 py-5 shadow-sm sm:px-8">
       <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-        {trustItems.map((item) => (
+        {items.map((item) => (
           <span
             key={item}
             className="inline-flex items-center gap-2 text-[0.78rem] font-extrabold uppercase tracking-[0.08em] text-stone-600"
@@ -352,17 +309,17 @@ function MembershipFlow() {
     <section className="animate-fade-up">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div>
-          <p className="section-eyebrow mb-3">How Membership Works</p>
+          <p className="section-eyebrow mb-3">Portal Flow</p>
           <h2 className="section-title text-balance">
-            Simple, verified,
+            Membership process,
             <br />
-            and transparent process
+            simple and verified
           </h2>
         </div>
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          JAS membership portal focuses on registration, admin approval, digital
-          ID card generation, and public QR verification.
+          The portal is designed only for membership registration, approval,
+          digital card access and public QR verification.
         </p>
       </div>
 
@@ -373,7 +330,9 @@ function MembershipFlow() {
           return (
             <article
               key={step.title}
-              className={`soft-panel animate-fade-up ${getDelayClass(index)} relative overflow-hidden rounded-[1.5rem] border border-[#e8e0d1] bg-white/90 p-5 shadow-sm`}
+              className={`soft-panel animate-fade-up ${getDelayClass(
+                index,
+              )} relative overflow-hidden rounded-[1.35rem] border border-[#e8e0d1] bg-white/90 p-5 shadow-sm`}
             >
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
@@ -385,11 +344,13 @@ function MembershipFlow() {
                 </span>
               </div>
 
-              <h3 className="font-[Cormorant_Garamond,serif] text-2xl font-bold tracking-tight text-stone-950">
+              <h3 className="text-xl font-black tracking-tight text-stone-950">
                 {step.title}
               </h3>
 
-              <p className="mt-2 text-sm leading-7 text-stone-600">{step.text}</p>
+              <p className="mt-2 text-sm leading-7 text-stone-600">
+                {step.text}
+              </p>
 
               {index < membershipSteps.length - 1 ? (
                 <ArrowRight
@@ -405,137 +366,89 @@ function MembershipFlow() {
   )
 }
 
-function MissionSection() {
-  return (
-    <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2rem] border border-[#e8e0d1] bg-white/90 p-[clamp(2rem,4vw,3.5rem)] shadow-[0_20px_55px_rgba(11,42,29,0.07)]">
-      <div className="absolute left-0 top-0 h-full w-1.5 bg-[linear-gradient(180deg,#1a4d2e,#2e8b78,#d8a949)]" />
-
-      <div className="grid items-center gap-12 md:grid-cols-[0.85fr_1.15fr]">
-        <div className="pl-4">
-          <p className="section-eyebrow mb-4">Our Mission</p>
-          <h2 className="section-title text-balance">
-            A transparent platform for community welfare
-          </h2>
-          <div className="ajrak-rule mt-5" />
-        </div>
-
-        <div className="soft-panel lift-hover rounded-[1.5rem] border border-stone-200 bg-[linear-gradient(180deg,#fffdf9,#faf7f1)] p-6">
-          <p className="m-0 font-[Cormorant_Garamond,serif] text-[clamp(1.15rem,2.2vw,1.42rem)] italic leading-8 text-stone-600">
-            <strong className="not-italic text-emerald-900">
-              Jatt Alliance Sindh
-            </strong>{' '}
-            is a non-political, non-profit, non-sectarian welfare organization
-            established to organize and support the Jatt community living across
-            Sindh in the fields of education, health, employment, social
-            welfare, unity, dignified representation, and service to humanity.
-          </p>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function FocusAreas() {
+function PortalFeatures() {
   return (
     <section className="animate-fade-up">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div>
-          <p className="section-eyebrow mb-3">Focus Areas</p>
+          <p className="section-eyebrow mb-3">Portal Features</p>
           <h2 className="section-title text-balance">
-            Building a stronger
+            Built for digital
             <br />
-            community together
+            membership management
           </h2>
         </div>
 
-        <p className="text-pretty m-0 max-w-sm text-sm leading-7 text-stone-600">
-          JAS focuses on six pillars of welfare, unity, and structured
-          membership for long-term community development.
+        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
+          No finance, welfare case management or program modules are included on
+          this landing page.
         </p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {focusAreas.map((area, index) => (
-          <FeatureCard key={area.title} {...area} index={index} />
-        ))}
+      <div className="grid gap-5 md:grid-cols-3">
+        {portalFeatures.map((feature, index) => {
+          const Icon = feature.icon
+
+          return (
+            <article
+              key={feature.title}
+              className={`feature-card group animate-fade-up ${getDelayClass(
+                index,
+              )} p-7`}
+            >
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+                <Icon size={22} strokeWidth={1.75} />
+              </div>
+
+              <h3 className="mb-2 mt-0 text-xl font-black tracking-tight text-stone-950">
+                {feature.title}
+              </h3>
+
+              <p className="m-0 text-[0.92rem] leading-7 text-stone-600">
+                {feature.text}
+              </p>
+
+              <div className="mt-6 flex items-center justify-between">
+                <div className="h-0.5 flex-1 overflow-hidden rounded-full bg-emerald-50">
+                  <div className="h-full w-1/2 rounded-full bg-emerald-700 opacity-50" />
+                </div>
+
+                <span className="ml-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-50 text-stone-400 transition group-hover:bg-emerald-50 group-hover:text-emerald-900">
+                  <ArrowRight size={16} />
+                </span>
+              </div>
+            </article>
+          )
+        })}
       </div>
     </section>
-  )
-}
-
-function FeatureCard({
-  title,
-  text,
-  icon: Icon,
-  color,
-  bg,
-  index,
-}: {
-  title: string
-  text: string
-  icon: LucideIcon
-  color: string
-  bg: string
-  index: number
-}) {
-  return (
-    <article className={`feature-card group animate-fade-up ${getDelayClass(index)} p-7`}>
-      <div
-        className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
-        style={{ background: bg }}
-      >
-        <Icon size={22} color={color} strokeWidth={1.75} />
-      </div>
-
-      <h3 className="mb-2 mt-0 font-[Cormorant_Garamond,serif] text-[1.5rem] font-bold tracking-tight text-stone-950">
-        {title}
-      </h3>
-
-      <p className="m-0 text-[0.92rem] leading-7 text-stone-600">{text}</p>
-
-      <div className="mt-6 flex items-center justify-between">
-        <div
-          className="h-0.5 flex-1 overflow-hidden rounded-full"
-          style={{ background: bg }}
-        >
-          <div
-            className="h-full w-1/2 rounded-full opacity-50"
-            style={{ background: color }}
-          />
-        </div>
-
-        <span className="ml-4 inline-flex h-9 w-9 items-center justify-center rounded-full bg-stone-50 text-stone-400 transition group-hover:bg-emerald-50 group-hover:text-emerald-900">
-          <ArrowRight size={16} />
-        </span>
-      </div>
-    </article>
   )
 }
 
 function FinalCTA() {
   return (
-    <section className="animate-fade-up relative overflow-hidden rounded-[2.5rem] bg-[linear-gradient(140deg,#0b1f14_0%,#14321e_50%,#0e2a1a_100%)] p-[clamp(2.5rem,6vw,5rem)] text-center shadow-[0_40px_100px_rgba(10,28,18,0.35)]">
+    <section className="animate-fade-up relative overflow-hidden rounded-[2rem] bg-[linear-gradient(140deg,#0b1f14_0%,#14321e_50%,#0e2a1a_100%)] p-[clamp(2.5rem,6vw,5rem)] text-center shadow-[0_40px_100px_rgba(10,28,18,0.35)]">
       <div className="pointer-events-none absolute -top-16 left-1/2 h-[320px] w-[640px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse,rgba(26,77,46,0.6)_0%,transparent_70%)]" />
       <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
       <div className="absolute left-1/2 top-0 h-1 w-32 -translate-x-1/2 bg-[linear-gradient(90deg,transparent,#f2d48f,transparent)]" />
 
       <div className="relative z-10">
         <div className="badge-soft mb-5 border border-white/10 bg-white/5 px-3 py-1.5 text-[#f2d48f]">
-          <Sparkles size={14} />
+          <ShieldCheck size={14} />
           <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.24em]">
-            Join the Platform
+            Membership Portal
           </span>
         </div>
 
-        <h2 className="display-title text-balance mx-auto mb-6 max-w-3xl text-[clamp(2.2rem,5vw,4.3rem)] leading-tight text-white">
-          Become part of a disciplined,
+        <h2 className="display-title text-balance mx-auto mb-6 max-w-3xl text-[clamp(2.2rem,5vw,4rem)] leading-tight text-white">
+          Apply, get approved,
           <br />
-          <em className="text-[#d8a949]">transparent</em> platform
+          <em className="text-[#d8a949]">receive your digital card</em>
         </h2>
 
         <p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">
-          Create your account, submit your membership form, and receive your
-          official digital member ID after admin approval.
+          Create your account, submit your membership form, and access your
+          official JAS digital member ID after admin approval.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
@@ -587,7 +500,9 @@ function AjrakPattern({ className = '' }: { className?: string }) {
             y={row * 40 + 20}
             width="12"
             height="12"
-            transform={`rotate(45 ${column * 40 + 26} ${row * 40 + 26})`}
+            transform={`rotate(45 ${column * 40 + 26} ${
+              row * 40 + 26
+            })`}
             fill="#1A4D2E"
           />
         )),

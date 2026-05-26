@@ -286,17 +286,16 @@ function SignupPage() {
                 </p>
 
                 <h1 className="home-hero-title text-balance animate-fade-up delay-2">
-                  Create your
+                  Apply for
                   <br />
-                  <span className="home-hero-accent">JAS account</span>
+                  <span className="home-hero-accent">Membership</span>
                 </h1>
 
                 <div className="home-hero-rule ajrak-rule animate-fade-in delay-2" />
 
                 <p className="home-hero-text text-pretty animate-fade-up delay-3">
-                  Register with email or mobile OTP to start your membership
-                  journey and continue to the JAS dashboard and registration
-                  flow.
+                  Create your account to submit the JAS membership application,
+                  track review status, and access your digital card after approval.
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -348,7 +347,7 @@ function SignupPage() {
                 Create account
               </div>
 
-              <h2 className="section-title mt-4">Create JAS Account</h2>
+              <h2 className="section-title mt-4">Create Account</h2>
 
               <p className="mt-3 text-sm leading-7 text-stone-600">
                 Register as a member of Jatt Alliance Sindh using email or

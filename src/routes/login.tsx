@@ -235,16 +235,16 @@ function LoginPage() {
                 </p>
 
                 <h1 className="home-hero-title text-balance animate-fade-up delay-2">
-                  Welcome back to your
+                  Member Login
                   <br />
-                  <span className="home-hero-accent">member dashboard</span>
+                  <span className="home-hero-accent">Portal Access</span>
                 </h1>
 
                 <div className="home-hero-rule ajrak-rule animate-fade-in delay-2" />
 
                 <p className="home-hero-text text-pretty animate-fade-up delay-3">
-                  Login with email or mobile OTP to access your membership
-                  profile, application status, and digital member card.
+                  Access your membership status, submitted profile, and digital
+                  member card after admin approval.
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -295,7 +295,7 @@ function LoginPage() {
                 Sign in
               </div>
 
-              <h2 className="section-title mt-4">Login to JAS</h2>
+              <h2 className="section-title mt-4">Member Login</h2>
 
               <p className="mt-3 text-sm leading-7 text-stone-600">
                 Access your membership dashboard using your preferred login
@@ -376,7 +376,7 @@ function LoginPage() {
                   className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
-                  {loading ? 'Logging in...' : 'Login'}
+                  {loading ? 'Logging in...' : 'Access Portal'}
                 </button>
               </form>
             ) : null}
