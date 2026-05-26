@@ -165,7 +165,7 @@ function SignupPage() {
 
     if (!isValidPakistanMobile(phoneNumber)) {
       throw new Error(
-        'Please enter a valid Pakistan mobile number, for example 03341013222.',
+        'Please enter a valid Pakistan mobile number, for example 03333300393.',
       )
     }
 
@@ -509,7 +509,7 @@ function SignupPage() {
                     }}
                     required
                     className="input-clean"
-                    placeholder="03341013222"
+                    placeholder="03333300393"
                   />
                   <p className="mt-2 text-xs leading-5 text-stone-500">
                     Enter 03XXXXXXXXX. The app will convert it to 923XXXXXXXXX
