@@ -11,6 +11,7 @@ import {
   Save,
   ShieldCheck,
   User,
+  UserPlus,
 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../../lib/supabase/client";
@@ -90,9 +91,11 @@ function AdminEducationApplicationDetailPage() {
   const [saving, setSaving] = useState(false);
   const [documentSavingId, setDocumentSavingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [status, setStatus] = useState<ProgramApplicationStatus>("submitted");
   const [approvedAmount, setApprovedAmount] = useState("");
+  const [assignedAdminId, setAssignedAdminId] = useState("");
   const [adminRemarks, setAdminRemarks] = useState("");
 
   useEffect(() => {
@@ -116,6 +119,8 @@ function AdminEducationApplicationDetailPage() {
       setLoading(false);
       return;
     }
+
+    setCurrentUserId(user.id);
 
     const { data, error } = await supabase
       .from("program_applications")
@@ -145,6 +150,7 @@ function AdminEducationApplicationDetailPage() {
     setApplication(row);
     setStatus(row.status as ProgramApplicationStatus);
     setApprovedAmount(row.approved_amount ? String(row.approved_amount) : "");
+    setAssignedAdminId(row.assigned_admin_id || "");
     setAdminRemarks(row.admin_remarks || "");
 
     await loadDocuments(row.id);
@@ -219,6 +225,7 @@ function AdminEducationApplicationDetailPage() {
       status: ProgramApplicationStatus;
       admin_remarks: string | null;
       approved_amount: number | null;
+      assigned_admin_id: string | null;
       reviewed_at: string;
       approved_at?: string | null;
       completed_at?: string | null;
@@ -226,6 +233,7 @@ function AdminEducationApplicationDetailPage() {
       status,
       admin_remarks: adminRemarks.trim() || null,
       approved_amount: numericApprovedAmount,
+      assigned_admin_id: assignedAdminId || null,
       reviewed_at: new Date().toISOString(),
     };
 
@@ -336,6 +344,21 @@ function AdminEducationApplicationDetailPage() {
   function handleMarkUnderReview() {
     setStatus("under_review");
     setAdminRemarks((prev) => prev || "Application is now under review.");
+  }
+
+  function handleAssignToMe() {
+    if (!currentUserId) {
+      setMessage("Reviewer assign karne ke liye login required hai.");
+      return;
+    }
+
+    setAssignedAdminId(currentUserId);
+    setStatus((prev) => (prev === "submitted" ? "under_review" : prev));
+    setAdminRemarks((prev) => prev || "Reviewer assigned and application is under review.");
+  }
+
+  function handleClearReviewer() {
+    setAssignedAdminId("");
   }
 
   async function handleGoBack() {
@@ -537,6 +560,46 @@ function AdminEducationApplicationDetailPage() {
                       </select>
                     </label>
 
+
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-white text-amber-700">
+                          <UserPlus className="h-5 w-5" />
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black text-slate-800">
+                            Assigned Reviewer
+                          </p>
+                          <p className="mt-1 break-all text-xs font-semibold text-slate-500">
+                            {assignedAdminId
+                              ? assignedAdminId === currentUserId
+                                ? "Assigned to you"
+                                : `Assigned: ${assignedAdminId}`
+                              : "No reviewer assigned yet"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={handleAssignToMe}
+                          className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-900"
+                        >
+                          Assign to Me
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleClearReviewer}
+                          className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
                     <label className="grid gap-2">
                       <span className="text-sm font-black text-slate-700">
                         Approved Amount
@@ -637,6 +700,9 @@ function SummaryCard({
 
           <p className="mt-2 font-semibold text-slate-500">
             Membership No: {application.membership_no}
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-500">
+            Reviewer: {application.assigned_admin_id ? "Assigned" : "Unassigned"}
           </p>
         </div>
 

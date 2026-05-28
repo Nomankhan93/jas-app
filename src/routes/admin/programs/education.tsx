@@ -1,7 +1,7 @@
 import {
-  createFileRoute,
   Link,
   Outlet,
+  createFileRoute,
   useRouterState,
 } from '@tanstack/react-router'
 import {
@@ -9,14 +9,17 @@ import {
   BadgeIndianRupee,
   CalendarDays,
   ClipboardList,
+  Download,
+  Filter,
   GraduationCap,
   Loader2,
   RefreshCw,
   Search,
   ShieldCheck,
   UserCheck,
+  XCircle,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
 import {
   getEducationStatusClass,
@@ -39,6 +42,7 @@ type EducationApplicationListItem = {
   taluka: string | null
   details: EducationApplicationDetails | null
   status: string
+  assigned_admin_id: string | null
   admin_remarks: string | null
   approved_amount: number | null
   submitted_at: string
@@ -71,12 +75,14 @@ function AdminEducationRoute() {
 }
 
 function AdminEducationApplicationsPage() {
-  const [applications, setApplications] = useState<EducationApplicationListItem[]>(
-    [],
-  )
+  const [applications, setApplications] = useState<
+    EducationApplicationListItem[]
+  >([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [districtFilter, setDistrictFilter] = useState('all')
+  const [talukaFilter, setTalukaFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
@@ -102,7 +108,7 @@ function AdminEducationApplicationsPage() {
     const { data, error } = await supabase
       .from('program_applications')
       .select(
-        'id, application_no, applicant_name, membership_no, relationship_to_member, phone, district, taluka, details, status, admin_remarks, approved_amount, submitted_at, created_at',
+        'id, application_no, applicant_name, membership_no, relationship_to_member, phone, district, taluka, details, status, assigned_admin_id, admin_remarks, approved_amount, submitted_at, created_at',
       )
       .eq('program_key', 'education')
       .order('created_at', { ascending: false })
@@ -118,12 +124,47 @@ function AdminEducationApplicationsPage() {
     setLoading(false)
   }
 
+  const districtOptions = useMemo(
+    () => getUniqueOptions(applications.map((item) => item.district)),
+    [applications],
+  )
+
+  const talukaOptions = useMemo(() => {
+    const scopedApplications =
+      districtFilter === 'all'
+        ? applications
+        : applications.filter(
+            (item) => normalizeValue(item.district) === districtFilter,
+          )
+
+    return getUniqueOptions(scopedApplications.map((item) => item.taluka))
+  }, [applications, districtFilter])
+
+  useEffect(() => {
+    if (
+      talukaFilter !== 'all' &&
+      !talukaOptions.some((item) => item.value === talukaFilter)
+    ) {
+      setTalukaFilter('all')
+    }
+  }, [talukaFilter, talukaOptions])
+
   const filteredApplications = useMemo(() => {
     const q = searchTerm.trim().toLowerCase()
 
     return applications.filter((item) => {
       const matchesStatus =
         statusFilter === 'all' ? true : item.status === statusFilter
+
+      const matchesDistrict =
+        districtFilter === 'all'
+          ? true
+          : normalizeValue(item.district) === districtFilter
+
+      const matchesTaluka =
+        talukaFilter === 'all'
+          ? true
+          : normalizeValue(item.taluka) === talukaFilter
 
       const details = item.details || {}
 
@@ -137,19 +178,24 @@ function AdminEducationApplicationsPage() {
             item.taluka,
             details.institute_name,
             details.class_degree,
+            details.board_university,
             details.support_type,
+            details.required_amount,
           ]
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(q))
         : true
 
-      return matchesStatus && matchesSearch
+      return (
+        matchesStatus && matchesDistrict && matchesTaluka && matchesSearch
+      )
     })
-  }, [applications, searchTerm, statusFilter])
+  }, [applications, districtFilter, searchTerm, statusFilter, talukaFilter])
 
   const stats = useMemo(() => {
     return {
       total: applications.length,
+      filtered: filteredApplications.length,
       submitted: applications.filter((item) => item.status === 'submitted')
         .length,
       underReview: applications.filter((item) => item.status === 'under_review')
@@ -159,7 +205,14 @@ function AdminEducationApplicationsPage() {
         ['paid_completed', 'completed'].includes(item.status),
       ).length,
     }
-  }, [applications])
+  }, [applications, filteredApplications.length])
+
+  function resetFilters() {
+    setStatusFilter('all')
+    setDistrictFilter('all')
+    setTalukaFilter('all')
+    setSearchTerm('')
+  }
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -185,34 +238,52 @@ function AdminEducationApplicationsPage() {
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">
                 Scholarship, fee support aur skills training applications ko
-                review, approve, reject ya complete mark karen.
+                district/taluka filters, CSV report, reviewer assignment aur
+                document verification ke sath manage karen.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={loadApplications}
-              disabled={loading}
-              className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60"
-            >
-              {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
-              )}
-              Refresh
-            </button>
+            <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
+              <button
+                type="button"
+                onClick={() => exportEducationCsv(filteredApplications)}
+                disabled={loading || filteredApplications.length === 0}
+                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </button>
+
+              <button
+                type="button"
+                onClick={loadApplications}
+                disabled={loading}
+                className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto max-w-7xl space-y-8">
-          <div className="grid gap-4 md:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-6">
             <StatCard
               title="Total"
               value={stats.total}
               icon={<ClipboardList className="h-5 w-5" />}
+            />
+            <StatCard
+              title="Filtered"
+              value={stats.filtered}
+              icon={<Filter className="h-5 w-5" />}
             />
             <StatCard
               title="Submitted"
@@ -237,7 +308,7 @@ function AdminEducationApplicationsPage() {
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="grid gap-4 lg:grid-cols-[1fr_260px]">
+            <div className="grid gap-4 xl:grid-cols-[1fr_220px_220px_220px_auto]">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input
@@ -261,6 +332,41 @@ function AdminEducationApplicationsPage() {
                   </option>
                 ))}
               </select>
+
+              <select
+                value={districtFilter}
+                onChange={(event) => setDistrictFilter(event.target.value)}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none transition focus:border-amber-500"
+              >
+                <option value="all">All Districts</option>
+                {districtOptions.map((district) => (
+                  <option key={district.value} value={district.value}>
+                    {district.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={talukaFilter}
+                onChange={(event) => setTalukaFilter(event.target.value)}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none transition focus:border-amber-500"
+              >
+                <option value="all">All Talukas</option>
+                {talukaOptions.map((taluka) => (
+                  <option key={taluka.value} value={taluka.value}>
+                    {taluka.label}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-700 transition hover:bg-slate-50"
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Reset
+              </button>
             </div>
           </div>
 
@@ -279,8 +385,8 @@ function AdminEducationApplicationsPage() {
                 No education applications found
               </h2>
               <p className="mx-auto mt-3 max-w-2xl text-slate-600">
-                Abhi selected filter/search ke according koi application nahi
-                mili.
+                Selected status, district, taluka ya search ke according koi
+                application nahi mili.
               </p>
             </div>
           ) : (
@@ -303,7 +409,7 @@ function StatCard({
 }: {
   title: string
   value: number
-  icon: React.ReactNode
+  icon: ReactNode
 }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -340,6 +446,16 @@ function ApplicationListCard({ item }: { item: EducationApplicationListItem }) {
 
             <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">
               {details.support_type || 'Education Support'}
+            </span>
+
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-black ${
+                item.assigned_admin_id
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {item.assigned_admin_id ? 'Reviewer Assigned' : 'Unassigned'}
             </span>
           </div>
 
@@ -396,7 +512,8 @@ function ApplicationListCard({ item }: { item: EducationApplicationListItem }) {
           <Link
             to="/admin/programs/education/$id"
             params={{ id: item.id }}
-            className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white no-underline transition hover:bg-emerald-900"
+            aria-label={`Review ${item.applicant_name} education application`}
+            className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition"
           >
             Review
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -405,4 +522,100 @@ function ApplicationListCard({ item }: { item: EducationApplicationListItem }) {
       </div>
     </article>
   )
+}
+
+function getUniqueOptions(values: Array<string | null>) {
+  const map = new Map<string, string>()
+
+  for (const value of values) {
+    const label = value?.trim()
+    if (!label) continue
+
+    const normalized = normalizeValue(label)
+    if (!map.has(normalized)) {
+      map.set(normalized, label)
+    }
+  }
+
+  return Array.from(map.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+}
+
+function normalizeValue(value?: string | null) {
+  return value?.trim().toLowerCase() || ''
+}
+
+function exportEducationCsv(items: EducationApplicationListItem[]) {
+  const rows = items.map((item, index) => {
+    const details = item.details || {}
+
+    return {
+      serial: index + 1,
+      application_no: item.application_no || '',
+      status: getEducationStatusLabel(item.status),
+      applicant_name: item.applicant_name,
+      membership_no: item.membership_no,
+      phone: item.phone,
+      district: item.district || '',
+      taluka: item.taluka || '',
+      institute_name: details.institute_name || '',
+      class_degree: details.class_degree || '',
+      board_university: details.board_university || '',
+      support_type: details.support_type || '',
+      required_amount: details.required_amount || '',
+      approved_amount: item.approved_amount ?? '',
+      submitted_at: item.submitted_at
+        ? new Date(item.submitted_at).toLocaleString()
+        : '',
+      assigned_reviewer: item.assigned_admin_id ? 'Assigned' : 'Unassigned',
+      admin_remarks: item.admin_remarks || '',
+    }
+  })
+
+  const headers = [
+    'serial',
+    'application_no',
+    'status',
+    'applicant_name',
+    'membership_no',
+    'phone',
+    'district',
+    'taluka',
+    'institute_name',
+    'class_degree',
+    'board_university',
+    'support_type',
+    'required_amount',
+    'approved_amount',
+    'submitted_at',
+    'assigned_reviewer',
+    'admin_remarks',
+  ] as const
+
+  const csv = [
+    headers.join(','),
+    ...rows.map((row) =>
+      headers.map((header) => escapeCsvValue(row[header])).join(','),
+    ),
+  ].join('\n')
+
+  const blob = new Blob([`\uFEFF${csv}`], {
+    type: 'text/csv;charset=utf-8;',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `jas-education-applications-${new Date()
+    .toISOString()
+    .slice(0, 10)}.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+function escapeCsvValue(value: string | number) {
+  const text = String(value)
+  return `"${text.replace(/"/g, '""')}"`
 }

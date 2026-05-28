@@ -154,6 +154,7 @@ canvas {
   display: -webkit-box;
   overflow: hidden;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   -webkit-box-orient: vertical;
 }
 
@@ -710,11 +711,23 @@ canvas {
 .jas-dark-action-link:focus,
 .jas-dark-action-link:active {
   color: #ffffff !important;
-  background: #0f172a;
+  background: #0f172a !important;
+}
+
+.jas-dark-action-link svg {
+  color: #ffffff !important;
+  stroke: currentColor !important;
 }
 
 .jas-dark-action-link:hover {
-  background: #1e293b;
+  color: #ffffff !important;
+  background: #064e3b !important;
+  transform: translateY(-1px);
+}
+
+.jas-dark-action-link:focus-visible {
+  outline: 3px solid rgba(201, 149, 47, 0.58);
+  outline-offset: 3px;
 }
 
 /* ─── Motion Utilities ───────────────────────────────── */

@@ -189,8 +189,7 @@ function EducationProgramPage() {
             </div>
 
             <p className="mt-5 text-sm leading-7 text-slate-500">
-              Documents upload will be added in next step. First we are building
-              application submission and admin review flow.
+              Documents upload is available in the application form. Please upload clear PDF, JPG, PNG or WEBP files up to 5MB for faster verification.
             </p>
           </div>
         </div>
