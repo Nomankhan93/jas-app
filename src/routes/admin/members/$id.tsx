@@ -16,14 +16,11 @@ import {
   CheckCircle2,
   Clock,
   CreditCard,
-  Eye,
-  EyeOff,
   FileCheck2,
   Hourglass,
   IdCard,
   ImageOff,
   Loader2,
-  LockKeyhole,
   RefreshCw,
   ShieldAlert,
   ShieldCheck,
@@ -134,7 +131,6 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
-  const [showSensitive, setShowSensitive] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -341,7 +337,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   CNIC:{' '}
                   <span className="font-bold text-slate-800">
-                    {showSensitive ? member.cnic : maskCnic(member.cnic)}
+                    {formatCnic(member.cnic)}
                   </span>{' '}
                   · District:{' '}
                   <span className="font-bold text-slate-800">
@@ -364,19 +360,6 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 <div className="grid w-full gap-2 sm:grid-cols-2 lg:flex lg:w-auto">
                   <button
                     type="button"
-                    onClick={() => setShowSensitive((value) => !value)}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
-                  >
-                    {showSensitive ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                    {showSensitive ? 'Hide Sensitive' : 'Show Sensitive'}
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => void loadMember(undefined, { silent: true })}
                     disabled={refreshing}
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -386,24 +369,26 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     />
                     Refresh
                   </button>
+
+                  {canViewCard ? (
+                    <Link
+                      to="/admin/members/$id/card"
+                      params={{ id: member.id }}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                      style={{ color: '#ffffff' }}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      View Card
+                    </Link>
+                  ) : null}
                 </div>
 
-                {canViewCard ? (
-                  <Link
-                    to="/admin/members/$id/card"
-                    params={{ id: member.id }}
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 lg:w-auto"
-                    style={{ color: '#ffffff' }}
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    View Member Card
-                  </Link>
-                ) : (
+                {!canViewCard ? (
                   <p className="max-w-xs text-left text-xs leading-5 text-slate-500 lg:text-right">
                     Digital card will be available after approval and membership
                     number issuance.
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
@@ -458,7 +443,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 Quick Contact
               </p>
               <p className="mt-2 break-all text-sm font-black text-slate-950">
-                {showSensitive ? member.mobile : maskMobile(member.mobile)}
+                {formatMobile(member.mobile)}
               </p>
               <p className="mt-1 text-sm text-slate-600">
                 {member.district}
@@ -468,10 +453,10 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
             <div className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900 ring-1 ring-emerald-100">
               <div className="flex items-start gap-3">
-                <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
                 <p className="leading-6">
-                  Sensitive information is masked by default. Reveal only when
-                  you need it for verification.
+                  Admin verification view shows full CNIC and contact details
+                  for review purposes.
                 </p>
               </div>
             </div>
@@ -505,16 +490,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               <DetailGroup title="Identity">
                 <InfoItem label="Full Name" value={member.full_name} />
                 <InfoItem label="Father Name" value={member.father_name} />
-                <InfoItem
-                  label="CNIC"
-                  value={showSensitive ? member.cnic : maskCnic(member.cnic)}
-                  sensitive={!showSensitive}
-                />
-                <InfoItem
-                  label="Mobile"
-                  value={showSensitive ? member.mobile : maskMobile(member.mobile)}
-                  sensitive={!showSensitive}
-                />
+                <InfoItem label="CNIC" value={formatCnic(member.cnic)} />
+                <InfoItem label="Mobile" value={formatMobile(member.mobile)} />
               </DetailGroup>
 
               <DetailGroup title="Location">
@@ -546,14 +523,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 />
                 <InfoItem
                   label="Emergency Contact Mobile"
-                  value={
-                    member.emergency_contact_mobile
-                      ? showSensitive
-                        ? member.emergency_contact_mobile
-                        : maskMobile(member.emergency_contact_mobile)
-                      : null
-                  }
-                  sensitive={Boolean(member.emergency_contact_mobile) && !showSensitive}
+                  value={formatMobile(member.emergency_contact_mobile)}
                 />
                 <InfoItem
                   label="Declaration Accepted"
@@ -859,12 +829,10 @@ function DetailGroup({
 function InfoItem({
   label,
   value,
-  sensitive = false,
   wide = false,
 }: {
   label: string
   value: string | null | undefined
-  sensitive?: boolean
   wide?: boolean
 }) {
   return (
@@ -873,9 +841,8 @@ function InfoItem({
         wide ? 'md:col-span-2' : ''
       }`}
     >
-      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
         {label}
-        {sensitive ? <LockKeyhole className="h-3 w-3" /> : null}
       </p>
 
       <p className="mt-1 break-words text-sm font-semibold text-slate-950">
@@ -1017,28 +984,34 @@ function formatDate(value: string | null | undefined, withTime = false) {
       })
 }
 
-function maskCnic(value: string | null | undefined) {
+function formatCnic(value: string | null | undefined) {
   if (!value) return 'N/A'
 
   const digits = value.replace(/\D/g, '')
 
-  if (digits.length !== 13) return '*****-*******-*'
+  if (digits.length === 13) {
+    return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`
+  }
 
-  return `${digits.slice(0, 5)}-*****${digits.slice(10, 12)}-${digits.slice(12)}`
+  return value
 }
 
-function maskMobile(value: string | null | undefined) {
+function formatMobile(value: string | null | undefined) {
   if (!value) return 'N/A'
 
-  const clean = value.replace(/[^\d+]/g, '')
+  const digits = value.replace(/\D/g, '')
 
-  if (clean.startsWith('+92') && clean.length >= 13) {
-    return `${clean.slice(0, 6)}*****${clean.slice(-2)}`
+  if (digits.startsWith('92') && digits.length === 12) {
+    return `+${digits}`
   }
 
-  if (clean.startsWith('03') && clean.length >= 11) {
-    return `${clean.slice(0, 4)}*****${clean.slice(-2)}`
+  if (digits.startsWith('0') && digits.length === 11) {
+    return digits
   }
 
-  return '***********'
+  if (digits.startsWith('3') && digits.length === 10) {
+    return `0${digits}`
+  }
+
+  return value
 }

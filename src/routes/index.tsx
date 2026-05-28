@@ -2,9 +2,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {
   ArrowRight,
+  BookOpenCheck,
   CheckCircle2,
   ClipboardCheck,
   FileCheck2,
+  GraduationCap,
   IdCard,
   LayoutDashboard,
   QrCode,
@@ -19,9 +21,9 @@ export const Route = createFileRoute('/')({
 })
 
 const portalStats = [
-  { label: 'Portal Type', value: 'Membership Only' },
+  { label: 'Portal Type', value: 'Member + Programs' },
   { label: 'Approval Flow', value: 'Admin Reviewed' },
-  { label: 'Digital Card', value: 'QR Verified' },
+  { label: 'Digital System', value: 'QR Verified' },
 ]
 
 const membershipSteps: Array<{
@@ -51,6 +53,36 @@ const membershipSteps: Array<{
   },
 ]
 
+const programModules: Array<{
+  title: string
+  text: string
+  to: string
+  badge: string
+  icon: LucideIcon
+}> = [
+  {
+    title: 'Membership Portal',
+    text: 'Register as a JAS member, track approval status and access your QR-based digital membership card.',
+    to: '/signup',
+    badge: 'Active',
+    icon: IdCard,
+  },
+  {
+    title: 'Education & Skills Support',
+    text: 'Apply for scholarship, fee support, books, uniform, exam fee, hostel, transport or skills training support.',
+    to: '/programs/education',
+    badge: 'Active',
+    icon: GraduationCap,
+  },
+  {
+    title: 'More Welfare Programs',
+    text: 'Health, employment, ration and welfare support modules can be connected later using the same verified member system.',
+    to: '/programs/education',
+    badge: 'Next Phase',
+    icon: ShieldCheck,
+  },
+]
+
 const portalFeatures: Array<{
   title: string
   text: string
@@ -62,14 +94,14 @@ const portalFeatures: Array<{
     icon: FileCheck2,
   },
   {
-    title: 'Status Dashboard',
-    text: 'Members can track pending, approved or rejected application status from their dashboard.',
-    icon: LayoutDashboard,
+    title: 'Education Applications',
+    text: 'Verified members or their dependents can apply for education support through membership number verification.',
+    icon: BookOpenCheck,
   },
   {
-    title: 'QR Verification',
-    text: 'Every approved digital card links to a public verification page for authenticity.',
-    icon: QrCode,
+    title: 'Status Tracking',
+    text: 'Members can track pending, under review, approved, rejected or completed application status.',
+    icon: LayoutDashboard,
   },
 ]
 
@@ -80,6 +112,7 @@ function HomePage() {
         <HeroSection />
         <TrustStrip />
         <MembershipFlow />
+        <ProgramGateway />
         <PortalFeatures />
         <FinalCTA />
       </div>
@@ -102,7 +135,7 @@ function HeroSection() {
           <div className="animate-fade-up glass-strip inline-flex items-center gap-2.5 rounded-full border border-emerald-900/10 px-3.5 py-2 shadow-sm backdrop-blur">
             <span className="brand-dot" />
             <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-900">
-              Official Membership Portal
+              Official Member & Programs Portal
             </span>
           </div>
 
@@ -119,8 +152,9 @@ function HeroSection() {
           <div className="ajrak-rule animate-fade-in delay-2 my-6" />
 
           <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[650px] text-[1.08rem] font-medium leading-8 text-stone-600">
-            Digital membership portal for registration, admin approval, member
-            dashboard, QR verification, and official JAS member cards.
+            Digital platform for JAS membership registration, admin approval,
+            QR verification, digital member cards and selected community support
+            programs such as education and skills development.
           </p>
 
           <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
@@ -129,8 +163,15 @@ function HeroSection() {
               <ArrowRight size={16} />
             </Link>
 
+            <Link
+              to="/programs/education"
+              className="secondary-btn pressable lift-hover"
+            >
+              Education Support
+            </Link>
+
             <Link to="/login" className="secondary-btn pressable lift-hover">
-              Login to Dashboard
+              Login
             </Link>
           </div>
 
@@ -284,7 +325,8 @@ function TrustStrip() {
     'Admin Approval',
     'Digital Card',
     'QR Verification',
-    'Member Dashboard',
+    'Education Support',
+    'Status Tracking',
   ]
 
   return (
@@ -309,7 +351,7 @@ function MembershipFlow() {
     <section className="animate-fade-up">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div>
-          <p className="section-eyebrow mb-3">Portal Flow</p>
+          <p className="section-eyebrow mb-3">Membership Flow</p>
           <h2 className="section-title text-balance">
             Membership process,
             <br />
@@ -318,8 +360,8 @@ function MembershipFlow() {
         </div>
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          The portal is designed only for membership registration, approval,
-          digital card access and public QR verification.
+          The core portal handles membership registration, approval, digital
+          card access and public QR verification.
         </p>
       </div>
 
@@ -366,6 +408,69 @@ function MembershipFlow() {
   )
 }
 
+function ProgramGateway() {
+  return (
+    <section className="animate-fade-up">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p className="section-eyebrow mb-3">Program Gateway</p>
+          <h2 className="section-title text-balance">
+            Member verified
+            <br />
+            community programs
+          </h2>
+        </div>
+
+        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
+          Program applications stay connected with approved JAS membership
+          numbers, so every case can be reviewed with a verified member record.
+        </p>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-3">
+        {programModules.map((program, index) => {
+          const Icon = program.icon
+
+          return (
+            <article
+              key={program.title}
+              className={`feature-card group animate-fade-up ${getDelayClass(
+                index,
+              )} p-7`}
+            >
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-[#9a6a12]">
+                  <Icon size={24} strokeWidth={1.8} />
+                </div>
+
+                <span className="rounded-full bg-[#f2d48f]/45 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.12em] text-[#5d4211]">
+                  {program.badge}
+                </span>
+              </div>
+
+              <h3 className="mb-2 mt-0 text-xl font-black tracking-tight text-stone-950">
+                {program.title}
+              </h3>
+
+              <p className="m-0 text-[0.92rem] leading-7 text-stone-600">
+                {program.text}
+              </p>
+
+              <Link
+                to={program.to}
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-stone-950 px-4 py-3 text-sm font-black text-white no-underline transition hover:bg-emerald-900"
+              >
+                Open
+                <ArrowRight size={15} />
+              </Link>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 function PortalFeatures() {
   return (
     <section className="animate-fade-up">
@@ -375,13 +480,14 @@ function PortalFeatures() {
           <h2 className="section-title text-balance">
             Built for digital
             <br />
-            membership management
+            member support
           </h2>
         </div>
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          No finance, welfare case management or program modules are included on
-          this landing page.
+          The portal supports membership registration and selected community
+          program workflows without turning the app into a heavy organization
+          management system.
         </p>
       </div>
 
@@ -436,19 +542,19 @@ function FinalCTA() {
         <div className="badge-soft mb-5 border border-white/10 bg-white/5 px-3 py-1.5 text-[#f2d48f]">
           <ShieldCheck size={14} />
           <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.24em]">
-            Membership Portal
+            Member Verified Portal
           </span>
         </div>
 
         <h2 className="display-title text-balance mx-auto mb-6 max-w-3xl text-[clamp(2.2rem,5vw,4rem)] leading-tight text-white">
           Apply, get approved,
           <br />
-          <em className="text-[#d8a949]">receive your digital card</em>
+          <em className="text-[#d8a949]">access member support</em>
         </h2>
 
         <p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">
-          Create your account, submit your membership form, and access your
-          official JAS digital member ID after admin approval.
+          Create your account, submit your membership form, receive your digital
+          member ID, and use verified member services such as education support.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
@@ -460,8 +566,11 @@ function FinalCTA() {
             <ArrowRight size={16} />
           </Link>
 
-          <Link to="/login" className="ghost-btn pressable lift-hover">
-            Login to Account
+          <Link
+            to="/programs/education"
+            className="ghost-btn pressable lift-hover"
+          >
+            Education Support
           </Link>
         </div>
       </div>

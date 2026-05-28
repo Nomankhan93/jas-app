@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       member_counters: {
@@ -160,6 +135,208 @@ export type Database = {
         }
         Relationships: []
       }
+      program_admin_assignments: {
+        Row: {
+          can_approve: boolean
+          can_mark_completed: boolean
+          can_review: boolean
+          can_view: boolean
+          created_at: string
+          created_by: string | null
+          district: string | null
+          id: string
+          program_key: Database["public"]["Enums"]["program_key"]
+          taluka: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_approve?: boolean
+          can_mark_completed?: boolean
+          can_review?: boolean
+          can_view?: boolean
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          id?: string
+          program_key: Database["public"]["Enums"]["program_key"]
+          taluka?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_approve?: boolean
+          can_mark_completed?: boolean
+          can_review?: boolean
+          can_view?: boolean
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          id?: string
+          program_key?: Database["public"]["Enums"]["program_key"]
+          taluka?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      program_applications: {
+        Row: {
+          address: string | null
+          admin_remarks: string | null
+          applicant_cnic: string | null
+          applicant_name: string
+          applicant_user_id: string
+          application_no: string | null
+          approved_amount: number | null
+          approved_at: string | null
+          assigned_admin_id: string | null
+          completed_at: string | null
+          created_at: string
+          details: Json
+          district: string | null
+          email: string | null
+          id: string
+          member_id: string | null
+          membership_no: string
+          phone: string
+          program_key: Database["public"]["Enums"]["program_key"]
+          relationship_to_member: Database["public"]["Enums"]["member_relationship"]
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["program_application_status"]
+          submitted_at: string
+          taluka: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          admin_remarks?: string | null
+          applicant_cnic?: string | null
+          applicant_name: string
+          applicant_user_id: string
+          application_no?: string | null
+          approved_amount?: number | null
+          approved_at?: string | null
+          assigned_admin_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          details?: Json
+          district?: string | null
+          email?: string | null
+          id?: string
+          member_id?: string | null
+          membership_no: string
+          phone: string
+          program_key: Database["public"]["Enums"]["program_key"]
+          relationship_to_member?: Database["public"]["Enums"]["member_relationship"]
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["program_application_status"]
+          submitted_at?: string
+          taluka?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          admin_remarks?: string | null
+          applicant_cnic?: string | null
+          applicant_name?: string
+          applicant_user_id?: string
+          application_no?: string | null
+          approved_amount?: number | null
+          approved_at?: string | null
+          assigned_admin_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          details?: Json
+          district?: string | null
+          email?: string | null
+          id?: string
+          member_id?: string | null
+          membership_no?: string
+          phone?: string
+          program_key?: Database["public"]["Enums"]["program_key"]
+          relationship_to_member?: Database["public"]["Enums"]["member_relationship"]
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["program_application_status"]
+          submitted_at?: string
+          taluka?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_applications_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      program_documents: {
+        Row: {
+          admin_note: string | null
+          application_id: string
+          created_at: string
+          document_type: string
+          file_name: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          is_verified: boolean
+          mime_type: string | null
+          program_key: Database["public"]["Enums"]["program_key"]
+          updated_at: string
+          uploaded_by: string
+          verification_status: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          application_id: string
+          created_at?: string
+          document_type: string
+          file_name?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_verified?: boolean
+          mime_type?: string | null
+          program_key: Database["public"]["Enums"]["program_key"]
+          updated_at?: string
+          uploaded_by: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          application_id?: string
+          created_at?: string
+          document_type?: string
+          file_name?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_verified?: boolean
+          mime_type?: string | null
+          program_key?: Database["public"]["Enums"]["program_key"]
+          updated_at?: string
+          uploaded_by?: string
+          verification_status?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "program_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -225,6 +402,48 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      current_user_can_approve_program: {
+        Args: {
+          _district?: string
+          _program_key: Database["public"]["Enums"]["program_key"]
+          _taluka?: string
+        }
+        Returns: boolean
+      }
+      current_user_can_manage_program: {
+        Args: {
+          _district?: string
+          _program_key: Database["public"]["Enums"]["program_key"]
+          _taluka?: string
+        }
+        Returns: boolean
+      }
+      current_user_can_mark_completed_program: {
+        Args: {
+          _district?: string
+          _program_key: Database["public"]["Enums"]["program_key"]
+          _taluka?: string
+        }
+        Returns: boolean
+      }
+      current_user_can_review_program: {
+        Args: {
+          _district?: string
+          _program_key: Database["public"]["Enums"]["program_key"]
+          _taluka?: string
+        }
+        Returns: boolean
+      }
+      current_user_can_view_program: {
+        Args: {
+          _district?: string
+          _program_key: Database["public"]["Enums"]["program_key"]
+          _taluka?: string
+        }
+        Returns: boolean
+      }
+      current_user_has_role: { Args: { _role: string }; Returns: boolean }
+      current_user_is_super_admin: { Args: never; Returns: boolean }
       reject_member: {
         Args: {
           _member_id: string
@@ -268,10 +487,46 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      verify_membership_no: { Args: { _membership_no: string }; Returns: Json }
     }
     Enums: {
-      app_role: "admin"
+      app_role:
+        | "admin"
+        | "super_admin"
+        | "membership_admin"
+        | "education_admin"
+        | "health_admin"
+        | "employment_admin"
+        | "ration_admin"
+        | "welfare_admin"
+      member_relationship:
+        | "self"
+        | "son"
+        | "daughter"
+        | "father"
+        | "mother"
+        | "brother"
+        | "sister"
+        | "wife"
+        | "husband"
+        | "guardian"
+        | "other"
       member_status: "pending" | "approved" | "rejected"
+      program_application_status:
+        | "submitted"
+        | "under_review"
+        | "need_more_info"
+        | "approved"
+        | "rejected"
+        | "paid_completed"
+        | "completed"
+      program_key:
+        | "membership"
+        | "education"
+        | "health"
+        | "employment"
+        | "ration"
+        | "welfare"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -397,13 +652,49 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: [
+        "admin",
+        "super_admin",
+        "membership_admin",
+        "education_admin",
+        "health_admin",
+        "employment_admin",
+        "ration_admin",
+        "welfare_admin",
+      ],
+      member_relationship: [
+        "self",
+        "son",
+        "daughter",
+        "father",
+        "mother",
+        "brother",
+        "sister",
+        "wife",
+        "husband",
+        "guardian",
+        "other",
+      ],
       member_status: ["pending", "approved", "rejected"],
+      program_application_status: [
+        "submitted",
+        "under_review",
+        "need_more_info",
+        "approved",
+        "rejected",
+        "paid_completed",
+        "completed",
+      ],
+      program_key: [
+        "membership",
+        "education",
+        "health",
+        "employment",
+        "ration",
+        "welfare",
+      ],
     },
   },
 } as const

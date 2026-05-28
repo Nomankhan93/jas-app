@@ -92,7 +92,8 @@ function CardFront({
   qrUrl,
   verifyUrl,
 }: Omit<MembershipCardProps, 'side'>) {
-  const professionOrCaste = member.profession || member.caste_branch || 'Not provided'
+  const professionOrCaste =
+    member.profession || member.caste_branch || 'Not provided'
 
   return (
     <>
@@ -104,7 +105,7 @@ function CardFront({
         badge="Verified"
       />
 
-      <div className="relative flex-1 overflow-hidden bg-white">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
         <div className="relative grid h-full grid-cols-[270px_1fr_230px] gap-8 p-8">
@@ -151,7 +152,10 @@ function CardFront({
               <Info label="District" value={member.district} />
               <Info label="Taluka" value={member.taluka || 'Not provided'} />
               <Info label="Profession / Caste" value={professionOrCaste} />
-              <Info label="Approved Date" value={formatDate(member.approved_at)} />
+              <Info
+                label="Approved Date"
+                value={formatDate(member.approved_at)}
+              />
               <Info label="Status" value="Approved" />
             </div>
 
@@ -195,16 +199,16 @@ function CardBack({
         badge="Back Side"
       />
 
-      <div className="relative flex-1 overflow-hidden bg-white">
+      <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-        <div className="relative grid h-full grid-cols-[1fr_270px] gap-6 p-7">
-          <section className="grid grid-cols-2 gap-4">
+        <div className="relative grid h-full min-h-0 grid-cols-[1fr_250px] gap-4 p-5">
+          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-3 gap-3">
             <BackPanel title="Residential Address" tone="gold">
               <p className="font-black text-slate-950">
                 {member.address || 'Full street address not provided.'}
               </p>
-              <p className="mt-2 font-bold text-slate-800">
+              <p className="mt-1 font-bold text-slate-800">
                 {member.taluka || 'Taluka not provided'}, {member.district}
               </p>
             </BackPanel>
@@ -215,11 +219,12 @@ function CardBack({
                   <p className="font-black text-slate-950">
                     {member.emergency_contact_name || 'Name not provided'}
                   </p>
-                  <p className="mt-1">
-                    {member.emergency_contact_relation || 'Relation not provided'}
+                  <p className="mt-0.5">
+                    {member.emergency_contact_relation ||
+                      'Relation not provided'}
                   </p>
-                  <p className="mt-1 font-black text-slate-950">
-                    {maskMobile(member.emergency_contact_mobile) || 'Mobile not provided'}
+                  <p className="mt-0.5 font-black text-slate-950">
+                    {formatMobile(member.emergency_contact_mobile)}
                   </p>
                 </>
               ) : (
@@ -233,58 +238,67 @@ function CardBack({
             </BackPanel>
 
             <BackPanel title="Member Information">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="grid grid-cols-3 gap-x-3 gap-y-2">
                 <MiniInfo label="DOB" value={formatDate(member.date_of_birth)} />
-                <MiniInfo label="Gender" value={member.gender || 'Not provided'} />
-                <MiniInfo label="Blood" value={member.blood_group || 'Not provided'} />
-                <MiniInfo label="Education" value={member.education || 'Not provided'} />
-                <MiniInfo label="CNIC" value={maskCnic(member.cnic)} />
-                <MiniInfo label="Mobile" value={maskMobile(member.mobile)} />
+                <MiniInfo
+                  label="Gender"
+                  value={member.gender || 'Not provided'}
+                />
+                <MiniInfo
+                  label="Blood"
+                  value={member.blood_group || 'Not provided'}
+                />
+                <MiniInfo
+                  label="Education"
+                  value={member.education || 'Not provided'}
+                />
+                <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
+                <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
               </div>
             </BackPanel>
 
             <BackPanel title="Verification Instructions">
               <p>Scan the QR code or open the verification URL.</p>
-              <p className="mt-2">
-                Match the verified name, member number, district and status
-                before accepting this card as valid.
+              <p className="mt-1">
+                Match verified name, member number, district and status before
+                accepting this card as valid.
               </p>
             </BackPanel>
 
             <BackPanel title="Terms and Conditions">
-              <ul className="list-disc space-y-1.5 pl-5">
+              <ul className="list-disc space-y-0.5 pl-4">
                 <li>This card remains property of Jatt Alliance Sindh.</li>
-                <li>Misuse, alteration, duplication or transfer is not permitted.</li>
+                <li>Misuse, alteration or transfer is not permitted.</li>
                 <li>Validity depends on live QR verification status.</li>
-                <li>If found, please return it to the issuing authority.</li>
+                <li>If found, return it to the issuing authority.</li>
               </ul>
             </BackPanel>
 
             <BackPanel title="Issuing Authority" tone="dark">
-              <div className="flex h-[62px] items-end">
+              <div className="flex h-[64px] items-end">
                 <img
                   src={SIGNATURE_PATH}
                   alt="Authorized signature"
-                  className="h-[62px] max-w-[245px] object-contain object-left-bottom"
+                  className="h-[64px] max-w-[280px] object-contain object-left-bottom"
                   draggable={false}
                 />
               </div>
 
-              <div className="mt-2 h-px w-64 bg-slate-400" />
+              <div className="mt-1 h-px w-64 bg-slate-400" />
 
-              <p className="mt-2 font-black text-slate-950">
+              <p className="mt-1 font-black text-slate-950">
                 Authorized Signature
               </p>
-              <p className="mt-1 text-slate-600">Digital membership office</p>
+              <p className="mt-0.5 text-slate-600">Digital membership office</p>
             </BackPanel>
           </section>
 
-          <aside className="flex flex-col justify-between rounded-[2rem] border border-slate-200 bg-white/95 p-4 shadow-lg">
+          <aside className="flex h-full min-h-0 flex-col justify-between rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-lg">
             <div className="rounded-2xl border border-yellow-400 bg-slate-950 px-3 py-3 text-center shadow-sm">
-              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-yellow-300">
+              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-yellow-300">
                 Issue No / Version
               </p>
-              <p className="mt-1 break-all text-[18px] font-black text-white">
+              <p className="mt-1 break-all text-[16px] font-black text-white">
                 {member.member_no ? `${member.member_no} / v1` : 'Pending / v1'}
               </p>
             </div>
@@ -294,37 +308,37 @@ function CardBack({
                 <img
                   src={qrUrl}
                   alt="Verification QR code"
-                  className="mx-auto h-[180px] w-[180px] rounded-xl bg-white p-2 ring-1 ring-slate-200"
+                  className="mx-auto h-[150px] w-[150px] rounded-xl bg-white p-2 ring-1 ring-slate-200"
                   draggable={false}
                 />
               ) : (
-                <div className="mx-auto flex h-[180px] w-[180px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
+                <div className="mx-auto flex h-[150px] w-[150px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
                   QR unavailable
                 </div>
               )}
 
-              <p className="mt-3 text-center text-[13px] font-black uppercase tracking-[0.16em] text-slate-500">
+              <p className="mt-2 text-center text-[12px] font-black uppercase tracking-[0.16em] text-slate-500">
                 Scan to verify
               </p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[12px] font-black uppercase tracking-wide text-slate-500">
+              <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
                 Verification URL
               </p>
-              <p className="mt-1 break-all text-[12px] font-bold leading-5 text-slate-950">
+              <p className="mt-1 break-all text-[11px] font-bold leading-4 text-slate-950">
                 {verifyUrl || 'Verification link unavailable'}
               </p>
             </div>
 
             <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-3">
-              <p className="text-[12px] font-black uppercase tracking-wide text-yellow-800">
+              <p className="text-[11px] font-black uppercase tracking-wide text-yellow-800">
                 Organization
               </p>
-              <p className="mt-1 text-[14px] font-black leading-5 text-slate-950">
+              <p className="mt-1 text-[13px] font-black leading-4 text-slate-950">
                 Jatt Alliance Sindh
               </p>
-              <p className="text-[12px] font-semibold text-slate-600">
+              <p className="text-[11px] font-semibold text-slate-600">
                 Sindh, Pakistan
               </p>
             </div>
@@ -354,7 +368,7 @@ function CardHeader({
   badge: string
 }) {
   return (
-    <header className="relative h-[182px] overflow-hidden bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 px-8 py-6 text-white">
+    <header className="relative h-[182px] shrink-0 overflow-hidden bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 px-8 py-6 text-white">
       <div className="absolute right-0 top-0 h-48 w-48 rounded-bl-full bg-yellow-300/15" />
       <div className="absolute bottom-0 left-0 h-32 w-32 rounded-tr-full bg-white/8" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.20),transparent_34%)]" />
@@ -451,11 +465,11 @@ function Info({ label, value }: { label: string; value: string }) {
 
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <p className="text-[11px] font-black uppercase tracking-wide text-emerald-800">
+    <div className="min-w-0">
+      <p className="text-[10px] font-black uppercase tracking-wide text-emerald-800">
         {label}
       </p>
-      <p className="mt-1 break-words text-[13px] font-bold leading-4 text-slate-950">
+      <p className="mt-0.5 break-words text-[12px] font-bold leading-[1.15] text-slate-950">
         {value}
       </p>
     </div>
@@ -479,11 +493,14 @@ function BackPanel({
         : 'border-slate-200 bg-white/90'
 
   return (
-    <section className={`rounded-[1.25rem] border p-4 shadow-sm ${toneClass}`}>
-      <h3 className="text-[12px] font-black uppercase tracking-[0.20em] text-emerald-800">
+    <section
+      className={`min-h-0 overflow-hidden rounded-[1rem] border p-3 shadow-sm ${toneClass}`}
+    >
+      <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">
         {title}
       </h3>
-      <div className="mt-2 text-[14px] font-semibold leading-5 text-slate-700">
+
+      <div className="mt-2 text-[12.5px] font-semibold leading-[1.45] text-slate-700">
         {children}
       </div>
     </section>
@@ -527,8 +544,8 @@ function QrPanel({
 
 function CardFooter({ children }: { children: ReactNode }) {
   return (
-    <footer className="border-t border-slate-200 bg-slate-50 px-8 py-4">
-      <p className="text-[13px] font-semibold leading-5 text-slate-500">
+    <footer className="shrink-0 border-t border-slate-200 bg-slate-50 px-8 py-3">
+      <p className="text-[12px] font-semibold leading-5 text-slate-500">
         {children}
       </p>
     </footer>
@@ -549,28 +566,34 @@ function formatDate(value: string | null | undefined) {
   })
 }
 
-function maskCnic(value: string | null | undefined) {
+function formatCnic(value: string | null | undefined) {
   if (!value) return 'N/A'
 
   const digits = value.replace(/\D/g, '')
 
-  if (digits.length !== 13) return '*****-*******-*'
+  if (digits.length === 13) {
+    return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`
+  }
 
-  return `${digits.slice(0, 5)}-*****${digits.slice(10, 12)}-${digits.slice(12)}`
+  return value
 }
 
-function maskMobile(value: string | null | undefined) {
+function formatMobile(value: string | null | undefined) {
   if (!value) return 'N/A'
 
-  const clean = value.replace(/[^\d+]/g, '')
+  const digits = value.replace(/\D/g, '')
 
-  if (clean.startsWith('+92') && clean.length >= 13) {
-    return `${clean.slice(0, 6)}*****${clean.slice(-2)}`
+  if (digits.startsWith('92') && digits.length === 12) {
+    return `+${digits}`
   }
 
-  if (clean.startsWith('03') && clean.length >= 11) {
-    return `${clean.slice(0, 4)}*****${clean.slice(-2)}`
+  if (digits.startsWith('0') && digits.length === 11) {
+    return digits
   }
 
-  return '***********'
+  if (digits.startsWith('3') && digits.length === 10) {
+    return `0${digits}`
+  }
+
+  return value
 }

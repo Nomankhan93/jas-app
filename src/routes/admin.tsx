@@ -8,11 +8,14 @@ import {
 } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  ArrowRight,
   BadgeCheck,
+  BookOpenCheck,
   Download,
   Eye,
   EyeOff,
   Filter,
+  GraduationCap,
   IdCard,
   ImageOff,
   ListChecks,
@@ -30,6 +33,19 @@ import { supabase } from '../lib/supabase/client'
 export const Route = createFileRoute('/admin')({
   component: AdminPage,
 })
+
+const adminRoleNames = [
+  'admin',
+  'super_admin',
+  'membership_admin',
+  'education_admin',
+  'health_admin',
+  'employment_admin',
+  'ration_admin',
+  'welfare_admin',
+] as const
+
+type AdminRoleName = (typeof adminRoleNames)[number]
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = 'all' | MemberStatus
@@ -50,7 +66,7 @@ type Member = {
 }
 
 type AdminAccessResult =
-  | { ok: true }
+  | { ok: true; roles: AdminRoleName[] }
   | { ok: false; redirectTo: '/login' | '/dashboard' }
 
 const MEMBER_PHOTO_BUCKET = 'member-photos'
@@ -63,7 +79,8 @@ function AdminPage() {
     select: (state) => state.location.pathname,
   })
 
-  const isMemberDetailPage = pathname.startsWith('/admin/members/')
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+  const isNestedAdminPage = normalizedPathname !== '/admin'
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -99,6 +116,18 @@ function AdminPage() {
         if (!access.ok) {
           if (!cancelledRef?.current) {
             await navigate({ to: access.redirectTo })
+          }
+
+          return
+        }
+
+        if (!canManageMembersFromRoles(access.roles)) {
+          if (!cancelledRef?.current) {
+            if (access.roles.includes('education_admin')) {
+              await navigate({ to: '/admin/programs/education' })
+            } else {
+              await navigate({ to: '/dashboard' })
+            }
           }
 
           return
@@ -149,7 +178,7 @@ function AdminPage() {
   )
 
   useEffect(() => {
-    if (isMemberDetailPage) return
+    if (isNestedAdminPage) return
 
     const cancelledRef = { current: false }
 
@@ -158,7 +187,7 @@ function AdminPage() {
     return () => {
       cancelledRef.current = true
     }
-  }, [isMemberDetailPage, loadAdmin])
+  }, [isNestedAdminPage, loadAdmin])
 
   const stats = useMemo(() => {
     return members.reduce(
@@ -269,7 +298,7 @@ function AdminPage() {
     URL.revokeObjectURL(url)
   }
 
-  if (isMemberDetailPage) {
+  if (isNestedAdminPage) {
     return <Outlet />
   }
 
@@ -309,6 +338,14 @@ function AdminPage() {
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 lg:flex">
+                <Link
+                  to="/admin/programs/education"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white"
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  Education Admin
+                </Link>
+
                 <button
                   type="button"
                   onClick={() => setShowSensitive((value) => !value)}
@@ -380,6 +417,8 @@ function AdminPage() {
             />
           </div>
         </header>
+
+        <AdminProgramShortcuts />
 
         {error ? (
           <div className="flex items-start gap-3 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-100">
@@ -636,6 +675,63 @@ function AdminPage() {
         </section>
       </div>
     </main>
+  )
+}
+
+function AdminProgramShortcuts() {
+  return (
+    <section className="grid gap-4 md:grid-cols-2">
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+          <ShieldCheck className="h-5 w-5" />
+        </div>
+
+        <h2 className="text-xl font-black text-slate-950">
+          Membership Applications
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Review member registrations, approve/reject applications and access
+          QR-based digital membership cards.
+        </p>
+
+        <div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-emerald-800">
+          Current Page
+          <CheckMini />
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+          <BookOpenCheck className="h-5 w-5" />
+        </div>
+
+        <h2 className="text-xl font-black text-slate-950">
+          Education Applications
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Review scholarship, fee support, books, uniform, hostel, transport and
+          skills training applications.
+        </p>
+
+        <Link
+          to="/admin/programs/education"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-emerald-900 hover:!text-white"
+        >
+          Open Education Admin
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+function CheckMini() {
+  return (
+    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+      <BadgeCheck className="h-3.5 w-3.5" />
+    </span>
   )
 }
 
@@ -935,18 +1031,35 @@ async function ensureAdminAccess(): Promise<AdminAccessResult> {
     return { ok: false, redirectTo: '/login' }
   }
 
-  const { data: role, error: roleError } = await supabase
+  const { data: roles, error: roleError } = await supabase
     .from('user_roles')
-    .select('id')
+    .select('role')
     .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle()
+    .in('role', adminRoleNames)
 
-  if (roleError || !role) {
+  if (roleError || !roles?.length) {
     return { ok: false, redirectTo: '/dashboard' }
   }
 
-  return { ok: true }
+  const safeRoles = roles
+    .map((item) => item.role)
+    .filter((role): role is AdminRoleName =>
+      adminRoleNames.includes(role as AdminRoleName),
+    )
+
+  if (!safeRoles.length) {
+    return { ok: false, redirectTo: '/dashboard' }
+  }
+
+  return { ok: true, roles: safeRoles }
+}
+
+function canManageMembersFromRoles(roles: readonly AdminRoleName[]) {
+  return (
+    roles.includes('admin') ||
+    roles.includes('super_admin') ||
+    roles.includes('membership_admin')
+  )
 }
 
 async function createSignedPhotoUrls(

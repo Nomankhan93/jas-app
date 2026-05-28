@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   ChevronRight,
+  GraduationCap,
   Home,
   IdCard,
   LayoutDashboard,
@@ -30,18 +31,21 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Jatt Alliance Sindh | Membership Portal' },
+      { title: 'Jatt Alliance Sindh | Member & Programs Portal' },
       {
         name: 'description',
         content:
-          'Jatt Alliance Sindh membership registration, admin approval, QR verification and digital ID card platform.',
+          'Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education support platform.',
       },
       { name: 'theme-color', content: '#0b2a1d' },
-      { property: 'og:title', content: 'Jatt Alliance Sindh Membership Portal' },
+      {
+        property: 'og:title',
+        content: 'Jatt Alliance Sindh Member & Programs Portal',
+      },
       {
         property: 'og:description',
         content:
-          'Register, verify and manage Jatt Alliance Sindh digital memberships.',
+          'Register, verify and access Jatt Alliance Sindh digital membership and selected member support programs.',
       },
       { property: 'og:type', content: 'website' },
     ],
@@ -60,6 +64,17 @@ type NavItem = {
   label: string
   icon: ReactNode
 }
+
+const adminRoleNames = [
+  'admin',
+  'super_admin',
+  'membership_admin',
+  'education_admin',
+  'health_admin',
+  'employment_admin',
+  'ration_admin',
+  'welfare_admin',
+]as const
 
 function RootComponent() {
   const pathname = useRouterState({
@@ -130,15 +145,15 @@ function Header({ compact }: { compact: boolean }) {
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .eq('role', 'admin')
-      .maybeSingle()
+      .in('role', adminRoleNames)
+      .limit(1)
 
     if (error) {
       console.error('Admin role check failed:', error.message)
       return false
     }
 
-    return Boolean(data)
+    return Boolean(data?.length)
   }, [])
 
   const syncAuthState = useCallback(
@@ -215,6 +230,11 @@ function Header({ compact }: { compact: boolean }) {
         to: '/',
         label: 'Home',
         icon: <Home size={16} />,
+      },
+      {
+        to: '/programs/education',
+        label: 'Education',
+        icon: <GraduationCap size={16} />,
       },
     ]
 
@@ -302,11 +322,15 @@ function Header({ compact }: { compact: boolean }) {
             aria-label="Jatt Alliance Sindh home"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-              <ShieldCheck size={18} className="text-[#d8a949]" aria-hidden="true" />
+              <ShieldCheck
+                size={18}
+                className="text-[#d8a949]"
+                aria-hidden="true"
+              />
             </span>
 
             <span className="min-w-0">
-              <span className="block truncate font-[Cormorant_Garamond,serif] text-xl font-bold tracking-tight text-white sm:text-2xl">
+              <span className="block truncate font-[Manrope,Inter,sans-serif] text-xl font-extrabold tracking-tight text-white sm:text-2xl">
                 Jatt Alliance Sindh
               </span>
               <span className="mt-0.5 block truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-white/60">

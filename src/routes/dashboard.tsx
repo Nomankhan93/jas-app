@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowRight,
   BadgeCheck,
+  BookOpenCheck,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -14,6 +15,7 @@ import {
   Eye,
   EyeOff,
   FileText,
+  GraduationCap,
   Hourglass,
   IdCard,
   LockKeyhole,
@@ -380,6 +382,8 @@ function DashboardPage() {
 
             <StatusNotice member={member} />
 
+            <EducationSupportPanel member={member} />
+
             <section className="jas-stat-grid" aria-label="Membership summary">
               {statItems.map((item) => (
                 <article key={item.label} className="jas-stat-card">
@@ -611,6 +615,99 @@ function DashboardPage() {
         )}
       </div>
     </main>
+  )
+}
+
+function EducationSupportPanel({ member }: { member: Member }) {
+  const canApply = member.status === 'approved' && Boolean(member.member_no)
+
+  const statusText = canApply
+    ? 'Available for verified member'
+    : member.status === 'pending'
+      ? 'Available after membership approval'
+      : 'Update membership application first'
+
+  const description = canApply
+    ? 'Your membership is approved. You can now apply for scholarship, fee support, books, uniform, exam fee, hostel, transport or skills training support.'
+    : member.status === 'pending'
+      ? 'Your membership application is still under review. Education support applications will be available after approval and member number issuance.'
+      : 'Your membership application needs correction before you can apply for education support programs.'
+
+  return (
+    <section className="jas-program-panel">
+      <div className="jas-program-panel-copy">
+        <div className="jas-program-icon">
+          <GraduationCap size={24} />
+        </div>
+
+        <div>
+          <p className="jas-eyebrow" style={{ color: TOKENS.gold700 }}>
+            Education & Skills Development
+          </p>
+
+          <h2 className="jas-program-title">
+            Apply for education support through verified membership
+          </h2>
+
+          <p className="jas-program-text">{description}</p>
+
+          <div className="jas-program-tags">
+            <span>
+              <BookOpenCheck size={14} />
+              Scholarship
+            </span>
+            <span>
+              <CreditCard size={14} />
+              Fee Support
+            </span>
+            <span>
+              <GraduationCap size={14} />
+              Skills Training
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="jas-program-actions">
+        <span
+          className={`jas-program-status ${
+            canApply ? 'jas-program-status-ready' : 'jas-program-status-waiting'
+          }`}
+        >
+          {statusText}
+        </span>
+
+        {canApply ? (
+          <>
+            <Link
+              to="/programs/education/apply"
+              className="jas-action jas-action-gold"
+            >
+              <GraduationCap size={16} />
+              Apply for Education Support
+            </Link>
+
+            <Link
+              to="/programs/education/my-applications"
+              className="jas-action jas-action-secondary"
+            >
+              <FileText size={16} />
+              My Education Applications
+            </Link>
+          </>
+        ) : member.status === 'rejected' ? (
+          <Link to="/register" className="jas-action jas-action-gold">
+            <RefreshCw size={16} />
+            Update membership first
+          </Link>
+        ) : (
+          <Link to="/programs/education" className="jas-action jas-action-secondary">
+            <ArrowRight size={16} />
+            Learn about education support
+          </Link>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -1413,6 +1510,105 @@ const DASHBOARD_CSS = `
   --notice-icon-color: #DC2626;
 }
 
+.jas-program-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+  align-items: center;
+  padding: 20px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(196,145,44,0.16), transparent 18rem),
+    linear-gradient(135deg, rgba(255,255,255,0.96), rgba(255,250,241,0.94));
+  border: 1px solid rgba(196,145,44,0.24);
+  box-shadow: 0 18px 46px rgba(11,42,29,0.08);
+}
+
+.jas-program-panel-copy {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.jas-program-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 20px;
+  background: #FBF2DF;
+  color: #9B6E18;
+  border: 1px solid rgba(196,145,44,0.24);
+}
+
+.jas-program-title {
+  margin: 8px 0 0;
+  color: #0B2A1D;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1;
+  font-weight: 700;
+}
+
+.jas-program-text {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: #6E675F;
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.jas-program-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.jas-program-tags span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(11,42,29,0.06);
+  border: 1px solid rgba(11,42,29,0.08);
+  color: #0B2A1D;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.jas-program-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.jas-program-status {
+  display: inline-flex;
+  justify-content: center;
+  min-height: 34px;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.jas-program-status-ready {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+}
+
+.jas-program-status-waiting {
+  background: #FFFBEB;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
 .jas-stat-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1936,6 +2132,10 @@ const DASHBOARD_CSS = `
   .jas-hero-inner {
     grid-template-columns: 1fr;
   }
+
+  .jas-program-panel {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -1972,6 +2172,14 @@ const DASHBOARD_CSS = `
 
   .jas-notice {
     grid-template-columns: 1fr;
+  }
+
+  .jas-program-panel-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .jas-program-actions .jas-action {
+    width: 100%;
   }
 
   .jas-actions,
