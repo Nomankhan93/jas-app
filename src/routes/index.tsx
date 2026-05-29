@@ -1,7 +1,8 @@
 // src/routes/index.tsx
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
+  BadgeIndianRupee,
   BookOpenCheck,
   CheckCircle2,
   ClipboardCheck,
@@ -12,111 +13,125 @@ import {
   IdCard,
   QrCode,
   ShieldCheck,
+  Trophy,
   UserPlus,
   Users,
   type LucideIcon,
-} from 'lucide-react'
+} from "lucide-react";
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute("/")({
   component: HomePage,
-})
+});
 
 const portalStats = [
-  { label: 'Portal Type', value: 'Member + Programs' },
-  { label: 'Active Programs', value: 'Education · Health · Welfare' },
-  { label: 'Digital System', value: 'QR Verified' },
-]
+  { label: "Portal Type", value: "Member + Programs" },
+  { label: "Active Programs", value: "Education · Health · Welfare" },
+  { label: "Donor System", value: "Member Leaderboard" },
+  { label: "Digital System", value: "QR Verified" },
+];
 
 const membershipSteps: Array<{
-  title: string
-  text: string
-  icon: LucideIcon
+  title: string;
+  text: string;
+  icon: LucideIcon;
 }> = [
   {
-    title: 'Create Account',
-    text: 'Signup with email or mobile OTP to start your membership application.',
+    title: "Create Account",
+    text: "Signup with email or mobile OTP to start your membership application.",
     icon: UserPlus,
   },
   {
-    title: 'Submit Application',
-    text: 'Fill your personal details, district, taluka, address and upload photo.',
+    title: "Submit Application",
+    text: "Fill your personal details, district, taluka, address and upload photo.",
     icon: FileCheck2,
   },
   {
-    title: 'Admin Review',
-    text: 'JAS admin verifies the submitted application before approval.',
+    title: "Admin Review",
+    text: "JAS admin verifies the submitted application before approval.",
     icon: ClipboardCheck,
   },
   {
-    title: 'Digital Card',
-    text: 'Approved members receive a QR-based digital membership card.',
+    title: "Digital Card",
+    text: "Approved members receive a QR-based digital membership card.",
     icon: IdCard,
   },
-]
+];
 
 const programModules: Array<{
-  title: string
-  text: string
-  to: string
-  badge: string
-  icon: LucideIcon
+  title: string;
+  text: string;
+  to: string;
+  badge: string;
+  icon: LucideIcon;
 }> = [
   {
-    title: 'Membership Portal',
-    text: 'Register as a JAS member, track approval status and access your QR-based digital membership card.',
-    to: '/signup',
-    badge: 'Active',
+    title: "Membership Portal",
+    text: "Register as a JAS member, track approval status and access your QR-based digital membership card.",
+    to: "/signup",
+    badge: "Active",
     icon: IdCard,
   },
   {
-    title: 'Education & Skills Support',
-    text: 'Apply for scholarship, fee support, books, uniform, exam fee, hostel, transport or skills training support.',
-    to: '/programs/education',
-    badge: 'Active',
+    title: "Education & Skills Support",
+    text: "Apply for scholarship, fee support, books, uniform, exam fee, hostel, transport or skills training support.",
+    to: "/programs/education",
+    badge: "Active",
     icon: GraduationCap,
   },
   {
-    title: 'Health Assistance',
-    text: 'Submit medical support cases with patient details, treatment information, emergency priority and private documents.',
-    to: '/programs/health',
-    badge: 'Active',
+    title: "Health Assistance",
+    text: "Submit medical support cases with patient details, treatment information, emergency priority and private documents.",
+    to: "/programs/health",
+    badge: "Active",
     icon: HeartPulse,
   },
   {
-    title: 'Welfare Case Support',
-    text: 'Apply for financial help, ration support, widow/orphan support, emergency assistance and other welfare cases.',
-    to: '/programs/welfare',
-    badge: 'Active',
+    title: "Welfare Case Support",
+    text: "Apply for financial help, ration support, widow/orphan support, emergency assistance and other welfare cases.",
+    to: "/programs/welfare",
+    badge: "Active",
     icon: HandHeart,
   },
-]
+  {
+    title: "Donation & Donor Leaderboard",
+    text: "Approved JAS members can submit donation proof and view member-only top donors after finance verification.",
+    to: "/donate",
+    badge: "Active",
+    icon: BadgeIndianRupee,
+  },
+];
 
 const portalFeatures: Array<{
-  title: string
-  text: string
-  icon: LucideIcon
+  title: string;
+  text: string;
+  icon: LucideIcon;
 }> = [
   {
-    title: 'Membership Registration',
-    text: 'A focused registration flow for collecting member profile, location and photo details.',
+    title: "Membership Registration",
+    text: "A focused registration flow for collecting member profile, location and photo details.",
     icon: FileCheck2,
   },
   {
-    title: 'Education Applications',
-    text: 'Verified members or their dependents can apply for education support through membership number verification.',
+    title: "Education Applications",
+    text: "Verified members or their dependents can apply for education support through membership number verification.",
     icon: BookOpenCheck,
   },
   {
-    title: 'Health Assistance Cases',
-    text: 'Medical help cases can be submitted with private documents and reviewed by authorized health admins.',
+    title: "Health Assistance Cases",
+    text: "Medical help cases can be submitted with private documents and reviewed by authorized health admins.",
     icon: HeartPulse,
   },
   {
-    title: 'Welfare Case Tracking',
-    text: 'Financial help, ration, widow, orphan and emergency welfare cases stay connected to verified member records.',
+    title: "Welfare Case Tracking",
+    text: "Financial help, ration, widow, orphan and emergency welfare cases stay connected to verified member records.",
     icon: HandHeart,
   },
-]
+  {
+    title: "Donor Leaderboard",
+    text: "Approved donations are verified by finance admin and shown in a member-only leaderboard to encourage support.",
+    icon: Trophy,
+  },
+];
 
 function HomePage() {
   return (
@@ -130,7 +145,7 @@ function HomePage() {
         <FinalCTA />
       </div>
     </main>
-  )
+  );
 }
 
 function HeroSection() {
@@ -165,8 +180,8 @@ function HeroSection() {
           <div className="ajrak-rule animate-fade-in delay-2 my-6" />
 
           <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[650px] text-[1.08rem] font-medium leading-8 text-stone-600">
-            Digital platform for JAS membership registration, admin approval,
-            QR verification, digital member cards and verified community support
+            Digital platform for JAS membership registration, admin approval, QR
+            verification, digital member cards and verified community support
             programs including education, health assistance and welfare cases.
           </p>
 
@@ -196,9 +211,13 @@ function HeroSection() {
             >
               Welfare
             </Link>
+
+            <Link to="/donate" className="secondary-btn pressable lift-hover">
+              Donate
+            </Link>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {portalStats.map((item, index) => (
               <div
                 key={item.label}
@@ -222,7 +241,7 @@ function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function PortalCardPreview() {
@@ -339,20 +358,20 @@ function PortalCardPreview() {
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 function TrustStrip() {
   const items = [
-    'Membership Registration',
-    'Admin Approval',
-    'Digital Card',
-    'QR Verification',
-    'Education Support',
-    'Health Assistance',
-    'Welfare Cases',
-    'Status Tracking',
-  ]
+    "Membership Registration",
+    "Admin Approval",
+    "Digital Card",
+    "QR Verification",
+    "Education Support",
+    "Health Assistance",
+    "Welfare Cases",
+    "Status Tracking",
+  ];
 
   return (
     <section className="glass-strip animate-fade-up rounded-[1.35rem] border border-[#e8e0d1] px-6 py-5 shadow-sm sm:px-8">
@@ -368,7 +387,7 @@ function TrustStrip() {
         ))}
       </div>
     </section>
-  )
+  );
 }
 
 function MembershipFlow() {
@@ -392,7 +411,7 @@ function MembershipFlow() {
 
       <div className="grid gap-4 md:grid-cols-4">
         {membershipSteps.map((step, index) => {
-          const Icon = step.icon
+          const Icon = step.icon;
 
           return (
             <article
@@ -407,7 +426,7 @@ function MembershipFlow() {
                 </div>
 
                 <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-black text-stone-500">
-                  {String(index + 1).padStart(2, '0')}
+                  {String(index + 1).padStart(2, "0")}
                 </span>
               </div>
 
@@ -426,11 +445,11 @@ function MembershipFlow() {
                 />
               ) : null}
             </article>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
 function ProgramGateway() {
@@ -447,15 +466,15 @@ function ProgramGateway() {
         </div>
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          Education, health and welfare applications stay connected with approved
-          JAS membership numbers, so every case can be reviewed with a verified
-          member record.
+          Education, health and welfare applications stay connected with
+          approved JAS membership numbers, so every case can be reviewed with a
+          verified member record.
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
         {programModules.map((program, index) => {
-          const Icon = program.icon
+          const Icon = program.icon;
 
           return (
             <article
@@ -490,11 +509,11 @@ function ProgramGateway() {
                 <ArrowRight size={15} />
               </Link>
             </article>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
 function PortalFeatures() {
@@ -512,14 +531,14 @@ function PortalFeatures() {
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
           The portal supports membership registration and focused community
-          program workflows while keeping finance and sensitive reviews restricted
-          to authorized admins.
+          program workflows while keeping finance and sensitive reviews
+          restricted to authorized admins.
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
         {portalFeatures.map((feature, index) => {
-          const Icon = feature.icon
+          const Icon = feature.icon;
 
           return (
             <article
@@ -550,11 +569,11 @@ function PortalFeatures() {
                 </span>
               </div>
             </article>
-          )
+          );
         })}
       </div>
     </section>
-  )
+  );
 }
 
 function FinalCTA() {
@@ -613,10 +632,18 @@ function FinalCTA() {
           >
             Welfare
           </Link>
+
+          <Link to="/donate" className="ghost-btn pressable lift-hover">
+            Donate
+          </Link>
+
+          <Link to="/donors" className="ghost-btn pressable lift-hover">
+            Donors
+          </Link>
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function PreviewInfo({ label, value }: { label: string; value: string }) {
@@ -629,10 +656,10 @@ function PreviewInfo({ label, value }: { label: string; value: string }) {
         {value}
       </p>
     </div>
-  )
+  );
 }
 
-function AjrakPattern({ className = '' }: { className?: string }) {
+function AjrakPattern({ className = "" }: { className?: string }) {
   return (
     <svg
       aria-hidden="true"
@@ -650,18 +677,16 @@ function AjrakPattern({ className = '' }: { className?: string }) {
             y={row * 40 + 20}
             width="12"
             height="12"
-            transform={`rotate(45 ${column * 40 + 26} ${
-              row * 40 + 26
-            })`}
+            transform={`rotate(45 ${column * 40 + 26} ${row * 40 + 26})`}
             fill="#1A4D2E"
           />
         )),
       )}
     </svg>
-  )
+  );
 }
 
 function getDelayClass(index: number) {
-  const delays = ['delay-1', 'delay-2', 'delay-3', 'delay-4', 'delay-5']
-  return delays[index] ?? 'delay-5'
+  const delays = ["delay-1", "delay-2", "delay-3", "delay-4", "delay-5"];
+  return delays[index] ?? "delay-5";
 }

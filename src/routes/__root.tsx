@@ -7,10 +7,11 @@ import {
   createRootRoute,
   useNavigate,
   useRouterState,
-} from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
+} from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
+  BadgeIndianRupee,
   ChevronRight,
   GraduationCap,
   HeartPulse,
@@ -20,73 +21,74 @@ import {
   LogOut,
   Menu,
   ShieldCheck,
+  Trophy,
   UserPlus,
   X,
-} from 'lucide-react'
-import { supabase } from '../lib/supabase/client'
-import appCss from '../styles.css?url'
+} from "lucide-react";
+import { supabase } from "../lib/supabase/client";
+import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
   head: () => ({
     meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'Jatt Alliance Sindh | Member & Programs Portal' },
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Jatt Alliance Sindh | Member & Programs Portal" },
       {
-        name: 'description',
+        name: "description",
         content:
-          'Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education, health and welfare support platform.',
+          "Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education, health and welfare support platform.",
       },
-      { name: 'theme-color', content: '#0b2a1d' },
+      { name: "theme-color", content: "#0b2a1d" },
       {
-        property: 'og:title',
-        content: 'Jatt Alliance Sindh Member & Programs Portal',
+        property: "og:title",
+        content: "Jatt Alliance Sindh Member & Programs Portal",
       },
       {
-        property: 'og:description',
+        property: "og:description",
         content:
-          'Register, verify and access Jatt Alliance Sindh digital membership, education, health and welfare support programs.',
+          "Register, verify and access Jatt Alliance Sindh digital membership, education, health and welfare support programs.",
       },
-      { property: 'og:type', content: 'website' },
+      { property: "og:type", content: "website" },
     ],
     links: [
-      { rel: 'stylesheet', href: appCss },
-      { rel: 'icon', href: '/favicon.ico' },
-      { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
-      { rel: 'manifest', href: '/manifest.json' },
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.json" },
     ],
   }),
   component: RootComponent,
-})
+});
 
 type NavItem = {
-  to: string
-  label: string
-  icon: ReactNode
-}
+  to: string;
+  label: string;
+  icon: ReactNode;
+};
 
 const adminRoleNames = [
-  'admin',
-  'super_admin',
-  'membership_admin',
-  'education_admin',
-  'health_admin',
-  'employment_admin',
-  'ration_admin',
-  'welfare_admin',
-  'finance_admin',
-] as const
+  "admin",
+  "super_admin",
+  "membership_admin",
+  "education_admin",
+  "health_admin",
+  "employment_admin",
+  "ration_admin",
+  "welfare_admin",
+  "finance_admin",
+] as const;
 
 function RootComponent() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
-  })
+  });
 
-  const isPublicVerifyPage = pathname.startsWith('/verify/')
+  const isPublicVerifyPage = pathname.startsWith("/verify/");
   const isCardPreviewPage =
-    pathname === '/card' ||
-    pathname.includes('/admin/members/') ||
-    pathname.endsWith('/card')
+    pathname === "/card" ||
+    pathname.includes("/admin/members/") ||
+    pathname.endsWith("/card");
 
   return (
     <RootDocument>
@@ -103,7 +105,7 @@ function RootComponent() {
         </div>
       </div>
     </RootDocument>
-  )
+  );
 }
 
 function RootDocument({ children }: { children: ReactNode }) {
@@ -125,193 +127,203 @@ function RootDocument({ children }: { children: ReactNode }) {
         <Scripts />
       </body>
     </html>
-  )
+  );
 }
 
 function Header({ compact }: { compact: boolean }) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
-  })
+  });
 
-  const [authLoading, setAuthLoading] = useState(true)
-  const [logoutLoading, setLogoutLoading] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true);
+  const [logoutLoading, setLogoutLoading] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const checkAdmin = useCallback(async (userId: string) => {
     const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .in('role', adminRoleNames)
-      .limit(1)
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .in("role", adminRoleNames)
+      .limit(1);
 
     if (error) {
-      console.error('Admin role check failed:', error.message)
-      return false
+      console.error("Admin role check failed:", error.message);
+      return false;
     }
 
-    return Boolean(data?.length)
-  }, [])
+    return Boolean(data?.length);
+  }, []);
 
   const syncAuthState = useCallback(
     async (userId?: string | null) => {
-      setIsLoggedIn(Boolean(userId))
+      setIsLoggedIn(Boolean(userId));
 
       if (userId) {
-        const admin = await checkAdmin(userId)
-        setIsAdmin(admin)
+        const admin = await checkAdmin(userId);
+        setIsAdmin(admin);
       } else {
-        setIsAdmin(false)
+        setIsAdmin(false);
       }
 
-      setAuthLoading(false)
+      setAuthLoading(false);
     },
     [checkAdmin],
-  )
+  );
 
   useEffect(() => {
-    setMobileOpen(false)
-  }, [pathname])
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
-    let mounted = true
+    let mounted = true;
 
     async function loadSession() {
-      const { data, error } = await supabase.auth.getSession()
+      const { data, error } = await supabase.auth.getSession();
 
-      if (!mounted) return
+      if (!mounted) return;
 
       if (error) {
-        console.error('Session load failed:', error.message)
-        setIsLoggedIn(false)
-        setIsAdmin(false)
-        setAuthLoading(false)
-        return
+        console.error("Session load failed:", error.message);
+        setIsLoggedIn(false);
+        setIsAdmin(false);
+        setAuthLoading(false);
+        return;
       }
 
-      const userId = data.session?.user?.id ?? null
+      const userId = data.session?.user?.id ?? null;
 
       if (userId) {
-        setIsLoggedIn(true)
-        const admin = await checkAdmin(userId)
+        setIsLoggedIn(true);
+        const admin = await checkAdmin(userId);
 
-        if (!mounted) return
+        if (!mounted) return;
 
-        setIsAdmin(admin)
+        setIsAdmin(admin);
       } else {
-        setIsLoggedIn(false)
-        setIsAdmin(false)
+        setIsLoggedIn(false);
+        setIsAdmin(false);
       }
 
-      setAuthLoading(false)
+      setAuthLoading(false);
     }
 
-    void loadSession()
+    void loadSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return
-      void syncAuthState(session?.user?.id ?? null)
-    })
+      if (!mounted) return;
+      void syncAuthState(session?.user?.id ?? null);
+    });
 
     return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
-  }, [checkAdmin, syncAuthState])
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [checkAdmin, syncAuthState]);
 
   const navItems = useMemo(() => {
     const items: NavItem[] = [
       {
-        to: '/',
-        label: 'Home',
+        to: "/",
+        label: "Home",
         icon: <Home size={16} />,
       },
       {
-        to: '/programs/education',
-        label: 'Education',
+        to: "/programs/education",
+        label: "Education",
         icon: <GraduationCap size={16} />,
       },
       {
-        to: '/programs/health',
-        label: 'Health',
+        to: "/programs/health",
+        label: "Health",
         icon: <HeartPulse size={16} />,
       },
       {
-        to: '/programs/welfare',
-        label: 'Welfare',
+        to: "/programs/welfare",
+        label: "Welfare",
         icon: <HandHeart size={16} />,
       },
-    ]
+      {
+        to: "/donate",
+        label: "Donate",
+        icon: <BadgeIndianRupee size={16} />,
+      },
+    ];
 
-    if (authLoading) return items
+    if (authLoading) return items;
 
     if (!isLoggedIn) {
       items.push({
-        to: '/signup',
-        label: 'Membership',
+        to: "/signup",
+        label: "Membership",
         icon: <IdCard size={16} />,
-      })
+      });
 
-      return items
+      return items;
     }
 
     items.push(
       {
-        to: '/register',
-        label: 'Register',
+        to: "/donors",
+        label: "Donors",
+        icon: <Trophy size={16} />,
+      },
+      {
+        to: "/register",
+        label: "Register",
         icon: <UserPlus size={16} />,
       },
       {
-        to: '/card',
-        label: 'Card',
+        to: "/card",
+        label: "Card",
         icon: <IdCard size={16} />,
       },
-    )
+    );
 
     if (isAdmin) {
       items.push({
-        to: '/admin',
-        label: 'Admin',
+        to: "/admin",
+        label: "Admin",
         icon: <ShieldCheck size={16} />,
-      })
+      });
     }
 
-    return items
-  }, [authLoading, isAdmin, isLoggedIn])
+    return items;
+  }, [authLoading, isAdmin, isLoggedIn]);
 
   async function handleLogout() {
-    setLogoutLoading(true)
+    setLogoutLoading(true);
 
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut();
 
     if (error) {
-      console.error('Logout failed:', error.message)
-      setLogoutLoading(false)
-      return
+      console.error("Logout failed:", error.message);
+      setLogoutLoading(false);
+      return;
     }
 
-    setMobileOpen(false)
-    setIsLoggedIn(false)
-    setIsAdmin(false)
-    setLogoutLoading(false)
+    setMobileOpen(false);
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    setLogoutLoading(false);
 
-    await navigate({ to: '/login', replace: true })
+    await navigate({ to: "/login", replace: true });
   }
 
   function isActive(path: string) {
-    if (path === '/') return pathname === '/'
-    return pathname === path || pathname.startsWith(`${path}/`)
+    if (path === "/") return pathname === "/";
+    return pathname === path || pathname.startsWith(`${path}/`);
   }
 
   return (
     <header
-      className={`site-header ${compact ? 'shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''}`}
+      className={`site-header ${compact ? "shadow-[0_10px_30px_rgba(15,23,42,0.06)]" : ""}`}
     >
       <div className="page-wrap flex items-center gap-3 py-3">
         <div className="animate-fade-up min-w-0 flex-1 sm:flex-none">
@@ -343,7 +355,10 @@ function Header({ compact }: { compact: boolean }) {
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-4 lg:gap-5 md:flex" aria-label="Main navigation">
+        <nav
+          className="hidden items-center gap-4 lg:gap-5 md:flex"
+          aria-label="Main navigation"
+        >
           {navItems.map((item, index) => (
             <NavLink
               key={item.to}
@@ -383,7 +398,7 @@ function Header({ compact }: { compact: boolean }) {
                 className="secondary-btn animate-fade-up pressable lift-hover disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <LogOut size={16} aria-hidden="true" />
-                {logoutLoading ? 'Logging out...' : 'Logout'}
+                {logoutLoading ? "Logging out..." : "Logout"}
               </button>
             </>
           ) : (
@@ -411,7 +426,9 @@ function Header({ compact }: { compact: boolean }) {
           onClick={() => setMobileOpen((open) => !open)}
           aria-expanded={mobileOpen}
           aria-controls="mobile-navigation"
-          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-label={
+            mobileOpen ? "Close navigation menu" : "Open navigation menu"
+          }
         >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -446,7 +463,7 @@ function Header({ compact }: { compact: boolean }) {
                     className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LogOut size={16} aria-hidden="true" />
-                    {logoutLoading ? 'Logging out...' : 'Logout'}
+                    {logoutLoading ? "Logging out..." : "Logout"}
                   </button>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
@@ -464,7 +481,7 @@ function Header({ compact }: { compact: boolean }) {
         </div>
       ) : null}
     </header>
-  )
+  );
 }
 
 function NavLink({
@@ -473,20 +490,20 @@ function NavLink({
   active,
   delayClass,
 }: {
-  to: string
-  label: string
-  active: boolean
-  delayClass: string
+  to: string;
+  label: string;
+  active: boolean;
+  delayClass: string;
 }) {
   return (
     <Link
       to={to}
-      className={`nav-link animate-fade-up ${delayClass} ${active ? 'is-active' : ''}`}
-      aria-current={active ? 'page' : undefined}
+      className={`nav-link animate-fade-up ${delayClass} ${active ? "is-active" : ""}`}
+      aria-current={active ? "page" : undefined}
     >
       {label}
     </Link>
-  )
+  );
 }
 
 function MobileNavLink({
@@ -496,21 +513,21 @@ function MobileNavLink({
   active,
   delayClass,
 }: {
-  to: string
-  label: string
-  icon: ReactNode
-  active: boolean
-  delayClass: string
+  to: string;
+  label: string;
+  icon: ReactNode;
+  active: boolean;
+  delayClass: string;
 }) {
   return (
     <Link
       to={to}
       className={`animate-fade-up ${delayClass} inline-flex items-center justify-between rounded-[1rem] px-4 py-3 text-sm font-bold transition ${
         active
-          ? 'bg-emerald-50 text-emerald-900'
-          : 'text-stone-700 hover:bg-stone-50 hover:text-emerald-900'
+          ? "bg-emerald-50 text-emerald-900"
+          : "text-stone-700 hover:bg-stone-50 hover:text-emerald-900"
       }`}
-      aria-current={active ? 'page' : undefined}
+      aria-current={active ? "page" : undefined}
     >
       <span className="inline-flex items-center gap-2">
         {icon}
@@ -518,10 +535,10 @@ function MobileNavLink({
       </span>
       <ChevronRight size={16} />
     </Link>
-  )
+  );
 }
 
 function getDelayClass(index: number) {
-  const delays = ['delay-1', 'delay-2', 'delay-3', 'delay-4', 'delay-5']
-  return delays[index] ?? 'delay-5'
+  const delays = ["delay-1", "delay-2", "delay-3", "delay-4", "delay-5"];
+  return delays[index] ?? "delay-5";
 }

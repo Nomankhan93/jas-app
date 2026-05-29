@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DonorsRouteImport } from './routes/donors'
+import { Route as DonateRouteImport } from './routes/donate'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CardRouteImport } from './routes/card'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -52,6 +54,16 @@ const RegisterRoute = RegisterRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonorsRoute = DonorsRouteImport.update({
+  id: '/donors',
+  path: '/donors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonateRoute = DonateRouteImport.update({
+  id: '/donate',
+  path: '/donate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -194,6 +206,8 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
   '/dashboard': typeof DashboardRoute
+  '/donate': typeof DonateRoute
+  '/donors': typeof DonorsRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
@@ -225,6 +239,8 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
   '/dashboard': typeof DashboardRoute
+  '/donate': typeof DonateRoute
+  '/donors': typeof DonorsRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
@@ -257,6 +273,8 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
   '/dashboard': typeof DashboardRoute
+  '/donate': typeof DonateRoute
+  '/donors': typeof DonorsRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
@@ -290,6 +308,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/card'
     | '/dashboard'
+    | '/donate'
+    | '/donors'
     | '/login'
     | '/register'
     | '/signup'
@@ -321,6 +341,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/card'
     | '/dashboard'
+    | '/donate'
+    | '/donors'
     | '/login'
     | '/register'
     | '/signup'
@@ -352,6 +374,8 @@ export interface FileRouteTypes {
     | '/admin'
     | '/card'
     | '/dashboard'
+    | '/donate'
+    | '/donors'
     | '/login'
     | '/register'
     | '/signup'
@@ -384,6 +408,8 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   CardRoute: typeof CardRoute
   DashboardRoute: typeof DashboardRoute
+  DonateRoute: typeof DonateRoute
+  DonorsRoute: typeof DonorsRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   SignupRoute: typeof SignupRoute
@@ -414,6 +440,20 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donors': {
+      id: '/donors'
+      path: '/donors'
+      fullPath: '/donors'
+      preLoaderRoute: typeof DonorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donate': {
+      id: '/donate'
+      path: '/donate'
+      fullPath: '/donate'
+      preLoaderRoute: typeof DonateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -719,6 +759,8 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   CardRoute: CardRoute,
   DashboardRoute: DashboardRoute,
+  DonateRoute: DonateRoute,
+  DonorsRoute: DonorsRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   SignupRoute: SignupRoute,

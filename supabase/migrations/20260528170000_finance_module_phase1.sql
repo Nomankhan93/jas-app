@@ -6,18 +6,9 @@
 -- =====================================================
 
 -- =====================================================
--- 1. ROLE SUPPORT
--- =====================================================
-
-do $$
-begin
-  alter type public.app_role add value if not exists 'finance_admin';
-exception
-  when duplicate_object then null;
-end $$;
-
--- =====================================================
--- 2. FINANCE ACCESS FUNCTION
+-- 1. FINANCE ACCESS FUNCTION
+-- finance_admin enum value is added in separate migration:
+-- 20260528165900_add_finance_admin_role.sql
 -- =====================================================
 
 create or replace function public.current_user_can_manage_finance()
@@ -31,7 +22,7 @@ as $$
     select 1
     from public.user_roles ur
     where ur.user_id = auth.uid()
-      and ur.role in ('admin', 'super_admin', 'finance_admin')
+      and ur.role::text in ('admin', 'super_admin', 'finance_admin')
   );
 $$;
 
