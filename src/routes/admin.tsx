@@ -17,6 +17,7 @@ import {
   Filter,
   GraduationCap,
   HeartPulse,
+  HandHeart,
   IdCard,
   ImageOff,
   ListChecks,
@@ -128,6 +129,8 @@ function AdminPage() {
               await navigate({ to: '/admin/programs/education' })
             } else if (access.roles.includes('health_admin')) {
               await navigate({ to: '/admin/programs/health' })
+            } else if (access.roles.includes('welfare_admin')) {
+              await navigate({ to: '/admin/programs/welfare' })
             } else {
               await navigate({ to: '/dashboard' })
             }
@@ -355,6 +358,14 @@ function AdminPage() {
                 >
                   <HeartPulse className="h-4 w-4" />
                   Health Admin
+                </Link>
+
+                <Link
+                  to="/admin/programs/welfare"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-bold !text-slate-950 no-underline shadow-sm transition hover:bg-amber-300 hover:!text-slate-950"
+                >
+                  <HandHeart className="h-4 w-4" />
+                  Welfare Admin
                 </Link>
 
                 <button
@@ -755,6 +766,29 @@ function AdminProgramShortcuts() {
           className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-red-900 hover:!text-white"
         >
           Open Health Admin
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
+          <HandHeart className="h-5 w-5" />
+        </div>
+
+        <h2 className="text-xl font-black text-slate-950">
+          Welfare Cases
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Review financial help, ration, widow/orphan, emergency, marriage,
+          disaster, legal and family support cases.
+        </p>
+
+        <Link
+          to="/admin/programs/welfare"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-amber-900 hover:!text-white"
+        >
+          Open Welfare Admin
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

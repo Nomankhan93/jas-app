@@ -17,17 +17,23 @@ import { Route as CardRouteImport } from './routes/card'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyMemberNoRouteImport } from './routes/verify/$memberNo'
+import { Route as ProgramsWelfareRouteImport } from './routes/programs/welfare'
 import { Route as ProgramsHealthRouteImport } from './routes/programs/health'
 import { Route as ProgramsEducationRouteImport } from './routes/programs/education'
+import { Route as ProgramsWelfareMyApplicationsRouteImport } from './routes/programs/welfare/my-applications'
+import { Route as ProgramsWelfareApplyRouteImport } from './routes/programs/welfare/apply'
+import { Route as ProgramsWelfareIdRouteImport } from './routes/programs/welfare/$id'
 import { Route as ProgramsHealthMyApplicationsRouteImport } from './routes/programs/health/my-applications'
 import { Route as ProgramsHealthApplyRouteImport } from './routes/programs/health/apply'
 import { Route as ProgramsHealthIdRouteImport } from './routes/programs/health/$id'
 import { Route as ProgramsEducationMyApplicationsRouteImport } from './routes/programs/education/my-applications'
 import { Route as ProgramsEducationApplyRouteImport } from './routes/programs/education/apply'
 import { Route as ProgramsEducationIdRouteImport } from './routes/programs/education/$id'
+import { Route as AdminProgramsWelfareRouteImport } from './routes/admin/programs/welfare'
 import { Route as AdminProgramsHealthRouteImport } from './routes/admin/programs/health'
 import { Route as AdminProgramsEducationRouteImport } from './routes/admin/programs/education'
 import { Route as AdminMembersIdRouteImport } from './routes/admin/members/$id'
+import { Route as AdminProgramsWelfareIdRouteImport } from './routes/admin/programs/welfare/$id'
 import { Route as AdminProgramsHealthIdRouteImport } from './routes/admin/programs/health/$id'
 import { Route as AdminProgramsEducationIdRouteImport } from './routes/admin/programs/education/$id'
 import { Route as AdminMembersIdCardRouteImport } from './routes/admin/members/$id/card'
@@ -72,6 +78,11 @@ const VerifyMemberNoRoute = VerifyMemberNoRouteImport.update({
   path: '/verify/$memberNo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgramsWelfareRoute = ProgramsWelfareRouteImport.update({
+  id: '/programs/welfare',
+  path: '/programs/welfare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsHealthRoute = ProgramsHealthRouteImport.update({
   id: '/programs/health',
   path: '/programs/health',
@@ -81,6 +92,22 @@ const ProgramsEducationRoute = ProgramsEducationRouteImport.update({
   id: '/programs/education',
   path: '/programs/education',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProgramsWelfareMyApplicationsRoute =
+  ProgramsWelfareMyApplicationsRouteImport.update({
+    id: '/my-applications',
+    path: '/my-applications',
+    getParentRoute: () => ProgramsWelfareRoute,
+  } as any)
+const ProgramsWelfareApplyRoute = ProgramsWelfareApplyRouteImport.update({
+  id: '/apply',
+  path: '/apply',
+  getParentRoute: () => ProgramsWelfareRoute,
+} as any)
+const ProgramsWelfareIdRoute = ProgramsWelfareIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ProgramsWelfareRoute,
 } as any)
 const ProgramsHealthMyApplicationsRoute =
   ProgramsHealthMyApplicationsRouteImport.update({
@@ -114,6 +141,11 @@ const ProgramsEducationIdRoute = ProgramsEducationIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ProgramsEducationRoute,
 } as any)
+const AdminProgramsWelfareRoute = AdminProgramsWelfareRouteImport.update({
+  id: '/programs/welfare',
+  path: '/programs/welfare',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminProgramsHealthRoute = AdminProgramsHealthRouteImport.update({
   id: '/programs/health',
   path: '/programs/health',
@@ -128,6 +160,11 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
   id: '/members/$id',
   path: '/members/$id',
   getParentRoute: () => AdminRoute,
+} as any)
+const AdminProgramsWelfareIdRoute = AdminProgramsWelfareIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AdminProgramsWelfareRoute,
 } as any)
 const AdminProgramsHealthIdRoute = AdminProgramsHealthIdRouteImport.update({
   id: '/$id',
@@ -156,19 +193,25 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
+  '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
   '/verify/$memberNo': typeof VerifyMemberNoRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/health': typeof AdminProgramsHealthRouteWithChildren
+  '/admin/programs/welfare': typeof AdminProgramsWelfareRouteWithChildren
   '/programs/education/$id': typeof ProgramsEducationIdRoute
   '/programs/education/apply': typeof ProgramsEducationApplyRoute
   '/programs/education/my-applications': typeof ProgramsEducationMyApplicationsRoute
   '/programs/health/$id': typeof ProgramsHealthIdRoute
   '/programs/health/apply': typeof ProgramsHealthApplyRoute
   '/programs/health/my-applications': typeof ProgramsHealthMyApplicationsRoute
+  '/programs/welfare/$id': typeof ProgramsWelfareIdRoute
+  '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
+  '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
   '/admin/programs/health/$id': typeof AdminProgramsHealthIdRoute
+  '/admin/programs/welfare/$id': typeof AdminProgramsWelfareIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -180,19 +223,25 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
+  '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
   '/verify/$memberNo': typeof VerifyMemberNoRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/health': typeof AdminProgramsHealthRouteWithChildren
+  '/admin/programs/welfare': typeof AdminProgramsWelfareRouteWithChildren
   '/programs/education/$id': typeof ProgramsEducationIdRoute
   '/programs/education/apply': typeof ProgramsEducationApplyRoute
   '/programs/education/my-applications': typeof ProgramsEducationMyApplicationsRoute
   '/programs/health/$id': typeof ProgramsHealthIdRoute
   '/programs/health/apply': typeof ProgramsHealthApplyRoute
   '/programs/health/my-applications': typeof ProgramsHealthMyApplicationsRoute
+  '/programs/welfare/$id': typeof ProgramsWelfareIdRoute
+  '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
+  '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
   '/admin/programs/health/$id': typeof AdminProgramsHealthIdRoute
+  '/admin/programs/welfare/$id': typeof AdminProgramsWelfareIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -205,19 +254,25 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
+  '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
   '/verify/$memberNo': typeof VerifyMemberNoRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/health': typeof AdminProgramsHealthRouteWithChildren
+  '/admin/programs/welfare': typeof AdminProgramsWelfareRouteWithChildren
   '/programs/education/$id': typeof ProgramsEducationIdRoute
   '/programs/education/apply': typeof ProgramsEducationApplyRoute
   '/programs/education/my-applications': typeof ProgramsEducationMyApplicationsRoute
   '/programs/health/$id': typeof ProgramsHealthIdRoute
   '/programs/health/apply': typeof ProgramsHealthApplyRoute
   '/programs/health/my-applications': typeof ProgramsHealthMyApplicationsRoute
+  '/programs/welfare/$id': typeof ProgramsWelfareIdRoute
+  '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
+  '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
   '/admin/programs/health/$id': typeof AdminProgramsHealthIdRoute
+  '/admin/programs/welfare/$id': typeof AdminProgramsWelfareIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,19 +286,25 @@ export interface FileRouteTypes {
     | '/signup'
     | '/programs/education'
     | '/programs/health'
+    | '/programs/welfare'
     | '/verify/$memberNo'
     | '/admin/members/$id'
     | '/admin/programs/education'
     | '/admin/programs/health'
+    | '/admin/programs/welfare'
     | '/programs/education/$id'
     | '/programs/education/apply'
     | '/programs/education/my-applications'
     | '/programs/health/$id'
     | '/programs/health/apply'
     | '/programs/health/my-applications'
+    | '/programs/welfare/$id'
+    | '/programs/welfare/apply'
+    | '/programs/welfare/my-applications'
     | '/admin/members/$id/card'
     | '/admin/programs/education/$id'
     | '/admin/programs/health/$id'
+    | '/admin/programs/welfare/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -255,19 +316,25 @@ export interface FileRouteTypes {
     | '/signup'
     | '/programs/education'
     | '/programs/health'
+    | '/programs/welfare'
     | '/verify/$memberNo'
     | '/admin/members/$id'
     | '/admin/programs/education'
     | '/admin/programs/health'
+    | '/admin/programs/welfare'
     | '/programs/education/$id'
     | '/programs/education/apply'
     | '/programs/education/my-applications'
     | '/programs/health/$id'
     | '/programs/health/apply'
     | '/programs/health/my-applications'
+    | '/programs/welfare/$id'
+    | '/programs/welfare/apply'
+    | '/programs/welfare/my-applications'
     | '/admin/members/$id/card'
     | '/admin/programs/education/$id'
     | '/admin/programs/health/$id'
+    | '/admin/programs/welfare/$id'
   id:
     | '__root__'
     | '/'
@@ -279,19 +346,25 @@ export interface FileRouteTypes {
     | '/signup'
     | '/programs/education'
     | '/programs/health'
+    | '/programs/welfare'
     | '/verify/$memberNo'
     | '/admin/members/$id'
     | '/admin/programs/education'
     | '/admin/programs/health'
+    | '/admin/programs/welfare'
     | '/programs/education/$id'
     | '/programs/education/apply'
     | '/programs/education/my-applications'
     | '/programs/health/$id'
     | '/programs/health/apply'
     | '/programs/health/my-applications'
+    | '/programs/welfare/$id'
+    | '/programs/welfare/apply'
+    | '/programs/welfare/my-applications'
     | '/admin/members/$id/card'
     | '/admin/programs/education/$id'
     | '/admin/programs/health/$id'
+    | '/admin/programs/welfare/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -304,6 +377,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ProgramsEducationRoute: typeof ProgramsEducationRouteWithChildren
   ProgramsHealthRoute: typeof ProgramsHealthRouteWithChildren
+  ProgramsWelfareRoute: typeof ProgramsWelfareRouteWithChildren
   VerifyMemberNoRoute: typeof VerifyMemberNoRoute
 }
 
@@ -365,6 +439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyMemberNoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/programs/welfare': {
+      id: '/programs/welfare'
+      path: '/programs/welfare'
+      fullPath: '/programs/welfare'
+      preLoaderRoute: typeof ProgramsWelfareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programs/health': {
       id: '/programs/health'
       path: '/programs/health'
@@ -378,6 +459,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/programs/education'
       preLoaderRoute: typeof ProgramsEducationRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/programs/welfare/my-applications': {
+      id: '/programs/welfare/my-applications'
+      path: '/my-applications'
+      fullPath: '/programs/welfare/my-applications'
+      preLoaderRoute: typeof ProgramsWelfareMyApplicationsRouteImport
+      parentRoute: typeof ProgramsWelfareRoute
+    }
+    '/programs/welfare/apply': {
+      id: '/programs/welfare/apply'
+      path: '/apply'
+      fullPath: '/programs/welfare/apply'
+      preLoaderRoute: typeof ProgramsWelfareApplyRouteImport
+      parentRoute: typeof ProgramsWelfareRoute
+    }
+    '/programs/welfare/$id': {
+      id: '/programs/welfare/$id'
+      path: '/$id'
+      fullPath: '/programs/welfare/$id'
+      preLoaderRoute: typeof ProgramsWelfareIdRouteImport
+      parentRoute: typeof ProgramsWelfareRoute
     }
     '/programs/health/my-applications': {
       id: '/programs/health/my-applications'
@@ -421,6 +523,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramsEducationIdRouteImport
       parentRoute: typeof ProgramsEducationRoute
     }
+    '/admin/programs/welfare': {
+      id: '/admin/programs/welfare'
+      path: '/programs/welfare'
+      fullPath: '/admin/programs/welfare'
+      preLoaderRoute: typeof AdminProgramsWelfareRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/programs/health': {
       id: '/admin/programs/health'
       path: '/programs/health'
@@ -441,6 +550,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/members/$id'
       preLoaderRoute: typeof AdminMembersIdRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/admin/programs/welfare/$id': {
+      id: '/admin/programs/welfare/$id'
+      path: '/$id'
+      fullPath: '/admin/programs/welfare/$id'
+      preLoaderRoute: typeof AdminProgramsWelfareIdRouteImport
+      parentRoute: typeof AdminProgramsWelfareRoute
     }
     '/admin/programs/health/$id': {
       id: '/admin/programs/health/$id'
@@ -503,16 +619,29 @@ const AdminProgramsHealthRouteChildren: AdminProgramsHealthRouteChildren = {
 const AdminProgramsHealthRouteWithChildren =
   AdminProgramsHealthRoute._addFileChildren(AdminProgramsHealthRouteChildren)
 
+interface AdminProgramsWelfareRouteChildren {
+  AdminProgramsWelfareIdRoute: typeof AdminProgramsWelfareIdRoute
+}
+
+const AdminProgramsWelfareRouteChildren: AdminProgramsWelfareRouteChildren = {
+  AdminProgramsWelfareIdRoute: AdminProgramsWelfareIdRoute,
+}
+
+const AdminProgramsWelfareRouteWithChildren =
+  AdminProgramsWelfareRoute._addFileChildren(AdminProgramsWelfareRouteChildren)
+
 interface AdminRouteChildren {
   AdminMembersIdRoute: typeof AdminMembersIdRouteWithChildren
   AdminProgramsEducationRoute: typeof AdminProgramsEducationRouteWithChildren
   AdminProgramsHealthRoute: typeof AdminProgramsHealthRouteWithChildren
+  AdminProgramsWelfareRoute: typeof AdminProgramsWelfareRouteWithChildren
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminMembersIdRoute: AdminMembersIdRouteWithChildren,
   AdminProgramsEducationRoute: AdminProgramsEducationRouteWithChildren,
   AdminProgramsHealthRoute: AdminProgramsHealthRouteWithChildren,
+  AdminProgramsWelfareRoute: AdminProgramsWelfareRouteWithChildren,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -548,6 +677,22 @@ const ProgramsHealthRouteWithChildren = ProgramsHealthRoute._addFileChildren(
   ProgramsHealthRouteChildren,
 )
 
+interface ProgramsWelfareRouteChildren {
+  ProgramsWelfareIdRoute: typeof ProgramsWelfareIdRoute
+  ProgramsWelfareApplyRoute: typeof ProgramsWelfareApplyRoute
+  ProgramsWelfareMyApplicationsRoute: typeof ProgramsWelfareMyApplicationsRoute
+}
+
+const ProgramsWelfareRouteChildren: ProgramsWelfareRouteChildren = {
+  ProgramsWelfareIdRoute: ProgramsWelfareIdRoute,
+  ProgramsWelfareApplyRoute: ProgramsWelfareApplyRoute,
+  ProgramsWelfareMyApplicationsRoute: ProgramsWelfareMyApplicationsRoute,
+}
+
+const ProgramsWelfareRouteWithChildren = ProgramsWelfareRoute._addFileChildren(
+  ProgramsWelfareRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -558,6 +703,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ProgramsEducationRoute: ProgramsEducationRouteWithChildren,
   ProgramsHealthRoute: ProgramsHealthRouteWithChildren,
+  ProgramsWelfareRoute: ProgramsWelfareRouteWithChildren,
   VerifyMemberNoRoute: VerifyMemberNoRoute,
 }
 export const routeTree = rootRouteImport

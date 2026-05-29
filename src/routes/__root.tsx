@@ -14,6 +14,7 @@ import {
   ChevronRight,
   GraduationCap,
   HeartPulse,
+  HandHeart,
   Home,
   IdCard,
   LayoutDashboard,
@@ -241,6 +242,11 @@ function Header({ compact }: { compact: boolean }) {
         to: '/programs/health',
         label: 'Health',
         icon: <HeartPulse size={16} />,
+      },
+      {
+        to: '/programs/welfare',
+        label: 'Welfare',
+        icon: <HandHeart size={16} />,
       },
     ]
 
