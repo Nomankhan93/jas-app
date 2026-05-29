@@ -13,6 +13,7 @@ import type { ReactNode } from 'react'
 import {
   ChevronRight,
   GraduationCap,
+  HeartPulse,
   Home,
   IdCard,
   LayoutDashboard,
@@ -53,7 +54,7 @@ export const Route = createRootRoute({
       { rel: 'stylesheet', href: appCss },
       { rel: 'icon', href: '/favicon.ico' },
       { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
-      { rel: 'manifest', href: '/manifest.webmanifest' },
+      { rel: 'manifest', href: '/manifest.json' },
     ],
   }),
   component: RootComponent,
@@ -235,6 +236,11 @@ function Header({ compact }: { compact: boolean }) {
         to: '/programs/education',
         label: 'Education',
         icon: <GraduationCap size={16} />,
+      },
+      {
+        to: '/programs/health',
+        label: 'Health',
+        icon: <HeartPulse size={16} />,
       },
     ]
 

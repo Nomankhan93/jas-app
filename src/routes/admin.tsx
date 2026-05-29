@@ -16,6 +16,7 @@ import {
   EyeOff,
   Filter,
   GraduationCap,
+  HeartPulse,
   IdCard,
   ImageOff,
   ListChecks,
@@ -125,6 +126,8 @@ function AdminPage() {
           if (!cancelledRef?.current) {
             if (access.roles.includes('education_admin')) {
               await navigate({ to: '/admin/programs/education' })
+            } else if (access.roles.includes('health_admin')) {
+              await navigate({ to: '/admin/programs/health' })
             } else {
               await navigate({ to: '/dashboard' })
             }
@@ -344,6 +347,14 @@ function AdminPage() {
                 >
                   <GraduationCap className="h-4 w-4" />
                   Education Admin
+                </Link>
+
+                <Link
+                  to="/admin/programs/health"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-bold !text-slate-950 no-underline shadow-sm transition hover:bg-red-400 hover:!text-slate-950"
+                >
+                  <HeartPulse className="h-4 w-4" />
+                  Health Admin
                 </Link>
 
                 <button
@@ -680,7 +691,7 @@ function AdminPage() {
 
 function AdminProgramShortcuts() {
   return (
-    <section className="grid gap-4 md:grid-cols-2">
+    <section className="grid gap-4 md:grid-cols-3">
       <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
           <ShieldCheck className="h-5 w-5" />
@@ -720,6 +731,30 @@ function AdminProgramShortcuts() {
           className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-emerald-900 hover:!text-white"
         >
           Open Education Admin
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+
+      <div className="rounded-3xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5 shadow-sm">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-800">
+          <HeartPulse className="h-5 w-5" />
+        </div>
+
+        <h2 className="text-xl font-black text-slate-950">
+          Health Applications
+        </h2>
+
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          Review medical help, emergency treatment, hospital estimate,
+          prescription and restricted health committee cases.
+        </p>
+
+        <Link
+          to="/admin/programs/health"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-red-900 hover:!text-white"
+        >
+          Open Health Admin
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
