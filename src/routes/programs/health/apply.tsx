@@ -315,6 +315,7 @@ function HealthApplyPage() {
       estimated_cost: form.estimatedCost.trim(),
       required_amount: form.requiredAmount.trim(),
       emergency: form.emergency,
+      case_priority: form.emergency ? 'emergency' : 'normal',
       case_summary: form.caseSummary.trim(),
       payment_status: 'not_started',
     }

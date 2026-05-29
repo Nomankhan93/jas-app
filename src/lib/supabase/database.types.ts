@@ -180,6 +180,27 @@ export type Database = {
         }
         Relationships: []
       }
+      program_application_counters: {
+        Row: {
+          last_seq: number
+          program_key: Database["public"]["Enums"]["program_key"]
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          program_key: Database["public"]["Enums"]["program_key"]
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          program_key?: Database["public"]["Enums"]["program_key"]
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       program_applications: {
         Row: {
           address: string | null

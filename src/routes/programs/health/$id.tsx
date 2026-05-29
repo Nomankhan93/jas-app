@@ -20,6 +20,10 @@ import {
   getHealthDocumentLabel,
   getHealthDocumentStatusClass,
   getHealthDocumentStatusLabel,
+  getHealthCasePriorityClass,
+  getHealthCasePriorityLabel,
+  getHealthCommitteeDecisionClass,
+  getHealthCommitteeDecisionLabel,
   getHealthPaymentStatusLabel,
   getHealthStatusClass,
   getHealthStatusLabel,
@@ -316,12 +320,19 @@ function SummaryCard({
         >
           {getHealthStatusLabel(application.status)}
         </span>
-        {isHealthEmergency(details) ? (
-          <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-800">
+        <span
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-black ${getHealthCasePriorityClass(details)}`}
+        >
+          {isHealthEmergency(details) ? (
             <AlertTriangle className="mr-1 h-3.5 w-3.5" />
-            Emergency
-          </span>
-        ) : null}
+          ) : null}
+          {getHealthCasePriorityLabel(details)}
+        </span>
+        <span
+          className={`rounded-full border px-3 py-1 text-xs font-black ${getHealthCommitteeDecisionClass(details.health_committee_decision)}`}
+        >
+          {getHealthCommitteeDecisionLabel(details.health_committee_decision)}
+        </span>
       </div>
 
       <h2 className="mt-4 text-3xl font-black text-slate-950">
@@ -352,6 +363,8 @@ function DecisionCard({
         <p><strong>Status:</strong> {getHealthStatusLabel(application.status)}</p>
         <p><strong>Approved Amount:</strong> {application.approved_amount ? `Rs. ${Number(application.approved_amount)}` : 'Pending'}</p>
         <p><strong>Payment Status:</strong> {getHealthPaymentStatusLabel(details.payment_status)}</p>
+        <p><strong>Case Priority:</strong> {getHealthCasePriorityLabel(details)}</p>
+        <p><strong>Committee Decision:</strong> {getHealthCommitteeDecisionLabel(details.health_committee_decision)}</p>
         <p><strong>Submitted:</strong> {new Date(application.submitted_at).toLocaleString()}</p>
         {application.reviewed_at ? <p><strong>Reviewed:</strong> {new Date(application.reviewed_at).toLocaleString()}</p> : null}
         {application.approved_at ? <p><strong>Approved:</strong> {new Date(application.approved_at).toLocaleString()}</p> : null}
@@ -361,6 +374,13 @@ function DecisionCard({
       {application.admin_remarks ? (
         <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
           <strong>Admin Remarks:</strong> {application.admin_remarks}
+        </div>
+      ) : null}
+
+      {details.health_committee_remarks ? (
+        <div className="mt-4 rounded-2xl bg-purple-50 p-4 text-sm text-purple-900">
+          <strong>Committee Decision Notes:</strong>{' '}
+          {details.health_committee_remarks}
         </div>
       ) : null}
 

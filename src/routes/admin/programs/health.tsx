@@ -24,10 +24,15 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
 import {
+  getHealthCasePriorityClass,
+  getHealthCasePriorityLabel,
+  getHealthCommitteeDecisionClass,
+  getHealthCommitteeDecisionLabel,
   getHealthPaymentStatusLabel,
   getHealthStatusClass,
   getHealthStatusLabel,
   isHealthEmergency,
+  sortHealthCasesByPriority,
   type HealthApplicationDetails,
 } from '../../../lib/programs/health'
 
@@ -95,6 +100,9 @@ function AdminHealthApplicationsPage() {
   const [districtFilter, setDistrictFilter] = useState('all')
   const [talukaFilter, setTalukaFilter] = useState('all')
   const [emergencyFilter, setEmergencyFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [paymentFilter, setPaymentFilter] = useState('all')
+  const [committeeFilter, setCommitteeFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
@@ -197,33 +205,64 @@ function AdminHealthApplicationsPage() {
             details.doctor_name,
             details.required_amount,
             details.estimated_cost,
+            details.health_committee_decision,
+            details.health_committee_members,
           ]
             .filter(Boolean)
             .some((value) => String(value).toLowerCase().includes(q))
         : true
+
+      const matchesPriority =
+        priorityFilter === 'all'
+          ? true
+          : (details.case_priority || (isHealthEmergency(details) ? 'emergency' : 'normal')) === priorityFilter
+
+      const matchesPayment =
+        paymentFilter === 'all'
+          ? true
+          : (details.payment_status || 'not_started') === paymentFilter
+
+      const matchesCommittee =
+        committeeFilter === 'all'
+          ? true
+          : (details.health_committee_decision || 'pending') === committeeFilter
 
       return (
         matchesStatus &&
         matchesDistrict &&
         matchesTaluka &&
         matchesEmergency &&
+        matchesPriority &&
+        matchesPayment &&
+        matchesCommittee &&
         matchesSearch
       )
     })
   }, [
     applications,
+    committeeFilter,
     districtFilter,
     emergencyFilter,
+    paymentFilter,
+    priorityFilter,
     searchTerm,
     statusFilter,
     talukaFilter,
   ])
+
+  const sortedFilteredApplications = useMemo(
+    () => sortHealthCasesByPriority(filteredApplications),
+    [filteredApplications],
+  )
 
   const stats = useMemo(() => {
     return {
       total: applications.length,
       filtered: filteredApplications.length,
       emergency: applications.filter((item) => isHealthEmergency(item.details)).length,
+      committeePending: applications.filter(
+        (item) => !item.details?.health_committee_decision || item.details.health_committee_decision === 'pending',
+      ).length,
       underReview: applications.filter((item) => item.status === 'under_review')
         .length,
       approved: applications.filter((item) => item.status === 'approved').length,
@@ -238,6 +277,9 @@ function AdminHealthApplicationsPage() {
     setDistrictFilter('all')
     setTalukaFilter('all')
     setEmergencyFilter('all')
+    setPriorityFilter('all')
+    setPaymentFilter('all')
+    setCommitteeFilter('all')
     setSearchTerm('')
   }
 
@@ -265,16 +307,16 @@ function AdminHealthApplicationsPage() {
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">
                 Medical help cases ko restricted access, emergency filter,
-                document verification, committee remarks aur payment status ke
-                sath manage karen.
+                priority queue, committee decision, district reviewer scope,
+                payment status aur close report ke sath manage karen.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
               <button
                 type="button"
-                onClick={() => exportHealthCsv(filteredApplications)}
-                disabled={loading || filteredApplications.length === 0}
+                onClick={() => exportHealthCsv(sortedFilteredApplications)}
+                disabled={loading || sortedFilteredApplications.length === 0}
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Download className="mr-2 h-4 w-4" />
@@ -301,17 +343,22 @@ function AdminHealthApplicationsPage() {
 
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto max-w-7xl space-y-8">
-          <div className="grid gap-4 md:grid-cols-6">
+          <div className="grid gap-4 md:grid-cols-7">
             <StatCard title="Total" value={stats.total} icon={<ShieldCheck className="h-5 w-5" />} />
             <StatCard title="Filtered" value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
             <StatCard title="Emergency" value={stats.emergency} icon={<AlertTriangle className="h-5 w-5" />} />
+            <StatCard title="Committee Pending" value={stats.committeePending} icon={<ShieldAlert className="h-5 w-5" />} />
             <StatCard title="Under Review" value={stats.underReview} icon={<Stethoscope className="h-5 w-5" />} />
             <StatCard title="Approved" value={stats.approved} icon={<UserCheck className="h-5 w-5" />} />
             <StatCard title="Completed" value={stats.completed} icon={<BadgeIndianRupee className="h-5 w-5" />} />
           </div>
 
+          <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-900 shadow-sm">
+            <strong>Medical Privacy:</strong> List view intentionally shows only operational summary. Full disease reports, documents and close report must be opened only by authorized health committee/admin users.
+          </div>
+
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="grid gap-4 xl:grid-cols-[1fr_200px_200px_200px_200px_auto]">
+            <div className="grid gap-4 xl:grid-cols-[1fr_180px_180px_180px_180px_180px_180px_auto]">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                 <input
@@ -336,6 +383,33 @@ function AdminHealthApplicationsPage() {
                 <option value="all">All Cases</option>
                 <option value="emergency">Emergency Only</option>
                 <option value="normal">Non-Emergency</option>
+              </SelectBox>
+
+              <SelectBox value={priorityFilter} onChange={setPriorityFilter}>
+                <option value="all">All Priority</option>
+                <option value="emergency">Emergency</option>
+                <option value="urgent">Urgent</option>
+                <option value="normal">Normal</option>
+              </SelectBox>
+
+              <SelectBox value={paymentFilter} onChange={setPaymentFilter}>
+                <option value="all">All Payments</option>
+                <option value="not_started">Not Started</option>
+                <option value="pending">Payment Pending</option>
+                <option value="approved">Payment Approved</option>
+                <option value="partially_released">Partially Released</option>
+                <option value="released">Released</option>
+                <option value="completed">Completed</option>
+              </SelectBox>
+
+              <SelectBox value={committeeFilter} onChange={setCommitteeFilter}>
+                <option value="all">All Committee</option>
+                <option value="pending">Pending</option>
+                <option value="recommended">Recommended</option>
+                <option value="not_recommended">Not Recommended</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="deferred">Deferred</option>
               </SelectBox>
 
               <SelectBox value={districtFilter} onChange={setDistrictFilter}>
@@ -373,7 +447,7 @@ function AdminHealthApplicationsPage() {
               <h2 className="text-2xl font-black">Unable to load health cases</h2>
               <p className="mt-3 font-semibold">{message}</p>
             </div>
-          ) : filteredApplications.length === 0 ? (
+          ) : sortedFilteredApplications.length === 0 ? (
             <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
               <h2 className="text-2xl font-black text-slate-950">
                 No health applications found
@@ -384,7 +458,7 @@ function AdminHealthApplicationsPage() {
             </div>
           ) : (
             <div className="grid gap-5">
-              {filteredApplications.map((item) => (
+              {sortedFilteredApplications.map((item) => (
                 <HealthApplicationListCard key={item.id} item={item} />
               ))}
             </div>
@@ -455,11 +529,16 @@ function HealthApplicationListCard({ item }: { item: HealthApplicationListItem }
             >
               {getHealthStatusLabel(item.status)}
             </span>
-            {isHealthEmergency(details) ? (
-              <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-800">
-                Emergency
-              </span>
-            ) : null}
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-black ${getHealthCasePriorityClass(details)}`}
+            >
+              {getHealthCasePriorityLabel(details)}
+            </span>
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-black ${getHealthCommitteeDecisionClass(details.health_committee_decision)}`}
+            >
+              {getHealthCommitteeDecisionLabel(details.health_committee_decision)}
+            </span>
             <span
               className={`rounded-full px-3 py-1 text-xs font-black ${
                 item.assigned_admin_id
@@ -488,6 +567,7 @@ function HealthApplicationListCard({ item }: { item: HealthApplicationListItem }
             <p><strong>Hospital:</strong> {details.hospital_name || '-'}</p>
             <p><strong>Required:</strong> {details.required_amount ? `Rs. ${details.required_amount}` : '-'}</p>
             <p><strong>Payment:</strong> {getHealthPaymentStatusLabel(details.payment_status)}</p>
+            <p><strong>Committee:</strong> {getHealthCommitteeDecisionLabel(details.health_committee_decision)}</p>
           </div>
 
           {item.admin_remarks ? (
@@ -606,6 +686,9 @@ function exportHealthCsv(items: HealthApplicationListItem[]) {
       district: item.district || '',
       taluka: item.taluka || '',
       treatment_type: details.treatment_type || '',
+      priority: getHealthCasePriorityLabel(details),
+      committee_decision: getHealthCommitteeDecisionLabel(details.health_committee_decision),
+      committee_reviewed_at: details.health_committee_reviewed_at || '',
       hospital_name: details.hospital_name || '',
       estimated_cost: details.estimated_cost || '',
       required_amount: details.required_amount || '',
@@ -630,6 +713,9 @@ function exportHealthCsv(items: HealthApplicationListItem[]) {
     'district',
     'taluka',
     'treatment_type',
+    'priority',
+    'committee_decision',
+    'committee_reviewed_at',
     'hospital_name',
     'estimated_cost',
     'required_amount',

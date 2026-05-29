@@ -30,6 +30,14 @@ export type HealthPaymentStatus =
   | 'released'
   | 'completed'
 
+export type HealthCommitteeDecision =
+  | 'pending'
+  | 'recommended'
+  | 'not_recommended'
+  | 'approved'
+  | 'rejected'
+  | 'deferred'
+
 export type HealthTreatmentType =
   | 'Emergency Treatment'
   | 'Surgery'
@@ -65,6 +73,7 @@ export type VerifyMembershipResult = {
 }
 
 export type HealthApplicationDetails = {
+  case_priority?: 'emergency' | 'urgent' | 'normal' | string
   patient_age?: string
   patient_gender?: string
   guardian_name?: string
@@ -78,6 +87,10 @@ export type HealthApplicationDetails = {
   emergency?: boolean
   case_summary?: string
   medical_committee_remarks?: string
+  health_committee_decision?: HealthCommitteeDecision | string
+  health_committee_reviewed_at?: string
+  health_committee_members?: string
+  health_committee_remarks?: string
   payment_status?: HealthPaymentStatus | string
   follow_up_notes?: string
   case_close_report?: string
@@ -165,6 +178,18 @@ export const healthPaymentStatusOptions: Array<{
   { value: 'partially_released', label: 'Partially Released' },
   { value: 'released', label: 'Released' },
   { value: 'completed', label: 'Completed' },
+]
+
+export const healthCommitteeDecisionOptions: Array<{
+  value: HealthCommitteeDecision
+  label: string
+}> = [
+  { value: 'pending', label: 'Pending Committee Review' },
+  { value: 'recommended', label: 'Recommended' },
+  { value: 'not_recommended', label: 'Not Recommended' },
+  { value: 'approved', label: 'Committee Approved' },
+  { value: 'rejected', label: 'Committee Rejected' },
+  { value: 'deferred', label: 'Deferred / More Info Needed' },
 ]
 
 export const healthDocumentOptions: HealthDocumentConfig[] = [
@@ -346,4 +371,88 @@ export function formatHealthFileSize(size?: number | null) {
 
 export function isHealthEmergency(details?: HealthApplicationDetails | null) {
   return Boolean(details?.emergency)
+}
+
+
+export function getHealthCommitteeDecisionLabel(status?: string | null) {
+  if (!status) return 'Pending Committee Review'
+
+  return (
+    healthCommitteeDecisionOptions.find((item) => item.value === status)?.label ??
+    status
+  )
+}
+
+export function getHealthCommitteeDecisionClass(status?: string | null) {
+  switch (status) {
+    case 'approved':
+    case 'recommended':
+      return 'bg-emerald-100 text-emerald-800 border-emerald-200'
+    case 'rejected':
+    case 'not_recommended':
+      return 'bg-red-100 text-red-800 border-red-200'
+    case 'deferred':
+      return 'bg-amber-100 text-amber-800 border-amber-200'
+    default:
+      return 'bg-slate-100 text-slate-800 border-slate-200'
+  }
+}
+
+export function getHealthCasePriority(details?: HealthApplicationDetails | null) {
+  if (details?.case_priority) return details.case_priority
+  return isHealthEmergency(details) ? 'emergency' : 'normal'
+}
+
+export function getHealthCasePriorityLabel(details?: HealthApplicationDetails | null) {
+  const priority = getHealthCasePriority(details)
+
+  if (priority === 'emergency') return 'Emergency'
+  if (priority === 'urgent') return 'Urgent'
+  return 'Normal'
+}
+
+export function getHealthCasePriorityClass(details?: HealthApplicationDetails | null) {
+  const priority = getHealthCasePriority(details)
+
+  if (priority === 'emergency') return 'bg-red-100 text-red-800 border-red-200'
+  if (priority === 'urgent') return 'bg-amber-100 text-amber-800 border-amber-200'
+  return 'bg-slate-100 text-slate-800 border-slate-200'
+}
+
+export function sortHealthCasesByPriority<T extends { details?: HealthApplicationDetails | null; created_at: string }>(
+  items: T[],
+) {
+  const priorityWeight = (details?: HealthApplicationDetails | null) => {
+    const priority = getHealthCasePriority(details)
+    if (priority === 'emergency') return 0
+    if (priority === 'urgent') return 1
+    return 2
+  }
+
+  return [...items].sort((a, b) => {
+    const byPriority = priorityWeight(a.details) - priorityWeight(b.details)
+    if (byPriority !== 0) return byPriority
+
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
+}
+
+export function formatHealthMoney(value?: string | number | null) {
+  if (value === null || value === undefined || value === '') return '-'
+
+  const amount = Number(value)
+  if (Number.isNaN(amount)) return String(value)
+
+  return `Rs. ${amount.toLocaleString('en-PK')}`
+}
+
+export function sanitizeHealthReportText(value?: string | number | boolean | null) {
+  if (value === null || value === undefined || value === '') return '-'
+
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
 }
