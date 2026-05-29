@@ -17,8 +17,6 @@ import {
   HandHeart,
   Home,
   IdCard,
-  LayoutDashboard,
-  LogIn,
   LogOut,
   Menu,
   ShieldCheck,
@@ -37,7 +35,7 @@ export const Route = createRootRoute({
       {
         name: 'description',
         content:
-          'Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education support platform.',
+          'Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education, health and welfare support platform.',
       },
       { name: 'theme-color', content: '#0b2a1d' },
       {
@@ -47,7 +45,7 @@ export const Route = createRootRoute({
       {
         property: 'og:description',
         content:
-          'Register, verify and access Jatt Alliance Sindh digital membership and selected member support programs.',
+          'Register, verify and access Jatt Alliance Sindh digital membership, education, health and welfare support programs.',
       },
       { property: 'og:type', content: 'website' },
     ],
@@ -76,7 +74,8 @@ const adminRoleNames = [
   'employment_admin',
   'ration_admin',
   'welfare_admin',
-]as const
+  'finance_admin',
+] as const
 
 function RootComponent() {
   const pathname = useRouterState({
@@ -253,28 +252,16 @@ function Header({ compact }: { compact: boolean }) {
     if (authLoading) return items
 
     if (!isLoggedIn) {
-      items.push(
-        {
-          to: '/signup',
-          label: 'Signup',
-          icon: <UserPlus size={16} />,
-        },
-        {
-          to: '/login',
-          label: 'Login',
-          icon: <LogIn size={16} />,
-        },
-      )
+      items.push({
+        to: '/signup',
+        label: 'Membership',
+        icon: <IdCard size={16} />,
+      })
 
       return items
     }
 
     items.push(
-      {
-        to: '/dashboard',
-        label: 'Dashboard',
-        icon: <LayoutDashboard size={16} />,
-      },
       {
         to: '/register',
         label: 'Register',
@@ -356,7 +343,7 @@ function Header({ compact }: { compact: boolean }) {
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-5 md:flex" aria-label="Main navigation">
+        <nav className="hidden items-center gap-4 lg:gap-5 md:flex" aria-label="Main navigation">
           {navItems.map((item, index) => (
             <NavLink
               key={item.to}

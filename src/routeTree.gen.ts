@@ -20,6 +20,7 @@ import { Route as VerifyMemberNoRouteImport } from './routes/verify/$memberNo'
 import { Route as ProgramsWelfareRouteImport } from './routes/programs/welfare'
 import { Route as ProgramsHealthRouteImport } from './routes/programs/health'
 import { Route as ProgramsEducationRouteImport } from './routes/programs/education'
+import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
 import { Route as ProgramsWelfareMyApplicationsRouteImport } from './routes/programs/welfare/my-applications'
 import { Route as ProgramsWelfareApplyRouteImport } from './routes/programs/welfare/apply'
 import { Route as ProgramsWelfareIdRouteImport } from './routes/programs/welfare/$id'
@@ -92,6 +93,11 @@ const ProgramsEducationRoute = ProgramsEducationRouteImport.update({
   id: '/programs/education',
   path: '/programs/education',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ProgramsWelfareMyApplicationsRoute =
   ProgramsWelfareMyApplicationsRouteImport.update({
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
   '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
   '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
   '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/signup'
+    | '/admin/finance'
     | '/programs/education'
     | '/programs/health'
     | '/programs/welfare'
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/signup'
+    | '/admin/finance'
     | '/programs/education'
     | '/programs/health'
     | '/programs/welfare'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/signup'
+    | '/admin/finance'
     | '/programs/education'
     | '/programs/health'
     | '/programs/welfare'
@@ -459,6 +471,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/programs/education'
       preLoaderRoute: typeof ProgramsEducationRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/programs/welfare/my-applications': {
       id: '/programs/welfare/my-applications'
@@ -631,6 +650,7 @@ const AdminProgramsWelfareRouteWithChildren =
   AdminProgramsWelfareRoute._addFileChildren(AdminProgramsWelfareRouteChildren)
 
 interface AdminRouteChildren {
+  AdminFinanceRoute: typeof AdminFinanceRoute
   AdminMembersIdRoute: typeof AdminMembersIdRouteWithChildren
   AdminProgramsEducationRoute: typeof AdminProgramsEducationRouteWithChildren
   AdminProgramsHealthRoute: typeof AdminProgramsHealthRouteWithChildren
@@ -638,6 +658,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminFinanceRoute: AdminFinanceRoute,
   AdminMembersIdRoute: AdminMembersIdRouteWithChildren,
   AdminProgramsEducationRoute: AdminProgramsEducationRouteWithChildren,
   AdminProgramsHealthRoute: AdminProgramsHealthRouteWithChildren,

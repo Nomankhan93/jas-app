@@ -6,16 +6,16 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
   BadgeCheck,
+  BadgeIndianRupee,
   BookOpenCheck,
   Download,
   Eye,
   EyeOff,
   Filter,
-  GraduationCap,
   HeartPulse,
   HandHeart,
   IdCard,
@@ -29,6 +29,7 @@ import {
   UserCheck,
   Users,
   XCircle,
+  type LucideIcon,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase/client'
 
@@ -45,9 +46,11 @@ const adminRoleNames = [
   'employment_admin',
   'ration_admin',
   'welfare_admin',
+  'finance_admin',
 ] as const
 
 type AdminRoleName = (typeof adminRoleNames)[number]
+type AdminModuleKey = 'membership' | 'education' | 'health' | 'welfare' | 'finance'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = 'all' | MemberStatus
@@ -71,8 +74,32 @@ type AdminAccessResult =
   | { ok: true; roles: AdminRoleName[] }
   | { ok: false; redirectTo: '/login' | '/dashboard' }
 
+type ModuleCardConfig = {
+  key: AdminModuleKey
+  title: string
+  description: string
+  to?: string
+  actionLabel: string
+  icon: LucideIcon
+  tone: 'membership' | 'education' | 'health' | 'welfare' | 'finance'
+  metric?: string
+  metricLabel?: string
+}
+
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+
+const roleLabels: Record<AdminRoleName, string> = {
+  admin: 'Admin',
+  super_admin: 'Super Admin',
+  membership_admin: 'Membership Admin',
+  education_admin: 'Education Admin',
+  health_admin: 'Health Admin',
+  employment_admin: 'Employment Admin',
+  ration_admin: 'Ration Admin',
+  welfare_admin: 'Welfare Admin',
+  finance_admin: 'Finance Admin',
+}
 
 function AdminPage() {
   const navigate = useNavigate()
@@ -88,6 +115,7 @@ function AdminPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
+  const [adminRoles, setAdminRoles] = useState<AdminRoleName[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [districtFilter, setDistrictFilter] = useState('all')
   const [talukaFilter, setTalukaFilter] = useState('all')
@@ -125,18 +153,14 @@ function AdminPage() {
 
         if (!canManageMembersFromRoles(access.roles)) {
           if (!cancelledRef?.current) {
-            if (access.roles.includes('education_admin')) {
-              await navigate({ to: '/admin/programs/education' })
-            } else if (access.roles.includes('health_admin')) {
-              await navigate({ to: '/admin/programs/health' })
-            } else if (access.roles.includes('welfare_admin')) {
-              await navigate({ to: '/admin/programs/welfare' })
-            } else {
-              await navigate({ to: '/dashboard' })
-            }
+            await navigate({ to: getPrimaryAdminRoute(access.roles) })
           }
 
           return
+        }
+
+        if (!cancelledRef?.current) {
+          setAdminRoles(access.roles)
         }
 
         const { data, error: membersError } = await supabase
@@ -292,13 +316,26 @@ function AdminPage() {
   }
 
   function exportCsv() {
-    const csv = buildCsv(filteredMembers)
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    if (showSensitive) {
+      const confirmed = window.confirm(
+        'This export will include full CNIC and mobile numbers. Continue only if this is required for official verification.',
+      )
+
+      if (!confirmed) return
+    }
+
+    const csv = buildCsv(filteredMembers, showSensitive)
+    const blob = new Blob([`\uFEFF${csv}`], {
+      type: 'text/csv;charset=utf-8;',
+    })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
+    const privacySuffix = showSensitive ? 'full' : 'masked'
 
     link.href = url
-    link.download = `jas-members-${new Date().toISOString().slice(0, 10)}.csv`
+    link.download = `jas-members-${privacySuffix}-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`
     link.click()
 
     URL.revokeObjectURL(url)
@@ -314,7 +351,7 @@ function AdminPage() {
         <div className="page-wrap rounded-3xl bg-white p-5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3">
             <RefreshCw className="h-5 w-5 animate-spin text-emerald-700" />
-            Loading admin panel...
+            Loading admin control center...
           </div>
         </div>
       </main>
@@ -326,59 +363,50 @@ function AdminPage() {
       <div className="page-wrap space-y-6">
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">
-              Jatt Alliance Sindh
-            </p>
-
-            <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-                  Membership Admin Panel
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">
+                  Jatt Alliance Sindh
+                </p>
+
+                <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+                  JAS Admin Control Center
                 </h1>
 
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  Review membership applications, filter by district or taluka,
-                  export records, and open the same digital membership card that
-                  approved members see.
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  Manage membership applications and access authorized program
+                  modules for education, health, welfare and finance. Sensitive
+                  CNIC/mobile data stays masked unless explicitly required.
                 </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {adminRoles.map((role) => (
+                    <span
+                      key={role}
+                      className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-black text-emerald-900 shadow-sm ring-1 ring-emerald-100"
+                    >
+                      {roleLabels[role]}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 lg:flex">
-                <Link
-                  to="/admin/programs/education"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white"
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  Education Admin
-                </Link>
-
-                <Link
-                  to="/admin/programs/health"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-bold !text-slate-950 no-underline shadow-sm transition hover:bg-red-400 hover:!text-slate-950"
-                >
-                  <HeartPulse className="h-4 w-4" />
-                  Health Admin
-                </Link>
-
-                <Link
-                  to="/admin/programs/welfare"
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-bold !text-slate-950 no-underline shadow-sm transition hover:bg-amber-300 hover:!text-slate-950"
-                >
-                  <HandHeart className="h-4 w-4" />
-                  Welfare Admin
-                </Link>
-
                 <button
                   type="button"
                   onClick={() => setShowSensitive((value) => !value)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
+                  className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold shadow-sm transition ${
+                    showSensitive
+                      ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+                      : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
+                  }`}
                 >
                   {showSensitive ? (
                     <EyeOff className="h-4 w-4" />
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
-                  {showSensitive ? 'Hide CNIC' : 'Show CNIC'}
+                  {showSensitive ? 'Hide Sensitive Data' : 'Show Sensitive Data'}
                 </button>
 
                 <button
@@ -395,6 +423,17 @@ function AdminPage() {
               </div>
             </div>
           </div>
+
+          {showSensitive ? (
+            <div className="flex items-start gap-3 border-b border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 sm:px-7">
+              <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
+              <p className="m-0">
+                Sensitive data is visible. Use this mode only for official
+                verification, and avoid exporting or sharing records unless
+                approved by JAS leadership.
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
             <StatCard
@@ -440,7 +479,7 @@ function AdminPage() {
           </div>
         </header>
 
-        <AdminProgramShortcuts />
+        <AdminProgramShortcuts roles={adminRoles} stats={stats} />
 
         {error ? (
           <div className="flex items-start gap-3 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-100">
@@ -454,7 +493,7 @@ function AdminPage() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-100">
                 <Filter className="h-3.5 w-3.5" />
-                Admin filters
+                Membership management
               </div>
 
               <h2 className="mt-3 text-lg font-black text-slate-950">
@@ -474,7 +513,7 @@ function AdminPage() {
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download className="h-4 w-4" />
-                Export CSV
+                {showSensitive ? 'Export Full CSV' : 'Export Masked CSV'}
               </button>
 
               {hasActiveFilters ? (
@@ -558,8 +597,8 @@ function AdminPage() {
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-medium text-slate-500">
-              CNIC and mobile numbers are masked by default. Use “Show CNIC” only
-              when needed for verification.
+              CNIC and mobile numbers are masked by default. Full CSV export
+              requires sensitive-data mode and confirmation.
             </p>
 
             <select
@@ -700,100 +739,166 @@ function AdminPage() {
   )
 }
 
-function AdminProgramShortcuts() {
+function AdminProgramShortcuts({
+  roles,
+  stats,
+}: {
+  roles: readonly AdminRoleName[]
+  stats: {
+    total: number
+    pending: number
+    approved: number
+    rejected: number
+    cards: number
+  }
+}) {
+  const cards: ModuleCardConfig[] = [
+    {
+      key: 'membership',
+      title: 'Membership Applications',
+      description:
+        'Review member registrations, approve/reject applications and access QR-based digital membership cards.',
+      actionLabel: 'Current Page',
+      icon: ShieldCheck,
+      tone: 'membership',
+      metric: String(stats.pending),
+      metricLabel: 'Pending',
+    },
+    {
+      key: 'education',
+      title: 'Education Applications',
+      description:
+        'Review scholarship, fee support, books, uniform, hostel, transport and skills training applications.',
+      to: '/admin/programs/education',
+      actionLabel: 'Open Education Admin',
+      icon: BookOpenCheck,
+      tone: 'education',
+    },
+    {
+      key: 'health',
+      title: 'Health Applications',
+      description:
+        'Review medical help, emergency treatment, hospital estimates, prescriptions and health committee cases.',
+      to: '/admin/programs/health',
+      actionLabel: 'Open Health Admin',
+      icon: HeartPulse,
+      tone: 'health',
+    },
+    {
+      key: 'welfare',
+      title: 'Welfare Cases',
+      description:
+        'Review financial help, ration, widow/orphan, emergency, marriage, disaster, legal and family support cases.',
+      to: '/admin/programs/welfare',
+      actionLabel: 'Open Welfare Admin',
+      icon: HandHeart,
+      tone: 'welfare',
+    },
+    {
+      key: 'finance',
+      title: 'Finance System',
+      description:
+        'Track donations, expenses, approvals, receipts, available balance, monthly reports and finance audit logs.',
+      to: '/admin/finance',
+      actionLabel: 'Open Finance Admin',
+      icon: BadgeIndianRupee,
+      tone: 'finance',
+    },
+  ]
+
+  const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
+
   return (
-    <section className="grid gap-4 md:grid-cols-3">
-      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
-          <ShieldCheck className="h-5 w-5" />
-        </div>
-
-        <h2 className="text-xl font-black text-slate-950">
-          Membership Applications
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Review member registrations, approve/reject applications and access
-          QR-based digital membership cards.
-        </p>
-
-        <div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-emerald-800">
-          Current Page
-          <CheckMini />
-        </div>
-      </div>
-
-      <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
-          <BookOpenCheck className="h-5 w-5" />
-        </div>
-
-        <h2 className="text-xl font-black text-slate-950">
-          Education Applications
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Review scholarship, fee support, books, uniform, hostel, transport and
-          skills training applications.
-        </p>
-
-        <Link
-          to="/admin/programs/education"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-emerald-900 hover:!text-white"
-        >
-          Open Education Admin
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-
-
-      <div className="rounded-3xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5 shadow-sm">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-800">
-          <HeartPulse className="h-5 w-5" />
-        </div>
-
-        <h2 className="text-xl font-black text-slate-950">
-          Health Applications
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Review medical help, emergency treatment, hospital estimate,
-          prescription and restricted health committee cases.
-        </p>
-
-        <Link
-          to="/admin/programs/health"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-red-900 hover:!text-white"
-        >
-          Open Health Admin
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-
-      <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5 shadow-sm">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-800">
-          <HandHeart className="h-5 w-5" />
-        </div>
-
-        <h2 className="text-xl font-black text-slate-950">
-          Welfare Cases
-        </h2>
-
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          Review financial help, ration, widow/orphan, emergency, marriage,
-          disaster, legal and family support cases.
-        </p>
-
-        <Link
-          to="/admin/programs/welfare"
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-black !text-white no-underline transition hover:bg-amber-900 hover:!text-white"
-        >
-          Open Welfare Admin
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      {visibleCards.map((card) => (
+        <AdminModuleCard key={card.key} card={card} />
+      ))}
     </section>
   )
+}
+
+function AdminModuleCard({ card }: { card: ModuleCardConfig }) {
+  const Icon = card.icon
+  const tone = getModuleTone(card.tone)
+
+  return (
+    <article className={`rounded-3xl border p-5 shadow-sm ${tone.card}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${tone.icon}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+
+        {card.metric ? (
+          <div className="rounded-2xl bg-white/80 px-3 py-2 text-right shadow-sm ring-1 ring-black/5">
+            <p className="text-lg font-black text-slate-950">{card.metric}</p>
+            <p className="text-[0.65rem] font-black uppercase tracking-wide text-slate-500">
+              {card.metricLabel}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <h2 className="text-xl font-black text-slate-950">{card.title}</h2>
+
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        {card.description}
+      </p>
+
+      {card.to ? (
+        <Link
+          to={card.to}
+          className={`jas-dark-action-link mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition ${tone.button}`}
+        >
+          {card.actionLabel}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      ) : (
+        <div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-emerald-800">
+          {card.actionLabel}
+          <CheckMini />
+        </div>
+      )}
+    </article>
+  )
+}
+
+function getModuleTone(tone: ModuleCardConfig['tone']) {
+  const tones: Record<
+    ModuleCardConfig['tone'],
+    {
+      card: string
+      icon: string
+      button: string
+    }
+  > = {
+    membership: {
+      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
+      icon: 'bg-emerald-100 text-emerald-800',
+      button: 'hover:bg-emerald-900',
+    },
+    education: {
+      card: 'border-amber-200 bg-gradient-to-br from-amber-50 to-white',
+      icon: 'bg-amber-100 text-amber-800',
+      button: 'hover:bg-amber-900',
+    },
+    health: {
+      card: 'border-red-200 bg-gradient-to-br from-red-50 to-white',
+      icon: 'bg-red-100 text-red-800',
+      button: 'hover:bg-red-900',
+    },
+    welfare: {
+      card: 'border-orange-200 bg-gradient-to-br from-orange-50 to-white',
+      icon: 'bg-orange-100 text-orange-800',
+      button: 'hover:bg-orange-900',
+    },
+    finance: {
+      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
+      icon: 'bg-emerald-100 text-emerald-800',
+      button: 'hover:bg-emerald-900',
+    },
+  }
+
+  return tones[tone]
 }
 
 function CheckMini() {
@@ -881,7 +986,7 @@ function StatCard({
   label: string
   value: number
   tone: 'slate' | 'amber' | 'emerald' | 'red' | 'gold'
-  icon: React.ReactNode
+  icon: ReactNode
   active: boolean
   onClick: () => void
 }) {
@@ -1006,10 +1111,9 @@ function ViewApplicationLink({
     <Link
       to="/admin/members/$id"
       params={{ id: memberId }}
-      className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-xs font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white ${
+      className={`jas-dark-action-link inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold no-underline shadow-sm transition ${
         fullWidth ? 'w-full' : ''
       }`}
-      style={{ color: '#ffffff' }}
     >
       <ShieldCheck className="h-4 w-4" />
       View Application
@@ -1028,7 +1132,7 @@ function MemberPhoto({
   alt: string
   className: string
   fallbackClassName: string
-  fallbackText: React.ReactNode
+  fallbackText: ReactNode
 }) {
   if (!src) {
     return <div className={fallbackClassName}>{fallbackText}</div>
@@ -1056,7 +1160,7 @@ function StatusBadge({ status }: { status: MemberStatus }) {
   const config: Record<
     MemberStatus,
     {
-      icon: React.ReactNode
+      icon: ReactNode
       className: string
       text: string
     }
@@ -1123,12 +1227,42 @@ async function ensureAdminAccess(): Promise<AdminAccessResult> {
   return { ok: true, roles: safeRoles }
 }
 
+function canAccessAdminModule(
+  roles: readonly AdminRoleName[],
+  moduleKey: AdminModuleKey,
+) {
+  if (roles.includes('admin') || roles.includes('super_admin')) {
+    return true
+  }
+
+  const roleByModule: Record<AdminModuleKey, AdminRoleName> = {
+    membership: 'membership_admin',
+    education: 'education_admin',
+    health: 'health_admin',
+    welfare: 'welfare_admin',
+    finance: 'finance_admin',
+  }
+
+  return roles.includes(roleByModule[moduleKey])
+}
+
 function canManageMembersFromRoles(roles: readonly AdminRoleName[]) {
-  return (
-    roles.includes('admin') ||
-    roles.includes('super_admin') ||
-    roles.includes('membership_admin')
-  )
+  return canAccessAdminModule(roles, 'membership')
+}
+
+function getPrimaryAdminRoute(
+  roles: readonly AdminRoleName[],
+):
+  | '/admin/programs/education'
+  | '/admin/programs/health'
+  | '/admin/programs/welfare'
+  | '/admin/finance'
+  | '/dashboard' {
+  if (roles.includes('education_admin')) return '/admin/programs/education'
+  if (roles.includes('health_admin')) return '/admin/programs/health'
+  if (roles.includes('welfare_admin')) return '/admin/programs/welfare'
+  if (roles.includes('finance_admin')) return '/admin/finance'
+  return '/dashboard'
 }
 
 async function createSignedPhotoUrls(
@@ -1219,7 +1353,7 @@ function matchesDateFilter(value: string, filter: DateFilter) {
   return date >= cutoff
 }
 
-function buildCsv(members: Member[]) {
+function buildCsv(members: Member[], includeSensitive: boolean) {
   const rows = [
     [
       'Full Name',
@@ -1230,16 +1364,18 @@ function buildCsv(members: Member[]) {
       'Status',
       'Member No',
       'Submitted',
+      'Export Mode',
     ],
     ...members.map((member) => [
       member.full_name,
-      member.cnic,
-      member.mobile,
+      includeSensitive ? member.cnic : maskCnic(member.cnic),
+      includeSensitive ? member.mobile : maskMobile(member.mobile),
       member.district,
       member.taluka ?? '',
       member.status,
       member.member_no ?? '',
       formatDate(member.created_at),
+      includeSensitive ? 'Full sensitive data' : 'Masked sensitive data',
     ]),
   ]
 

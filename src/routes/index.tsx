@@ -7,8 +7,9 @@ import {
   ClipboardCheck,
   FileCheck2,
   GraduationCap,
+  HandHeart,
+  HeartPulse,
   IdCard,
-  LayoutDashboard,
   QrCode,
   ShieldCheck,
   UserPlus,
@@ -22,7 +23,7 @@ export const Route = createFileRoute('/')({
 
 const portalStats = [
   { label: 'Portal Type', value: 'Member + Programs' },
-  { label: 'Approval Flow', value: 'Admin Reviewed' },
+  { label: 'Active Programs', value: 'Education · Health · Welfare' },
   { label: 'Digital System', value: 'QR Verified' },
 ]
 
@@ -75,11 +76,18 @@ const programModules: Array<{
     icon: GraduationCap,
   },
   {
-    title: 'More Welfare Programs',
-    text: 'Health, employment, ration and welfare support modules can be connected later using the same verified member system.',
-    to: '/programs/education',
-    badge: 'Next Phase',
-    icon: ShieldCheck,
+    title: 'Health Assistance',
+    text: 'Submit medical support cases with patient details, treatment information, emergency priority and private documents.',
+    to: '/programs/health',
+    badge: 'Active',
+    icon: HeartPulse,
+  },
+  {
+    title: 'Welfare Case Support',
+    text: 'Apply for financial help, ration support, widow/orphan support, emergency assistance and other welfare cases.',
+    to: '/programs/welfare',
+    badge: 'Active',
+    icon: HandHeart,
   },
 ]
 
@@ -99,9 +107,14 @@ const portalFeatures: Array<{
     icon: BookOpenCheck,
   },
   {
-    title: 'Status Tracking',
-    text: 'Members can track pending, under review, approved, rejected or completed application status.',
-    icon: LayoutDashboard,
+    title: 'Health Assistance Cases',
+    text: 'Medical help cases can be submitted with private documents and reviewed by authorized health admins.',
+    icon: HeartPulse,
+  },
+  {
+    title: 'Welfare Case Tracking',
+    text: 'Financial help, ration, widow, orphan and emergency welfare cases stay connected to verified member records.',
+    icon: HandHeart,
   },
 ]
 
@@ -153,8 +166,8 @@ function HeroSection() {
 
           <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[650px] text-[1.08rem] font-medium leading-8 text-stone-600">
             Digital platform for JAS membership registration, admin approval,
-            QR verification, digital member cards and selected community support
-            programs such as education and skills development.
+            QR verification, digital member cards and verified community support
+            programs including education, health assistance and welfare cases.
           </p>
 
           <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
@@ -167,11 +180,21 @@ function HeroSection() {
               to="/programs/education"
               className="secondary-btn pressable lift-hover"
             >
-              Education Support
+              Education
             </Link>
 
-            <Link to="/login" className="secondary-btn pressable lift-hover">
-              Login
+            <Link
+              to="/programs/health"
+              className="secondary-btn pressable lift-hover"
+            >
+              Health
+            </Link>
+
+            <Link
+              to="/programs/welfare"
+              className="secondary-btn pressable lift-hover"
+            >
+              Welfare
             </Link>
           </div>
 
@@ -326,6 +349,8 @@ function TrustStrip() {
     'Digital Card',
     'QR Verification',
     'Education Support',
+    'Health Assistance',
+    'Welfare Cases',
     'Status Tracking',
   ]
 
@@ -422,12 +447,13 @@ function ProgramGateway() {
         </div>
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          Program applications stay connected with approved JAS membership
-          numbers, so every case can be reviewed with a verified member record.
+          Education, health and welfare applications stay connected with approved
+          JAS membership numbers, so every case can be reviewed with a verified
+          member record.
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {programModules.map((program, index) => {
           const Icon = program.icon
 
@@ -458,7 +484,7 @@ function ProgramGateway() {
 
               <Link
                 to={program.to}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-stone-950 px-4 py-3 text-sm font-black text-white no-underline transition hover:bg-emerald-900"
+                className="jas-dark-action-link mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition"
               >
                 Open
                 <ArrowRight size={15} />
@@ -485,13 +511,13 @@ function PortalFeatures() {
         </div>
 
         <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          The portal supports membership registration and selected community
-          program workflows without turning the app into a heavy organization
-          management system.
+          The portal supports membership registration and focused community
+          program workflows while keeping finance and sensitive reviews restricted
+          to authorized admins.
         </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {portalFeatures.map((feature, index) => {
           const Icon = feature.icon
 
@@ -554,7 +580,8 @@ function FinalCTA() {
 
         <p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">
           Create your account, submit your membership form, receive your digital
-          member ID, and use verified member services such as education support.
+          member ID, and use verified member services such as education, health
+          assistance and welfare support.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">
@@ -570,7 +597,21 @@ function FinalCTA() {
             to="/programs/education"
             className="ghost-btn pressable lift-hover"
           >
-            Education Support
+            Education
+          </Link>
+
+          <Link
+            to="/programs/health"
+            className="ghost-btn pressable lift-hover"
+          >
+            Health
+          </Link>
+
+          <Link
+            to="/programs/welfare"
+            className="ghost-btn pressable lift-hover"
+          >
+            Welfare
           </Link>
         </div>
       </div>
