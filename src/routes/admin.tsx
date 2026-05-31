@@ -12,6 +12,7 @@ import {
   BadgeCheck,
   BadgeIndianRupee,
   BookOpenCheck,
+  BriefcaseBusiness,
   Download,
   Eye,
   EyeOff,
@@ -50,7 +51,13 @@ const adminRoleNames = [
 ] as const
 
 type AdminRoleName = (typeof adminRoleNames)[number]
-type AdminModuleKey = 'membership' | 'education' | 'health' | 'welfare' | 'finance'
+type AdminModuleKey =
+  | 'membership'
+  | 'education'
+  | 'health'
+  | 'welfare'
+  | 'employment'
+  | 'finance'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = 'all' | MemberStatus
@@ -74,14 +81,27 @@ type AdminAccessResult =
   | { ok: true; roles: AdminRoleName[] }
   | { ok: false; redirectTo: '/login' | '/dashboard' }
 
+type AdminRouteTo =
+  | '/admin/programs/education'
+  | '/admin/programs/health'
+  | '/admin/programs/welfare'
+  | '/admin/programs/employment'
+  | '/admin/finance'
+
 type ModuleCardConfig = {
   key: AdminModuleKey
   title: string
   description: string
-  to?: string
+  to?: AdminRouteTo
   actionLabel: string
   icon: LucideIcon
-  tone: 'membership' | 'education' | 'health' | 'welfare' | 'finance'
+  tone:
+    | 'membership'
+    | 'education'
+    | 'health'
+    | 'welfare'
+    | 'employment'
+    | 'finance'
   metric?: string
   metricLabel?: string
 }
@@ -375,7 +395,7 @@ function AdminPage() {
 
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                   Manage membership applications and access authorized program
-                  modules for education, health, welfare and finance. Sensitive
+                  modules for education, health, welfare, employment and finance. Sensitive
                   CNIC/mobile data stays masked unless explicitly required.
                 </p>
 
@@ -794,6 +814,17 @@ function AdminProgramShortcuts({
       icon: HandHeart,
       tone: 'welfare',
     },
+
+    {
+      key: 'employment',
+      title: 'Employment Program',
+      description:
+        'Review job seeker profiles, CV uploads, skills, training interests, shortlists and placement tracking.',
+      to: '/admin/programs/employment',
+      actionLabel: 'Open Employment Admin',
+      icon: BriefcaseBusiness,
+      tone: 'employment',
+    },
     {
       key: 'finance',
       title: 'Finance System',
@@ -809,7 +840,7 @@ function AdminProgramShortcuts({
   const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
       {visibleCards.map((card) => (
         <AdminModuleCard key={card.key} card={card} />
       ))}
@@ -890,6 +921,11 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
       card: 'border-orange-200 bg-gradient-to-br from-orange-50 to-white',
       icon: 'bg-orange-100 text-orange-800',
       button: 'hover:bg-orange-900',
+    },
+    employment: {
+      card: 'border-sky-200 bg-gradient-to-br from-sky-50 to-white',
+      icon: 'bg-sky-100 text-sky-800',
+      button: 'hover:bg-sky-900',
     },
     finance: {
       card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
@@ -1240,6 +1276,7 @@ function canAccessAdminModule(
     education: 'education_admin',
     health: 'health_admin',
     welfare: 'welfare_admin',
+    employment: 'employment_admin',
     finance: 'finance_admin',
   }
 
@@ -1256,11 +1293,13 @@ function getPrimaryAdminRoute(
   | '/admin/programs/education'
   | '/admin/programs/health'
   | '/admin/programs/welfare'
+  | '/admin/programs/employment'
   | '/admin/finance'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
   if (roles.includes('health_admin')) return '/admin/programs/health'
   if (roles.includes('welfare_admin')) return '/admin/programs/welfare'
+  if (roles.includes('employment_admin')) return '/admin/programs/employment'
   if (roles.includes('finance_admin')) return '/admin/finance'
   return '/dashboard'
 }

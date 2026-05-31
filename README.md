@@ -1,202 +1,188 @@
-Welcome to your new TanStack Start app! 
+# Jatt Alliance Sindh (JAS) Web App
 
-# Getting Started
+A member-verified web platform for Jatt Alliance Sindh. The app combines digital membership registration, admin approval, QR-based member cards, program applications, finance tracking, donations, donor leaderboard, employment support, and member notifications.
 
-To run this application:
+## Current modules
+
+- Public landing page with Programs, Donate and Donors entry points
+- Membership registration, approval, rejection and QR verification
+- Digital membership card front/back and admin card preview
+- Unified member dashboard and in-app notifications
+- Education program applications and admin review
+- Health assistance cases with restricted medical review
+- Welfare case management and close reports
+- Employment program / CV database
+- Donation submission and member-only donor leaderboard
+- Admin finance dashboard for donations, expenses and audit logs
+- Role-based admin entry points for membership, education, health, welfare, employment and finance
+
+## Tech stack
+
+- React + TypeScript
+- TanStack Start / TanStack Router
+- Supabase Auth, Postgres, Storage and RLS
+- Tailwind CSS
+- Vite
+
+## Environment setup
+
+Create `.env.local` from `.env.example`:
+
+```bash
+cp .env.example .env.local
+```
+
+Required variables:
+
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+VITE_SITE_URL=http://localhost:3000
+```
+
+Important: never commit or share `.env.local`. The service-role key is server-only.
+
+## Install and run
 
 ```bash
 npm install
 npm run dev
 ```
 
-# Building For Production
+Default local app URL:
 
-To build this application for production:
+```text
+http://localhost:3000
+```
+
+## Typecheck and build
 
 ```bash
+npm run check
 npm run build
 ```
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+Equivalent direct command:
 
 ```bash
-npm run test
+npx tsc --noEmit
 ```
 
-## Styling
+## Supabase migrations
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `npm install @tailwindcss/vite tailwindcss -D`
-
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
+Push migrations to the linked Supabase project:
 
 ```bash
-pnpm dlx shadcn@latest add button
+npx supabase db push
 ```
 
+Generate database types after schema changes:
 
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
+```bash
+npx supabase gen types typescript --linked --schema public > src/lib/supabase/database.types.ts
 ```
 
-Then anywhere in your JSX you can use it like so:
+For local Supabase:
 
-```tsx
-<Link to="/about">About</Link>
+```bash
+npx supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts
 ```
 
-This will create a link that will navigate to the `/about` route.
+## Admin roles
 
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
+Roles are stored in `public.user_roles`. Common roles:
 
-### Using A Layout
+- `admin`
+- `super_admin`
+- `membership_admin`
+- `education_admin`
+- `health_admin`
+- `welfare_admin`
+- `employment_admin`
+- `finance_admin`
 
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
+Assign a role from Supabase SQL Editor:
 
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
+```sql
+insert into public.user_roles (user_id, role)
+values ('USER_UUID_HERE', 'admin')
+on conflict (user_id, role) do nothing;
 ```
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+Program-specific example:
 
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
+```sql
+insert into public.user_roles (user_id, role)
+values ('USER_UUID_HERE', 'employment_admin')
+on conflict (user_id, role) do nothing;
 ```
 
-## API Routes
+## Key routes
 
-You can create API routes by using the `server` property in your route definitions:
+Public/member routes:
 
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
+```text
+/
+/signup
+/login
+/register
+/dashboard
+/notifications
+/card
+/verify/$memberNo
+/donate
+/donors
+/programs/education
+/programs/health
+/programs/welfare
+/programs/employment
 ```
 
-## Data Fetching
+Admin routes:
 
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
+```text
+/admin
+/admin/members/$id
+/admin/members/$id/card
+/admin/programs/education
+/admin/programs/health
+/admin/programs/welfare
+/admin/programs/employment
+/admin/finance
 ```
 
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
+## Security notes
 
-# Demo files
+- Keep storage buckets private unless explicitly public.
+- Medical, welfare, finance and employment documents should only be viewed by authorized roles.
+- Leaderboard includes only finance-approved donations.
+- CNIC/mobile are masked by default in admin lists.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` in client code.
+- Do not share project zips containing `.env.local`, `.git`, `.output`, or `supabase/.temp`.
 
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
+## Clean zip sharing
 
-# Learn More
+When sharing a project zip, exclude secrets and build artifacts:
 
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
+```bash
+cd ~/projects
+rsync -av jas-app/ jas-app-clean/ \
+  --exclude node_modules \
+  --exclude .git \
+  --exclude .output \
+  --exclude .env.local \
+  --exclude supabase/.temp \
+  --exclude supabase/.branches \
+  --exclude supabase/snippets
 
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+zip -r jas-app-clean.zip jas-app-clean
+```
+
+## Recommended next builds
+
+1. Public Website + CMS Phase 1
+2. News / Gallery / Events Phase 1
+3. Admin Reports Center
+4. Role Management UI
+5. Committee and Designation Management
