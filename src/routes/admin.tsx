@@ -11,6 +11,7 @@ import {
   ArrowRight,
   BadgeCheck,
   BadgeIndianRupee,
+  BarChart3,
   BookOpenCheck,
   BriefcaseBusiness,
   Download,
@@ -22,8 +23,10 @@ import {
   HandHeart,
   IdCard,
   ImageOff,
+  KeyRound,
   ListChecks,
   MapPin,
+  Network,
   Newspaper,
   RefreshCw,
   Search,
@@ -62,6 +65,9 @@ type AdminModuleKey =
   | 'finance'
   | 'cms'
   | 'media'
+  | 'reports'
+  | 'roles'
+  | 'committees'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = 'all' | MemberStatus
@@ -93,6 +99,8 @@ type AdminRouteTo =
   | '/admin/finance'
   | '/admin/cms'
   | '/admin/news'
+  | '/admin/reports'
+  | '/admin/roles'
 
 type ModuleCardConfig = {
   key: AdminModuleKey
@@ -110,8 +118,13 @@ type ModuleCardConfig = {
     | 'finance'
     | 'cms'
     | 'media'
+    | 'reports'
+    | 'roles'
+    | 'committees'
   metric?: string
   metricLabel?: string
+  badgeLabel?: string
+  comingSoon?: boolean
 }
 
 const MEMBER_PHOTO_BUCKET = 'member-photos'
@@ -862,9 +875,48 @@ function AdminProgramShortcuts({
       icon: Newspaper,
       tone: 'media',
     },
+    {
+      key: 'reports',
+      title: 'Reports Center',
+      description:
+        'View organization-wide summaries for members, programs, finance, districts and monthly activity.',
+      to: '/admin/reports',
+      actionLabel: 'Open Reports',
+      icon: BarChart3,
+      tone: 'reports',
+      badgeLabel: 'Admin',
+    },
+    {
+      key: 'roles',
+      title: 'Roles & Permissions',
+      description:
+        'Assign or remove admin roles, review user access and protect super admin controls.',
+      to: '/admin/roles',
+      actionLabel: 'Manage Roles',
+      icon: KeyRound,
+      tone: 'roles',
+      badgeLabel: 'Super Admin',
+    },
+    {
+      key: 'committees',
+      title: 'Committees & Designations',
+      description:
+        'Foundation for central, district and taluka committee records, office bearers and future designation cards.',
+      actionLabel: 'Coming Soon',
+      icon: Network,
+      tone: 'committees',
+      badgeLabel: 'Next Phase',
+      comingSoon: true,
+    },
   ]
 
   const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
+  const isSuperAdmin = roles.includes('super_admin')
+  const accessLabel = isSuperAdmin
+    ? 'Super admin control layer active'
+    : roles.includes('admin')
+      ? 'Central admin operations access'
+      : 'Role-based module access'
 
   return (
     <section className="rounded-[2rem] bg-white/90 p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
@@ -877,13 +929,18 @@ function AdminProgramShortcuts({
             Control center shortcuts
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Open the authorized modules for membership, programs, finance and
-            public website content management.
+            Open the authorized modules for membership, programs, finance,
+            public website content, reports and system access management.
           </p>
         </div>
 
-        <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
-          {visibleCards.length} module{visibleCards.length === 1 ? '' : 's'} available
+        <div className="space-y-2">
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
+            {visibleCards.length} module{visibleCards.length === 1 ? '' : 's'} available
+          </div>
+          <div className="rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
+            {accessLabel}
+          </div>
         </div>
       </div>
 
@@ -924,7 +981,7 @@ function AdminModuleCard({ card }: { card: ModuleCardConfig }) {
           <span
             className={`rounded-full px-3 py-1 text-[0.66rem] font-black uppercase tracking-[0.14em] ${tone.badge}`}
           >
-            Module
+            {card.badgeLabel ?? 'Module'}
           </span>
         )}
       </div>
@@ -949,6 +1006,10 @@ function AdminModuleCard({ card }: { card: ModuleCardConfig }) {
             {card.actionLabel}
             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
           </Link>
+        ) : card.comingSoon ? (
+          <div className="inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-500 shadow-sm">
+            {card.actionLabel}
+          </div>
         ) : (
           <div className="inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl bg-emerald-800 px-4 py-3 text-sm font-black text-white shadow-sm">
             {card.actionLabel}
@@ -1017,6 +1078,24 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
       icon: 'bg-cyan-100 text-cyan-800',
       badge: 'bg-cyan-100 text-cyan-800',
       action: 'bg-slate-950 !text-white hover:bg-cyan-900 hover:!text-white',
+    },
+    reports: {
+      card: 'border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white',
+      icon: 'bg-indigo-100 text-indigo-800',
+      badge: 'bg-indigo-100 text-indigo-800',
+      action: 'bg-slate-950 !text-white hover:bg-indigo-900 hover:!text-white',
+    },
+    roles: {
+      card: 'border-slate-300 bg-gradient-to-br from-slate-50 via-white to-white',
+      icon: 'bg-slate-900 text-white',
+      badge: 'bg-slate-900 text-white',
+      action: 'bg-slate-950 !text-white hover:bg-slate-800 hover:!text-white',
+    },
+    committees: {
+      card: 'border-lime-200 bg-gradient-to-br from-lime-50 via-white to-white',
+      icon: 'bg-lime-100 text-lime-800',
+      badge: 'bg-lime-100 text-lime-800',
+      action: 'bg-slate-950 !text-white hover:bg-lime-900 hover:!text-white',
     },
   }
 
@@ -1353,22 +1432,30 @@ function canAccessAdminModule(
   roles: readonly AdminRoleName[],
   moduleKey: AdminModuleKey,
 ) {
-  if (roles.includes('admin') || roles.includes('super_admin')) {
+  if (roles.includes('super_admin')) {
     return true
   }
 
-  const roleByModule: Record<AdminModuleKey, AdminRoleName> = {
+  if (moduleKey === 'roles') {
+    return false
+  }
+
+  if (roles.includes('admin')) {
+  return true
+}
+
+  const roleByModule: Partial<Record<AdminModuleKey, AdminRoleName>> = {
     membership: 'membership_admin',
     education: 'education_admin',
     health: 'health_admin',
     welfare: 'welfare_admin',
     employment: 'employment_admin',
     finance: 'finance_admin',
-    cms: 'admin',
-    media: 'admin',
   }
 
-  return roles.includes(roleByModule[moduleKey])
+  const requiredRole = roleByModule[moduleKey]
+
+  return requiredRole ? roles.includes(requiredRole) : false
 }
 
 function canManageMembersFromRoles(roles: readonly AdminRoleName[]) {
@@ -1385,6 +1472,8 @@ function getPrimaryAdminRoute(
   | '/admin/finance'
   | '/admin/cms'
   | '/admin/news'
+  | '/admin/reports'
+  | '/admin/roles'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
   if (roles.includes('health_admin')) return '/admin/programs/health'
