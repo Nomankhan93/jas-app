@@ -46,6 +46,7 @@ import { Route as AdminEventsRouteImport } from './routes/admin/events'
 import { Route as AdminDesignationsRouteImport } from './routes/admin/designations'
 import { Route as AdminCommitteesRouteImport } from './routes/admin/committees'
 import { Route as AdminCmsRouteImport } from './routes/admin/cms'
+import { Route as AdminAreaPermissionsRouteImport } from './routes/admin/area-permissions'
 import { Route as ProgramsWelfareMyApplicationsRouteImport } from './routes/programs/welfare/my-applications'
 import { Route as ProgramsWelfareApplyRouteImport } from './routes/programs/welfare/apply'
 import { Route as ProgramsWelfareIdRouteImport } from './routes/programs/welfare/$id'
@@ -258,6 +259,11 @@ const AdminCmsRoute = AdminCmsRouteImport.update({
   path: '/cms',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAreaPermissionsRoute = AdminAreaPermissionsRouteImport.update({
+  id: '/area-permissions',
+  path: '/area-permissions',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ProgramsWelfareMyApplicationsRoute =
   ProgramsWelfareMyApplicationsRouteImport.update({
     id: '/my-applications',
@@ -418,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
+  '/admin/area-permissions': typeof AdminAreaPermissionsRoute
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
@@ -483,6 +490,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
+  '/admin/area-permissions': typeof AdminAreaPermissionsRoute
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
@@ -549,6 +557,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
+  '/admin/area-permissions': typeof AdminAreaPermissionsRoute
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
@@ -616,6 +625,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/vision-mission'
+    | '/admin/area-permissions'
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
@@ -681,6 +691,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/vision-mission'
+    | '/admin/area-permissions'
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/signup'
     | '/vision-mission'
+    | '/admin/area-permissions'
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
@@ -1080,6 +1092,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCmsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/area-permissions': {
+      id: '/admin/area-permissions'
+      path: '/area-permissions'
+      fullPath: '/admin/area-permissions'
+      preLoaderRoute: typeof AdminAreaPermissionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/programs/welfare/my-applications': {
       id: '/programs/welfare/my-applications'
       path: '/my-applications'
@@ -1366,6 +1385,7 @@ const AdminProgramsWelfareRouteWithChildren =
   AdminProgramsWelfareRoute._addFileChildren(AdminProgramsWelfareRouteChildren)
 
 interface AdminRouteChildren {
+  AdminAreaPermissionsRoute: typeof AdminAreaPermissionsRoute
   AdminCmsRoute: typeof AdminCmsRouteWithChildren
   AdminCommitteesRoute: typeof AdminCommitteesRouteWithChildren
   AdminDesignationsRoute: typeof AdminDesignationsRoute
@@ -1383,6 +1403,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAreaPermissionsRoute: AdminAreaPermissionsRoute,
   AdminCmsRoute: AdminCmsRouteWithChildren,
   AdminCommitteesRoute: AdminCommitteesRouteWithChildren,
   AdminDesignationsRoute: AdminDesignationsRoute,

@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_area_permissions: {
+        Row: {
+          can_approve: boolean
+          can_review: boolean
+          can_view: boolean
+          created_at: string
+          created_by: string | null
+          district: string | null
+          id: string
+          is_active: boolean
+          module_key: string
+          notes: string | null
+          scope: string
+          taluka: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          can_approve?: boolean
+          can_review?: boolean
+          can_view?: boolean
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          id?: string
+          is_active?: boolean
+          module_key: string
+          notes?: string | null
+          scope: string
+          taluka?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          can_approve?: boolean
+          can_review?: boolean
+          can_view?: boolean
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          id?: string
+          is_active?: boolean
+          module_key?: string
+          notes?: string | null
+          scope?: string
+          taluka?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cms_pages: {
         Row: {
           content: string
@@ -998,6 +1052,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_area_permission_matches: {
+        Args: {
+          _action?: string
+          _district: string
+          _module_key: string
+          _taluka: string
+        }
+        Returns: boolean
+      }
       approve_member: {
         Args: { _member_id: string; _reviewed_by?: string }
         Returns: {
@@ -1094,8 +1157,39 @@ export type Database = {
         Returns: boolean
       }
       current_user_has_role: { Args: { _role: string }; Returns: boolean }
+      current_user_is_admin_or_super_admin: { Args: never; Returns: boolean }
       current_user_is_approved_member: { Args: never; Returns: boolean }
       current_user_is_super_admin: { Args: never; Returns: boolean }
+      delete_admin_area_permission: {
+        Args: { _permission_id: string }
+        Returns: boolean
+      }
+      get_area_permissions_for_user: {
+        Args: { _user_id: string }
+        Returns: {
+          can_approve: boolean
+          can_review: boolean
+          can_view: boolean
+          created_at: string
+          created_by: string | null
+          district: string | null
+          id: string
+          is_active: boolean
+          module_key: string
+          notes: string | null
+          scope: string
+          taluka: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "admin_area_permissions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_donor_leaderboard: {
         Args: { _limit?: number }
         Returns: {
@@ -1111,6 +1205,32 @@ export type Database = {
           purposes: string[]
           total_donated: number
         }[]
+      }
+      get_my_area_permissions: {
+        Args: never
+        Returns: {
+          can_approve: boolean
+          can_review: boolean
+          can_view: boolean
+          created_at: string
+          created_by: string | null
+          district: string | null
+          id: string
+          is_active: boolean
+          module_key: string
+          notes: string | null
+          scope: string
+          taluka: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "admin_area_permissions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       reject_member: {
         Args: {
@@ -1180,6 +1300,59 @@ export type Database = {
           roles: string[]
           user_id: string
         }[]
+      }
+      search_users_for_area_permissions: {
+        Args: { _limit?: number; _query?: string }
+        Returns: {
+          active_permissions_count: number
+          district: string
+          email: string
+          father_name: string
+          full_name: string
+          member_id: string
+          member_no: string
+          roles: string[]
+          taluka: string
+          user_id: string
+        }[]
+      }
+      upsert_admin_area_permission: {
+        Args: {
+          _can_approve: boolean
+          _can_review: boolean
+          _can_view: boolean
+          _district: string
+          _is_active: boolean
+          _module_key: string
+          _notes: string
+          _permission_id: string
+          _scope: string
+          _taluka: string
+          _user_id: string
+        }
+        Returns: {
+          can_approve: boolean
+          can_review: boolean
+          can_view: boolean
+          created_at: string
+          created_by: string | null
+          district: string | null
+          id: string
+          is_active: boolean
+          module_key: string
+          notes: string | null
+          scope: string
+          taluka: string | null
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admin_area_permissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       verify_membership_no: { Args: { _membership_no: string }; Returns: Json }
     }
