@@ -51,6 +51,45 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          cover_image_path: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          event_date: string
+          id: string
+          location: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cover_image_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_date: string
+          id?: string
+          location?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cover_image_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          event_date?: string
+          id?: string
+          location?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       finance_audit_logs: {
         Row: {
           action: string
@@ -286,6 +325,42 @@ export type Database = {
           },
         ]
       }
+      gallery_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_path: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_path?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_path?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       member_counters: {
         Row: {
           last_seq: number
@@ -391,6 +466,57 @@ export type Database = {
           taluka?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      news_posts: {
+        Row: {
+          category: string
+          content: string
+          cover_image_path: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_featured: boolean
+          published_at: string | null
+          slug: string
+          status: string
+          summary: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          category?: string
+          content: string
+          cover_image_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_featured?: boolean
+          published_at?: string | null
+          slug: string
+          status?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          category?: string
+          content?: string
+          cover_image_path?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_featured?: boolean
+          published_at?: string | null
+          slug?: string
+          status?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
