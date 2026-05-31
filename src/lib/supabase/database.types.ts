@@ -9,6 +9,283 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      cms_pages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          language: string
+          published_at: string | null
+          slug: string
+          status: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          language?: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          language?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      finance_audit_logs: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+        }
+        Relationships: []
+      }
+      finance_donation_counters: {
+        Row: {
+          last_seq: number
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      finance_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          district: string | null
+          donation_no: string | null
+          donor_district_snapshot: string | null
+          donor_father_name_snapshot: string | null
+          donor_member_id: string | null
+          donor_member_no_snapshot: string | null
+          donor_name: string
+          donor_name_snapshot: string | null
+          donor_phone: string | null
+          donor_taluka_snapshot: string | null
+          donor_user_id: string | null
+          id: string
+          notes: string | null
+          payment_method: string
+          purpose: string
+          receipt_file_path: string | null
+          receipt_no: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          status: string
+          taluka: string | null
+          transaction_reference: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          donation_no?: string | null
+          donor_district_snapshot?: string | null
+          donor_father_name_snapshot?: string | null
+          donor_member_id?: string | null
+          donor_member_no_snapshot?: string | null
+          donor_name: string
+          donor_name_snapshot?: string | null
+          donor_phone?: string | null
+          donor_taluka_snapshot?: string | null
+          donor_user_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method: string
+          purpose: string
+          receipt_file_path?: string | null
+          receipt_no?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          status?: string
+          taluka?: string | null
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          donation_no?: string | null
+          donor_district_snapshot?: string | null
+          donor_father_name_snapshot?: string | null
+          donor_member_id?: string | null
+          donor_member_no_snapshot?: string | null
+          donor_name?: string
+          donor_name_snapshot?: string | null
+          donor_phone?: string | null
+          donor_taluka_snapshot?: string | null
+          donor_user_id?: string | null
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          purpose?: string
+          receipt_file_path?: string | null
+          receipt_no?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          status?: string
+          taluka?: string | null
+          transaction_reference?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_donations_donor_member_id_fkey"
+            columns: ["donor_member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          district: string | null
+          document_path: string | null
+          expense_title: string
+          id: string
+          linked_application_id: string | null
+          linked_program_key: Database["public"]["Enums"]["program_key"] | null
+          notes: string | null
+          paid_at: string | null
+          paid_by: string | null
+          paid_to: string
+          payment_method: string
+          receipt_no: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          status: string
+          taluka: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          document_path?: string | null
+          expense_title: string
+          id?: string
+          linked_application_id?: string | null
+          linked_program_key?: Database["public"]["Enums"]["program_key"] | null
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          paid_to: string
+          payment_method: string
+          receipt_no?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          status?: string
+          taluka?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          document_path?: string | null
+          expense_title?: string
+          id?: string
+          linked_application_id?: string | null
+          linked_program_key?: Database["public"]["Enums"]["program_key"] | null
+          notes?: string | null
+          paid_at?: string | null
+          paid_by?: string | null
+          paid_to?: string
+          payment_method?: string
+          receipt_no?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          status?: string
+          taluka?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_expenses_linked_application_id_fkey"
+            columns: ["linked_application_id"]
+            isOneToOne: false
+            referencedRelation: "program_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       member_counters: {
         Row: {
           last_seq: number
@@ -117,6 +394,48 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          action_url: string | null
+          category: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          read_at: string | null
+          related_id: string | null
+          related_type: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -177,6 +496,27 @@ export type Database = {
           taluka?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      program_application_counters: {
+        Row: {
+          last_seq: number
+          program_key: Database["public"]["Enums"]["program_key"]
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          last_seq?: number
+          program_key: Database["public"]["Enums"]["program_key"]
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          last_seq?: number
+          program_key?: Database["public"]["Enums"]["program_key"]
+          updated_at?: string
+          year?: number
         }
         Relationships: []
       }
@@ -337,233 +677,6 @@ export type Database = {
           },
         ]
       }
-      finance_donations: {
-        Row: {
-          amount: number
-          approved_at: string | null
-          approved_by: string | null
-          created_at: string
-          created_by: string | null
-          district: string | null
-          donor_name: string
-          donor_phone: string | null
-          id: string
-          donation_no: string | null
-          donor_user_id: string | null
-          donor_member_id: string | null
-          donor_member_no_snapshot: string | null
-          donor_name_snapshot: string | null
-          donor_father_name_snapshot: string | null
-          donor_district_snapshot: string | null
-          donor_taluka_snapshot: string | null
-          transaction_reference: string | null
-          receipt_file_path: string | null
-          notes: string | null
-          payment_method: string
-          purpose: string
-          receipt_no: string | null
-          rejected_at: string | null
-          rejected_by: string | null
-          status: string
-          taluka: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          approved_at?: string | null
-          approved_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          district?: string | null
-          donor_name: string
-          donor_phone?: string | null
-          id?: string
-          donation_no?: string | null
-          donor_user_id?: string | null
-          donor_member_id?: string | null
-          donor_member_no_snapshot?: string | null
-          donor_name_snapshot?: string | null
-          donor_father_name_snapshot?: string | null
-          donor_district_snapshot?: string | null
-          donor_taluka_snapshot?: string | null
-          transaction_reference?: string | null
-          receipt_file_path?: string | null
-          notes?: string | null
-          payment_method: string
-          purpose: string
-          receipt_no?: string | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          status?: string
-          taluka?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          approved_at?: string | null
-          approved_by?: string | null
-          created_at?: string
-          created_by?: string | null
-          district?: string | null
-          donor_name?: string
-          donor_phone?: string | null
-          id?: string
-          donation_no?: string | null
-          donor_user_id?: string | null
-          donor_member_id?: string | null
-          donor_member_no_snapshot?: string | null
-          donor_name_snapshot?: string | null
-          donor_father_name_snapshot?: string | null
-          donor_district_snapshot?: string | null
-          donor_taluka_snapshot?: string | null
-          transaction_reference?: string | null
-          receipt_file_path?: string | null
-          notes?: string | null
-          payment_method?: string
-          purpose?: string
-          receipt_no?: string | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          status?: string
-          taluka?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      finance_donation_counters: {
-        Row: {
-          last_seq: number
-          year: number
-        }
-        Insert: {
-          last_seq?: number
-          year: number
-        }
-        Update: {
-          last_seq?: number
-          year?: number
-        }
-        Relationships: []
-      }
-      finance_expenses: {
-        Row: {
-          amount: number
-          approved_at: string | null
-          approved_by: string | null
-          category: string
-          created_at: string
-          created_by: string | null
-          district: string | null
-          document_path: string | null
-          expense_title: string
-          id: string
-          linked_application_id: string | null
-          linked_program_key: Database["public"]["Enums"]["program_key"] | null
-          notes: string | null
-          paid_at: string | null
-          paid_by: string | null
-          paid_to: string
-          payment_method: string
-          receipt_no: string | null
-          rejected_at: string | null
-          rejected_by: string | null
-          status: string
-          taluka: string | null
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          approved_at?: string | null
-          approved_by?: string | null
-          category: string
-          created_at?: string
-          created_by?: string | null
-          district?: string | null
-          document_path?: string | null
-          expense_title: string
-          id?: string
-          linked_application_id?: string | null
-          linked_program_key?: Database["public"]["Enums"]["program_key"] | null
-          notes?: string | null
-          paid_at?: string | null
-          paid_by?: string | null
-          paid_to: string
-          payment_method: string
-          receipt_no?: string | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          status?: string
-          taluka?: string | null
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          approved_at?: string | null
-          approved_by?: string | null
-          category?: string
-          created_at?: string
-          created_by?: string | null
-          district?: string | null
-          document_path?: string | null
-          expense_title?: string
-          id?: string
-          linked_application_id?: string | null
-          linked_program_key?: Database["public"]["Enums"]["program_key"] | null
-          notes?: string | null
-          paid_at?: string | null
-          paid_by?: string | null
-          paid_to?: string
-          payment_method?: string
-          receipt_no?: string | null
-          rejected_at?: string | null
-          rejected_by?: string | null
-          status?: string
-          taluka?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "finance_expenses_linked_application_id_fkey"
-            columns: ["linked_application_id"]
-            isOneToOne: false
-            referencedRelation: "program_applications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      finance_audit_logs: {
-        Row: {
-          action: string
-          actor_user_id: string | null
-          created_at: string
-          entity_id: string | null
-          entity_type: string
-          id: string
-          new_data: Json | null
-          old_data: Json | null
-        }
-        Insert: {
-          action: string
-          actor_user_id?: string | null
-          created_at?: string
-          entity_id?: string | null
-          entity_type: string
-          id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-        }
-        Update: {
-          action?: string
-          actor_user_id?: string | null
-          created_at?: string
-          entity_id?: string | null
-          entity_type?: string
-          id?: string
-          new_data?: Json | null
-          old_data?: Json | null
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -629,6 +742,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_notification: {
+        Args: {
+          _action_url?: string
+          _category?: string
+          _message: string
+          _related_id?: string
+          _related_type?: string
+          _title: string
+          _user_id: string
+        }
+        Returns: string
+      }
       current_user_can_approve_program: {
         Args: {
           _district?: string
@@ -637,6 +762,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      current_user_can_manage_cms: { Args: never; Returns: boolean }
       current_user_can_manage_finance: { Args: never; Returns: boolean }
       current_user_can_manage_program: {
         Args: {
@@ -662,6 +788,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      current_user_can_view_donor_leaderboard: { Args: never; Returns: boolean }
       current_user_can_view_program: {
         Args: {
           _district?: string
@@ -671,7 +798,24 @@ export type Database = {
         Returns: boolean
       }
       current_user_has_role: { Args: { _role: string }; Returns: boolean }
+      current_user_is_approved_member: { Args: never; Returns: boolean }
       current_user_is_super_admin: { Args: never; Returns: boolean }
+      get_donor_leaderboard: {
+        Args: { _limit?: number }
+        Returns: {
+          donation_count: number
+          donor_district: string
+          donor_father_name: string
+          donor_member_id: string
+          donor_member_no: string
+          donor_name: string
+          donor_taluka: string
+          first_approved_at: string
+          latest_approved_at: string
+          purposes: string[]
+          total_donated: number
+        }[]
+      }
       reject_member: {
         Args: {
           _member_id: string

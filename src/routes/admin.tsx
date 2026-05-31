@@ -779,9 +779,9 @@ function AdminProgramShortcuts({
   const cards: ModuleCardConfig[] = [
     {
       key: 'membership',
-      title: 'Membership Applications',
+      title: 'Membership',
       description:
-        'Review member registrations, approve/reject applications and access QR-based digital membership cards.',
+        'Review member registrations, approve or reject applications, and open QR-based digital membership cards.',
       actionLabel: 'Current Page',
       icon: ShieldCheck,
       tone: 'membership',
@@ -790,52 +790,51 @@ function AdminProgramShortcuts({
     },
     {
       key: 'education',
-      title: 'Education Applications',
+      title: 'Education',
       description:
-        'Review scholarship, fee support, books, uniform, hostel, transport and skills training applications.',
+        'Manage scholarship, fee support, documents, review notes and approved education support amounts.',
       to: '/admin/programs/education',
-      actionLabel: 'Open Education Admin',
+      actionLabel: 'Open Education',
       icon: BookOpenCheck,
       tone: 'education',
     },
     {
       key: 'health',
-      title: 'Health Applications',
+      title: 'Health',
       description:
-        'Review medical help, emergency treatment, hospital estimates, prescriptions and health committee cases.',
+        'Review medical help, emergency treatment, hospital estimates, prescriptions and committee decisions.',
       to: '/admin/programs/health',
-      actionLabel: 'Open Health Admin',
+      actionLabel: 'Open Health',
       icon: HeartPulse,
       tone: 'health',
     },
     {
       key: 'welfare',
-      title: 'Welfare Cases',
+      title: 'Welfare',
       description:
-        'Review financial help, ration, widow/orphan, emergency, marriage, disaster, legal and family support cases.',
+        'Manage financial help, ration, widow/orphan, emergency, legal and family support cases.',
       to: '/admin/programs/welfare',
-      actionLabel: 'Open Welfare Admin',
+      actionLabel: 'Open Welfare',
       icon: HandHeart,
       tone: 'welfare',
     },
-
     {
       key: 'employment',
-      title: 'Employment Program',
+      title: 'Employment',
       description:
-        'Review job seeker profiles, CV uploads, skills, training interests, shortlists and placement tracking.',
+        'Review job seeker profiles, CV uploads, skills, training interests, shortlists and placements.',
       to: '/admin/programs/employment',
-      actionLabel: 'Open Employment Admin',
+      actionLabel: 'Open Employment',
       icon: BriefcaseBusiness,
       tone: 'employment',
     },
     {
       key: 'finance',
-      title: 'Finance System',
+      title: 'Finance',
       description:
-        'Track donations, expenses, approvals, receipts, available balance, monthly reports and finance audit logs.',
+        'Track donations, expenses, approvals, receipts, available balance and finance audit logs.',
       to: '/admin/finance',
-      actionLabel: 'Open Finance Admin',
+      actionLabel: 'Open Finance',
       icon: BadgeIndianRupee,
       tone: 'finance',
     },
@@ -854,10 +853,31 @@ function AdminProgramShortcuts({
   const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
-      {visibleCards.map((card) => (
-        <AdminModuleCard key={card.key} card={card} />
-      ))}
+    <section className="rounded-[2rem] bg-white/90 p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+            Admin Modules
+          </p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+            Control center shortcuts
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+            Open the authorized modules for membership, programs, finance and
+            public website content management.
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
+          {visibleCards.length} module{visibleCards.length === 1 ? '' : 's'} available
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {visibleCards.map((card) => (
+          <AdminModuleCard key={card.key} card={card} />
+        ))}
+      </div>
     </section>
   )
 }
@@ -867,42 +887,61 @@ function AdminModuleCard({ card }: { card: ModuleCardConfig }) {
   const tone = getModuleTone(card.tone)
 
   return (
-    <article className={`rounded-3xl border p-5 shadow-sm ${tone.card}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${tone.icon}`}>
-          <Icon className="h-5 w-5" />
+    <article
+      className={`group flex min-h-[270px] flex-col overflow-hidden rounded-[1.6rem] border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl ${tone.card}`}
+    >
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div
+          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5 ${tone.icon}`}
+        >
+          <Icon className="h-6 w-6" />
         </div>
 
         {card.metric ? (
-          <div className="rounded-2xl bg-white/80 px-3 py-2 text-right shadow-sm ring-1 ring-black/5">
-            <p className="text-lg font-black text-slate-950">{card.metric}</p>
-            <p className="text-[0.65rem] font-black uppercase tracking-wide text-slate-500">
+          <div className="min-w-[76px] rounded-2xl bg-white/85 px-3 py-2 text-center shadow-sm ring-1 ring-black/5 backdrop-blur">
+            <p className="text-xl font-black leading-none text-slate-950">
+              {card.metric}
+            </p>
+            <p className="mt-1 text-[0.62rem] font-black uppercase tracking-wide text-slate-500">
               {card.metricLabel}
             </p>
           </div>
-        ) : null}
+        ) : (
+          <span
+            className={`rounded-full px-3 py-1 text-[0.66rem] font-black uppercase tracking-[0.14em] ${tone.badge}`}
+          >
+            Module
+          </span>
+        )}
       </div>
 
-      <h2 className="text-xl font-black text-slate-950">{card.title}</h2>
+      <div className="min-w-0 flex-1">
+        <h3 className="text-2xl font-black tracking-tight text-slate-950">
+          {card.title}
+        </h3>
 
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        {card.description}
-      </p>
+        <p className="mt-3 text-[0.95rem] leading-7 text-slate-600">
+          {card.description}
+        </p>
+      </div>
 
-      {card.to ? (
-        <Link
-          to={card.to}
-          className={`jas-dark-action-link mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition ${tone.button}`}
-        >
-          {card.actionLabel}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      ) : (
-        <div className="mt-4 inline-flex items-center gap-2 text-sm font-black text-emerald-800">
-          {card.actionLabel}
-          <CheckMini />
-        </div>
-      )}
+      <div className="mt-6">
+        {card.to ? (
+          <Link
+            to={card.to}
+            className={`inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black !text-white no-underline shadow-sm transition hover:!text-white ${tone.action}`}
+            style={{ color: '#ffffff' }}
+          >
+            {card.actionLabel}
+            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </Link>
+        ) : (
+          <div className="inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl bg-emerald-800 px-4 py-3 text-sm font-black text-white shadow-sm">
+            {card.actionLabel}
+            <CheckMini />
+          </div>
+        )}
+      </div>
     </article>
   )
 }
@@ -913,43 +952,51 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
     {
       card: string
       icon: string
-      button: string
+      badge: string
+      action: string
     }
   > = {
     membership: {
-      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
+      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
       icon: 'bg-emerald-100 text-emerald-800',
-      button: 'hover:bg-emerald-900',
+      badge: 'bg-emerald-100 text-emerald-800',
+      action: 'bg-emerald-800 !text-white hover:!text-white hover:bg-emerald-900',
     },
     education: {
-      card: 'border-amber-200 bg-gradient-to-br from-amber-50 to-white',
+      card: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white',
       icon: 'bg-amber-100 text-amber-800',
-      button: 'hover:bg-amber-900',
+      badge: 'bg-amber-100 text-amber-800',
+      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-amber-900',
     },
     health: {
-      card: 'border-red-200 bg-gradient-to-br from-red-50 to-white',
+      card: 'border-red-200 bg-gradient-to-br from-red-50 via-white to-white',
       icon: 'bg-red-100 text-red-800',
-      button: 'hover:bg-red-900',
+      badge: 'bg-red-100 text-red-800',
+      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-red-900',
     },
     welfare: {
-      card: 'border-orange-200 bg-gradient-to-br from-orange-50 to-white',
+      card: 'border-orange-200 bg-gradient-to-br from-orange-50 via-white to-white',
       icon: 'bg-orange-100 text-orange-800',
-      button: 'hover:bg-orange-900',
+      badge: 'bg-orange-100 text-orange-800',
+      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-orange-900',
     },
     employment: {
-      card: 'border-sky-200 bg-gradient-to-br from-sky-50 to-white',
+      card: 'border-sky-200 bg-gradient-to-br from-sky-50 via-white to-white',
       icon: 'bg-sky-100 text-sky-800',
-      button: 'hover:bg-sky-900',
+      badge: 'bg-sky-100 text-sky-800',
+      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-sky-900',
     },
     finance: {
-      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
+      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
       icon: 'bg-emerald-100 text-emerald-800',
-      button: 'hover:bg-emerald-900',
+      badge: 'bg-emerald-100 text-emerald-800',
+      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-emerald-900',
     },
     cms: {
-      card: 'border-violet-200 bg-gradient-to-br from-violet-50 to-white',
+      card: 'border-violet-200 bg-gradient-to-br from-violet-50 via-white to-white',
       icon: 'bg-violet-100 text-violet-800',
-      button: 'hover:bg-violet-900',
+      badge: 'bg-violet-100 text-violet-800',
+      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-violet-900',
     },
   }
 
