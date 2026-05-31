@@ -1,5 +1,5 @@
 // src/routes/admin/news.tsx
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { ArrowRight, Edit3, Newspaper, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
@@ -16,13 +16,21 @@ export const Route = createFileRoute('/admin/news')({
 })
 
 function AdminNewsPage() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+  const isNestedNewsPage = normalizedPathname !== '/admin/news'
+
   const [posts, setPosts] = useState<NewsPost[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
+    if (isNestedNewsPage) return
+
     void loadPosts()
-  }, [])
+  }, [isNestedNewsPage])
 
   async function loadPosts() {
     setLoading(true)
@@ -42,6 +50,10 @@ function AdminNewsPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (isNestedNewsPage) {
+    return <Outlet />
   }
 
   return (

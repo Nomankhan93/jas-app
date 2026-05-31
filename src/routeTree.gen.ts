@@ -34,6 +34,7 @@ import { Route as ProgramsHealthRouteImport } from './routes/programs/health'
 import { Route as ProgramsEmploymentRouteImport } from './routes/programs/employment'
 import { Route as ProgramsEducationRouteImport } from './routes/programs/education'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminNewsRouteImport } from './routes/admin/news'
 import { Route as AdminGalleryRouteImport } from './routes/admin/gallery'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
@@ -188,6 +189,11 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => NewsRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminNewsRoute = AdminNewsRouteImport.update({
   id: '/news',
@@ -366,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/reports': typeof AdminReportsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -422,6 +429,7 @@ export interface FileRoutesByTo {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/reports': typeof AdminReportsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -479,6 +487,7 @@ export interface FileRoutesById {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/reports': typeof AdminReportsRoute
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -537,6 +546,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/reports'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -593,6 +603,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/reports'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -649,6 +660,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/reports'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -884,6 +896,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
       parentRoute: typeof NewsRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/news': {
       id: '/admin/news'
@@ -1183,6 +1202,7 @@ interface AdminRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminNewsRoute: typeof AdminNewsRouteWithChildren
+  AdminReportsRoute: typeof AdminReportsRoute
   AdminMembersIdRoute: typeof AdminMembersIdRouteWithChildren
   AdminProgramsEducationRoute: typeof AdminProgramsEducationRouteWithChildren
   AdminProgramsEmploymentRoute: typeof AdminProgramsEmploymentRouteWithChildren
@@ -1196,6 +1216,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminNewsRoute: AdminNewsRouteWithChildren,
+  AdminReportsRoute: AdminReportsRoute,
   AdminMembersIdRoute: AdminMembersIdRouteWithChildren,
   AdminProgramsEducationRoute: AdminProgramsEducationRouteWithChildren,
   AdminProgramsEmploymentRoute: AdminProgramsEmploymentRouteWithChildren,
