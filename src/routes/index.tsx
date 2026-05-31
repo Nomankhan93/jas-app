@@ -15,6 +15,7 @@ import {
   Images,
   Newspaper,
   QrCode,
+  Network,
   ScrollText,
   ShieldCheck,
   Trophy,
@@ -76,6 +77,12 @@ const publicHighlights: Array<{ title: string; text: string; to: string; icon: L
     text: 'Follow upcoming meetings, public activities and organization events.',
     to: '/events',
     icon: CalendarDays,
+  },
+  {
+    title: 'Public Committees',
+    text: 'View central, district and taluka committee office bearers and public organization hierarchy.',
+    to: '/committees',
+    icon: Network,
   },
   {
     title: 'Manifesto & Constitution',

@@ -20,10 +20,12 @@ import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as DonorsRouteImport } from './routes/donors'
 import { Route as DonateRouteImport } from './routes/donate'
+import { Route as DesignationCardRouteImport } from './routes/designation-card'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CwcRouteImport } from './routes/cwc'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ConstitutionRouteImport } from './routes/constitution'
+import { Route as CommitteesRouteImport } from './routes/committees'
 import { Route as CardRouteImport } from './routes/card'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
@@ -34,6 +36,7 @@ import { Route as ProgramsHealthRouteImport } from './routes/programs/health'
 import { Route as ProgramsEmploymentRouteImport } from './routes/programs/employment'
 import { Route as ProgramsEducationRouteImport } from './routes/programs/education'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
+import { Route as CommitteesIdRouteImport } from './routes/committees/$id'
 import { Route as AdminRolesRouteImport } from './routes/admin/roles'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminNewsRouteImport } from './routes/admin/news'
@@ -67,6 +70,7 @@ import { Route as AdminProgramsWelfareIdRouteImport } from './routes/admin/progr
 import { Route as AdminProgramsHealthIdRouteImport } from './routes/admin/programs/health/$id'
 import { Route as AdminProgramsEmploymentIdRouteImport } from './routes/admin/programs/employment/$id'
 import { Route as AdminProgramsEducationIdRouteImport } from './routes/admin/programs/education/$id'
+import { Route as AdminMembersIdDesignationCardRouteImport } from './routes/admin/members/$id/designation-card'
 import { Route as AdminMembersIdCardRouteImport } from './routes/admin/members/$id/card'
 
 const VisionMissionRoute = VisionMissionRouteImport.update({
@@ -124,6 +128,11 @@ const DonateRoute = DonateRouteImport.update({
   path: '/donate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DesignationCardRoute = DesignationCardRouteImport.update({
+  id: '/designation-card',
+  path: '/designation-card',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -142,6 +151,11 @@ const ContactRoute = ContactRouteImport.update({
 const ConstitutionRoute = ConstitutionRouteImport.update({
   id: '/constitution',
   path: '/constitution',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommitteesRoute = CommitteesRouteImport.update({
+  id: '/committees',
+  path: '/committees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CardRoute = CardRouteImport.update({
@@ -193,6 +207,11 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => NewsRoute,
+} as any)
+const CommitteesIdRoute = CommitteesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CommitteesRoute,
 } as any)
 const AdminRolesRoute = AdminRolesRouteImport.update({
   id: '/roles',
@@ -365,6 +384,12 @@ const AdminProgramsEducationIdRoute =
     path: '/$id',
     getParentRoute: () => AdminProgramsEducationRoute,
   } as any)
+const AdminMembersIdDesignationCardRoute =
+  AdminMembersIdDesignationCardRouteImport.update({
+    id: '/designation-card',
+    path: '/designation-card',
+    getParentRoute: () => AdminMembersIdRoute,
+  } as any)
 const AdminMembersIdCardRoute = AdminMembersIdCardRouteImport.update({
   id: '/card',
   path: '/card',
@@ -376,10 +401,12 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
+  '/committees': typeof CommitteesRouteWithChildren
   '/constitution': typeof ConstitutionRoute
   '/contact': typeof ContactRoute
   '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
+  '/designation-card': typeof DesignationCardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
@@ -400,6 +427,7 @@ export interface FileRoutesByFullPath {
   '/admin/news': typeof AdminNewsRouteWithChildren
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
+  '/committees/$id': typeof CommitteesIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -427,6 +455,7 @@ export interface FileRoutesByFullPath {
   '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
   '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
+  '/admin/members/$id/designation-card': typeof AdminMembersIdDesignationCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
   '/admin/programs/employment/$id': typeof AdminProgramsEmploymentIdRoute
   '/admin/programs/health/$id': typeof AdminProgramsHealthIdRoute
@@ -437,10 +466,12 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
+  '/committees': typeof CommitteesRouteWithChildren
   '/constitution': typeof ConstitutionRoute
   '/contact': typeof ContactRoute
   '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
+  '/designation-card': typeof DesignationCardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
@@ -461,6 +492,7 @@ export interface FileRoutesByTo {
   '/admin/news': typeof AdminNewsRouteWithChildren
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
+  '/committees/$id': typeof CommitteesIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -488,6 +520,7 @@ export interface FileRoutesByTo {
   '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
   '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
+  '/admin/members/$id/designation-card': typeof AdminMembersIdDesignationCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
   '/admin/programs/employment/$id': typeof AdminProgramsEmploymentIdRoute
   '/admin/programs/health/$id': typeof AdminProgramsHealthIdRoute
@@ -499,10 +532,12 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
+  '/committees': typeof CommitteesRouteWithChildren
   '/constitution': typeof ConstitutionRoute
   '/contact': typeof ContactRoute
   '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
+  '/designation-card': typeof DesignationCardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
@@ -523,6 +558,7 @@ export interface FileRoutesById {
   '/admin/news': typeof AdminNewsRouteWithChildren
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
+  '/committees/$id': typeof CommitteesIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -550,6 +586,7 @@ export interface FileRoutesById {
   '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
   '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
+  '/admin/members/$id/designation-card': typeof AdminMembersIdDesignationCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
   '/admin/programs/employment/$id': typeof AdminProgramsEmploymentIdRoute
   '/admin/programs/health/$id': typeof AdminProgramsHealthIdRoute
@@ -562,10 +599,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/card'
+    | '/committees'
     | '/constitution'
     | '/contact'
     | '/cwc'
     | '/dashboard'
+    | '/designation-card'
     | '/donate'
     | '/donors'
     | '/events'
@@ -586,6 +625,7 @@ export interface FileRouteTypes {
     | '/admin/news'
     | '/admin/reports'
     | '/admin/roles'
+    | '/committees/$id'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -613,6 +653,7 @@ export interface FileRouteTypes {
     | '/programs/welfare/apply'
     | '/programs/welfare/my-applications'
     | '/admin/members/$id/card'
+    | '/admin/members/$id/designation-card'
     | '/admin/programs/education/$id'
     | '/admin/programs/employment/$id'
     | '/admin/programs/health/$id'
@@ -623,10 +664,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/card'
+    | '/committees'
     | '/constitution'
     | '/contact'
     | '/cwc'
     | '/dashboard'
+    | '/designation-card'
     | '/donate'
     | '/donors'
     | '/events'
@@ -647,6 +690,7 @@ export interface FileRouteTypes {
     | '/admin/news'
     | '/admin/reports'
     | '/admin/roles'
+    | '/committees/$id'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -674,6 +718,7 @@ export interface FileRouteTypes {
     | '/programs/welfare/apply'
     | '/programs/welfare/my-applications'
     | '/admin/members/$id/card'
+    | '/admin/members/$id/designation-card'
     | '/admin/programs/education/$id'
     | '/admin/programs/employment/$id'
     | '/admin/programs/health/$id'
@@ -684,10 +729,12 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin'
     | '/card'
+    | '/committees'
     | '/constitution'
     | '/contact'
     | '/cwc'
     | '/dashboard'
+    | '/designation-card'
     | '/donate'
     | '/donors'
     | '/events'
@@ -708,6 +755,7 @@ export interface FileRouteTypes {
     | '/admin/news'
     | '/admin/reports'
     | '/admin/roles'
+    | '/committees/$id'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -735,6 +783,7 @@ export interface FileRouteTypes {
     | '/programs/welfare/apply'
     | '/programs/welfare/my-applications'
     | '/admin/members/$id/card'
+    | '/admin/members/$id/designation-card'
     | '/admin/programs/education/$id'
     | '/admin/programs/employment/$id'
     | '/admin/programs/health/$id'
@@ -746,10 +795,12 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   CardRoute: typeof CardRoute
+  CommitteesRoute: typeof CommitteesRouteWithChildren
   ConstitutionRoute: typeof ConstitutionRoute
   ContactRoute: typeof ContactRoute
   CwcRoute: typeof CwcRoute
   DashboardRoute: typeof DashboardRoute
+  DesignationCardRoute: typeof DesignationCardRoute
   DonateRoute: typeof DonateRoute
   DonorsRoute: typeof DonorsRoute
   EventsRoute: typeof EventsRoute
@@ -847,6 +898,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DonateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/designation-card': {
+      id: '/designation-card'
+      path: '/designation-card'
+      fullPath: '/designation-card'
+      preLoaderRoute: typeof DesignationCardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -873,6 +931,13 @@ declare module '@tanstack/react-router' {
       path: '/constitution'
       fullPath: '/constitution'
       preLoaderRoute: typeof ConstitutionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/committees': {
+      id: '/committees'
+      path: '/committees'
+      fullPath: '/committees'
+      preLoaderRoute: typeof CommitteesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/card': {
@@ -944,6 +1009,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/news/$slug'
       preLoaderRoute: typeof NewsSlugRouteImport
       parentRoute: typeof NewsRoute
+    }
+    '/committees/$id': {
+      id: '/committees/$id'
+      path: '/$id'
+      fullPath: '/committees/$id'
+      preLoaderRoute: typeof CommitteesIdRouteImport
+      parentRoute: typeof CommitteesRoute
     }
     '/admin/roles': {
       id: '/admin/roles'
@@ -1176,6 +1248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminProgramsEducationIdRouteImport
       parentRoute: typeof AdminProgramsEducationRoute
     }
+    '/admin/members/$id/designation-card': {
+      id: '/admin/members/$id/designation-card'
+      path: '/designation-card'
+      fullPath: '/admin/members/$id/designation-card'
+      preLoaderRoute: typeof AdminMembersIdDesignationCardRouteImport
+      parentRoute: typeof AdminMembersIdRoute
+    }
     '/admin/members/$id/card': {
       id: '/admin/members/$id/card'
       path: '/card'
@@ -1224,10 +1303,12 @@ const AdminNewsRouteWithChildren = AdminNewsRoute._addFileChildren(
 
 interface AdminMembersIdRouteChildren {
   AdminMembersIdCardRoute: typeof AdminMembersIdCardRoute
+  AdminMembersIdDesignationCardRoute: typeof AdminMembersIdDesignationCardRoute
 }
 
 const AdminMembersIdRouteChildren: AdminMembersIdRouteChildren = {
   AdminMembersIdCardRoute: AdminMembersIdCardRoute,
+  AdminMembersIdDesignationCardRoute: AdminMembersIdDesignationCardRoute,
 }
 
 const AdminMembersIdRouteWithChildren = AdminMembersIdRoute._addFileChildren(
@@ -1320,6 +1401,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CommitteesRouteChildren {
+  CommitteesIdRoute: typeof CommitteesIdRoute
+}
+
+const CommitteesRouteChildren: CommitteesRouteChildren = {
+  CommitteesIdRoute: CommitteesIdRoute,
+}
+
+const CommitteesRouteWithChildren = CommitteesRoute._addFileChildren(
+  CommitteesRouteChildren,
+)
+
 interface NewsRouteChildren {
   NewsSlugRoute: typeof NewsSlugRoute
 }
@@ -1397,10 +1490,12 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   CardRoute: CardRoute,
+  CommitteesRoute: CommitteesRouteWithChildren,
   ConstitutionRoute: ConstitutionRoute,
   ContactRoute: ContactRoute,
   CwcRoute: CwcRoute,
   DashboardRoute: DashboardRoute,
+  DesignationCardRoute: DesignationCardRoute,
   DonateRoute: DonateRoute,
   DonorsRoute: DonorsRoute,
   EventsRoute: EventsRoute,

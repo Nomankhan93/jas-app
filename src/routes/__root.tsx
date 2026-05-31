@@ -28,6 +28,7 @@ import {
   Images,
   LogOut,
   Menu,
+  Network,
   Newspaper,
   ScrollText,
   ShieldCheck,
@@ -130,6 +131,12 @@ const publicPageItems: PublicPageItem[] = [
     label: 'Central Working Committee',
     icon: <FileText size={16} />,
     description: 'Central cabinet and top-level governing body',
+  },
+  {
+    to: '/committees',
+    label: 'Committees',
+    icon: <Network size={16} />,
+    description: 'Central, district and taluka committee office bearers',
   },
   {
     to: '/gallery',
