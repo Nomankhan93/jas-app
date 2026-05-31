@@ -24,6 +24,7 @@ import {
   ImageOff,
   ListChecks,
   MapPin,
+  Newspaper,
   RefreshCw,
   Search,
   ShieldAlert,
@@ -60,6 +61,7 @@ type AdminModuleKey =
   | 'employment'
   | 'finance'
   | 'cms'
+  | 'media'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = 'all' | MemberStatus
@@ -90,6 +92,7 @@ type AdminRouteTo =
   | '/admin/programs/employment'
   | '/admin/finance'
   | '/admin/cms'
+  | '/admin/news'
 
 type ModuleCardConfig = {
   key: AdminModuleKey
@@ -106,6 +109,7 @@ type ModuleCardConfig = {
     | 'employment'
     | 'finance'
     | 'cms'
+    | 'media'
   metric?: string
   metricLabel?: string
 }
@@ -848,6 +852,16 @@ function AdminProgramShortcuts({
       icon: FileText,
       tone: 'cms',
     },
+    {
+      key: 'media',
+      title: 'News & Media',
+      description:
+        'Create and publish news, announcements, gallery items and public event notices.',
+      to: '/admin/news',
+      actionLabel: 'Open News Admin',
+      icon: Newspaper,
+      tone: 'media',
+    },
   ]
 
   const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
@@ -929,7 +943,7 @@ function AdminModuleCard({ card }: { card: ModuleCardConfig }) {
         {card.to ? (
           <Link
             to={card.to}
-            className={`inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black !text-white no-underline shadow-sm transition hover:!text-white ${tone.action}`}
+            className={`inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black !text-white no-underline shadow-sm transition ${tone.action}`}
             style={{ color: '#ffffff' }}
           >
             {card.actionLabel}
@@ -960,43 +974,49 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
       card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
       icon: 'bg-emerald-100 text-emerald-800',
       badge: 'bg-emerald-100 text-emerald-800',
-      action: 'bg-emerald-800 !text-white hover:!text-white hover:bg-emerald-900',
+      action: 'bg-emerald-800 !text-white hover:bg-emerald-900 hover:!text-white',
     },
     education: {
       card: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white',
       icon: 'bg-amber-100 text-amber-800',
       badge: 'bg-amber-100 text-amber-800',
-      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-amber-900',
+      action: 'bg-slate-950 !text-white hover:bg-amber-900 hover:!text-white',
     },
     health: {
       card: 'border-red-200 bg-gradient-to-br from-red-50 via-white to-white',
       icon: 'bg-red-100 text-red-800',
       badge: 'bg-red-100 text-red-800',
-      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-red-900',
+      action: 'bg-slate-950 !text-white hover:bg-red-900 hover:!text-white',
     },
     welfare: {
       card: 'border-orange-200 bg-gradient-to-br from-orange-50 via-white to-white',
       icon: 'bg-orange-100 text-orange-800',
       badge: 'bg-orange-100 text-orange-800',
-      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-orange-900',
+      action: 'bg-slate-950 !text-white hover:bg-orange-900 hover:!text-white',
     },
     employment: {
       card: 'border-sky-200 bg-gradient-to-br from-sky-50 via-white to-white',
       icon: 'bg-sky-100 text-sky-800',
       badge: 'bg-sky-100 text-sky-800',
-      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-sky-900',
+      action: 'bg-slate-950 !text-white hover:bg-sky-900 hover:!text-white',
     },
     finance: {
       card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
       icon: 'bg-emerald-100 text-emerald-800',
       badge: 'bg-emerald-100 text-emerald-800',
-      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-emerald-900',
+      action: 'bg-slate-950 !text-white hover:bg-emerald-900 hover:!text-white',
     },
     cms: {
       card: 'border-violet-200 bg-gradient-to-br from-violet-50 via-white to-white',
       icon: 'bg-violet-100 text-violet-800',
       badge: 'bg-violet-100 text-violet-800',
-      action: 'bg-slate-950 !text-white hover:!text-white hover:bg-violet-900',
+      action: 'bg-slate-950 !text-white hover:bg-violet-900 hover:!text-white',
+    },
+    media: {
+      card: 'border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-white',
+      icon: 'bg-cyan-100 text-cyan-800',
+      badge: 'bg-cyan-100 text-cyan-800',
+      action: 'bg-slate-950 !text-white hover:bg-cyan-900 hover:!text-white',
     },
   }
 
@@ -1345,6 +1365,7 @@ function canAccessAdminModule(
     employment: 'employment_admin',
     finance: 'finance_admin',
     cms: 'admin',
+    media: 'admin',
   }
 
   return roles.includes(roleByModule[moduleKey])
@@ -1363,6 +1384,7 @@ function getPrimaryAdminRoute(
   | '/admin/programs/employment'
   | '/admin/finance'
   | '/admin/cms'
+  | '/admin/news'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
   if (roles.includes('health_admin')) return '/admin/programs/health'

@@ -23,9 +23,12 @@ import {
   HandHeart,
   Home,
   Landmark,
+  CalendarDays,
   IdCard,
+  Images,
   LogOut,
   Menu,
+  Newspaper,
   ScrollText,
   ShieldCheck,
   Trophy,
@@ -119,6 +122,18 @@ const publicPageItems: PublicPageItem[] = [
     label: 'Central Working Committee',
     icon: <FileText size={16} />,
     description: 'Central cabinet and top-level governing body',
+  },
+  {
+    to: '/gallery',
+    label: 'Gallery',
+    icon: <Images size={16} />,
+    description: 'Program photos, meetings and community activity',
+  },
+  {
+    to: '/events',
+    label: 'Events',
+    icon: <CalendarDays size={16} />,
+    description: 'Upcoming events, meetings and public activities',
   },
   {
     to: '/contact',
@@ -280,6 +295,7 @@ function Header({ compact }: { compact: boolean }) {
   const navItems = useMemo(() => {
     const items: NavItem[] = [
       { to: '/', label: 'Home', icon: <Home size={16} /> },
+      { to: '/news', label: 'News', icon: <Newspaper size={16} /> },
       { to: '/donate', label: 'Donate', icon: <BadgeIndianRupee size={16} /> },
     ]
 
