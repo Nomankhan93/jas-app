@@ -101,6 +101,7 @@ type AdminRouteTo =
   | '/admin/news'
   | '/admin/reports'
   | '/admin/roles'
+  | '/admin/committees'
 
 type ModuleCardConfig = {
   key: AdminModuleKey
@@ -901,12 +902,12 @@ function AdminProgramShortcuts({
       key: 'committees',
       title: 'Committees & Designations',
       description:
-        'Foundation for central, district and taluka committee records, office bearers and future designation cards.',
-      actionLabel: 'Coming Soon',
+        'Manage Central, District and Taluka committees, office bearers, designations and tenure records.',
+      to: '/admin/committees',
+      actionLabel: 'Open Committees',
       icon: Network,
       tone: 'committees',
-      badgeLabel: 'Next Phase',
-      comingSoon: true,
+      badgeLabel: 'Phase 1',
     },
   ]
 
@@ -1441,8 +1442,8 @@ function canAccessAdminModule(
   }
 
   if (roles.includes('admin')) {
-  return true
-}
+    return true
+  }
 
   const roleByModule: Partial<Record<AdminModuleKey, AdminRoleName>> = {
     membership: 'membership_admin',
@@ -1474,6 +1475,7 @@ function getPrimaryAdminRoute(
   | '/admin/news'
   | '/admin/reports'
   | '/admin/roles'
+  | '/admin/committees'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
   if (roles.includes('health_admin')) return '/admin/programs/health'

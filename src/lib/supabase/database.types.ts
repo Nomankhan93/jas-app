@@ -562,6 +562,175 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_committee_members: {
+        Row: {
+          appointment_notes: string | null
+          committee_id: string
+          created_at: string
+          created_by: string | null
+          designation_id: string | null
+          designation_title: string
+          district_snapshot: string | null
+          father_name_snapshot: string | null
+          full_name_snapshot: string
+          id: string
+          member_id: string
+          member_no_snapshot: string | null
+          sort_order: number
+          status: string
+          taluka_snapshot: string | null
+          tenure_end: string | null
+          tenure_start: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          appointment_notes?: string | null
+          committee_id: string
+          created_at?: string
+          created_by?: string | null
+          designation_id?: string | null
+          designation_title: string
+          district_snapshot?: string | null
+          father_name_snapshot?: string | null
+          full_name_snapshot: string
+          id?: string
+          member_id: string
+          member_no_snapshot?: string | null
+          sort_order?: number
+          status?: string
+          taluka_snapshot?: string | null
+          tenure_end?: string | null
+          tenure_start?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          appointment_notes?: string | null
+          committee_id?: string
+          created_at?: string
+          created_by?: string | null
+          designation_id?: string | null
+          designation_title?: string
+          district_snapshot?: string | null
+          father_name_snapshot?: string | null
+          full_name_snapshot?: string
+          id?: string
+          member_id?: string
+          member_no_snapshot?: string | null
+          sort_order?: number
+          status?: string
+          taluka_snapshot?: string | null
+          tenure_end?: string | null
+          tenure_start?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_committee_members_committee_id_fkey"
+            columns: ["committee_id"]
+            isOneToOne: false
+            referencedRelation: "organization_committees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_committee_members_designation_id_fkey"
+            columns: ["designation_id"]
+            isOneToOne: false
+            referencedRelation: "organization_designations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_committee_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organization_committees: {
+        Row: {
+          committee_type: string
+          created_at: string
+          created_by: string | null
+          district: string | null
+          id: string
+          name: string
+          notes: string | null
+          public_display: boolean
+          status: string
+          taluka: string | null
+          tenure_end: string | null
+          tenure_start: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          committee_type: string
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          public_display?: boolean
+          status?: string
+          taluka?: string | null
+          tenure_end?: string | null
+          tenure_start?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          committee_type?: string
+          created_at?: string
+          created_by?: string | null
+          district?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          public_display?: boolean
+          status?: string
+          taluka?: string | null
+          tenure_end?: string | null
+          tenure_start?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      organization_designations: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          scope: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          scope: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          scope?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -890,6 +1059,7 @@ export type Database = {
       }
       current_user_can_manage_cms: { Args: never; Returns: boolean }
       current_user_can_manage_finance: { Args: never; Returns: boolean }
+      current_user_can_manage_organization: { Args: never; Returns: boolean }
       current_user_can_manage_program: {
         Args: {
           _district?: string
