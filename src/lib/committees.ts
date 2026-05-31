@@ -82,7 +82,14 @@ export type MemberSearchResult = {
   member_no: string | null
   district: string | null
   taluka: string | null
+  mobile?: string | null
   status: string
+}
+
+export type MemberSearchFilters = {
+  district?: string | null
+  taluka?: string | null
+  requireMemberNo?: boolean
 }
 
 const committeeSelect = [
@@ -340,23 +347,41 @@ export async function updateDesignation(
   if (error) throw error
 }
 
-export async function searchApprovedMembers(query: string) {
+export async function searchApprovedMembers(
+  query: string,
+  filters: MemberSearchFilters = {},
+) {
   const trimmed = query.trim()
   if (trimmed.length < 2) return []
 
-  const { data, error } = await supabase
+  let request = supabase
     .from('members')
-    .select('id, full_name, father_name, member_no, district, taluka, status')
+    .select('id, full_name, father_name, member_no, district, taluka, mobile, status')
     .eq('status', 'approved')
     .or(
       [
         `full_name.ilike.%${escapeIlike(trimmed)}%`,
         `father_name.ilike.%${escapeIlike(trimmed)}%`,
         `member_no.ilike.%${escapeIlike(trimmed)}%`,
+        `mobile.ilike.%${escapeIlike(trimmed)}%`,
       ].join(','),
     )
+
+  if (filters.requireMemberNo ?? true) {
+    request = request.not('member_no', 'is', null)
+  }
+
+  if (filters.district) {
+    request = request.eq('district', filters.district)
+  }
+
+  if (filters.taluka) {
+    request = request.eq('taluka', filters.taluka)
+  }
+
+  const { data, error } = await request
     .order('full_name', { ascending: true })
-    .limit(12)
+    .limit(15)
 
   if (error) throw error
 

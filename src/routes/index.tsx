@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BadgeIndianRupee,
   BriefcaseBusiness,
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   FileCheck2,
@@ -11,7 +12,10 @@ import {
   HandHeart,
   HeartPulse,
   IdCard,
+  Images,
+  Newspaper,
   QrCode,
+  ScrollText,
   ShieldCheck,
   Trophy,
   UserPlus,
@@ -53,8 +57,36 @@ const portalFeatures: Array<{ title: string; text: string; icon: LucideIcon }> =
   { title: 'Donor Leaderboard', text: 'Approved donations are verified and shown in a member-only leaderboard.', icon: Trophy },
 ]
 
+
+const publicHighlights: Array<{ title: string; text: string; to: string; icon: LucideIcon }> = [
+  {
+    title: 'News & Announcements',
+    text: 'Read official JAS updates, program notices and public announcements.',
+    to: '/news',
+    icon: Newspaper,
+  },
+  {
+    title: 'Gallery',
+    text: 'View program photos, meetings and community activity records.',
+    to: '/gallery',
+    icon: Images,
+  },
+  {
+    title: 'Events',
+    text: 'Follow upcoming meetings, public activities and organization events.',
+    to: '/events',
+    icon: CalendarDays,
+  },
+  {
+    title: 'Manifesto & Constitution',
+    text: 'Review the public manifesto, governance structure and official rules.',
+    to: '/manifesto',
+    icon: ScrollText,
+  },
+]
+
 function HomePage() {
-  return <main className="overflow-hidden"><div className="page-wrap flex flex-col gap-16 pb-24 pt-10 lg:gap-20 lg:pt-12"><HeroSection /><TrustStrip /><MembershipFlow /><ProgramGateway /><PortalFeatures /><FinalCTA /></div></main>
+  return <main className="overflow-hidden"><div className="page-wrap flex flex-col gap-16 pb-24 pt-10 lg:gap-20 lg:pt-12"><HeroSection /><TrustStrip /><MembershipFlow /><ProgramGateway /><PortalFeatures /><PublicInformationHub /><FinalCTA /></div></main>
 }
 
 function HeroSection() {
@@ -87,6 +119,58 @@ function MembershipFlow() { return <section className="animate-fade-up"><div cla
 function ProgramGateway() { return <section id="programs-gateway" className="animate-fade-up"><div className="mb-10 flex flex-wrap items-end justify-between gap-6"><div><p className="section-eyebrow mb-3">Program Gateway</p><h2 className="section-title text-balance">Member verified<br />community programs</h2></div><p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">Education, health, welfare and employment applications stay connected with approved JAS membership numbers.</p></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{programModules.map((program, index) => { const Icon = program.icon; return <article key={program.title} className={`feature-card group animate-fade-up ${getDelayClass(index)} p-7`}><div className="mb-5 flex items-start justify-between gap-4"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-[#9a6a12]"><Icon size={24} strokeWidth={1.8} /></div><span className="rounded-full bg-[#f2d48f]/45 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.12em] text-[#5d4211]">{program.badge}</span></div><h3 className="mb-2 mt-0 text-xl font-black tracking-tight text-stone-950">{program.title}</h3><p className="m-0 text-[0.92rem] leading-7 text-stone-600">{program.text}</p><Link to={program.to} className="jas-dark-action-link mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition">Open<ArrowRight size={15} /></Link></article> })}</div></section> }
 
 function PortalFeatures() { return <section className="animate-fade-up"><div className="mb-10 flex flex-wrap items-end justify-between gap-6"><div><p className="section-eyebrow mb-3">Portal Features</p><h2 className="section-title text-balance">Built for digital<br />member support</h2></div><p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">The portal supports membership registration and focused community program workflows while keeping sensitive reviews restricted to authorized admins.</p></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{portalFeatures.map((feature, index) => { const Icon = feature.icon; return <article key={feature.title} className={`feature-card group animate-fade-up ${getDelayClass(index)} p-7`}><div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><Icon size={22} strokeWidth={1.75} /></div><h3 className="mb-2 mt-0 text-xl font-black tracking-tight text-stone-950">{feature.title}</h3><p className="m-0 text-[0.92rem] leading-7 text-stone-600">{feature.text}</p></article> })}</div></section> }
+
+
+function PublicInformationHub() {
+  return (
+    <section className="animate-fade-up">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+        <div>
+          <p className="section-eyebrow mb-3">Public Website</p>
+          <h2 className="section-title text-balance">
+            Public updates,<br />records and transparency
+          </h2>
+        </div>
+        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
+          Visitors can explore official JAS information, latest news, gallery
+          records and events without logging in.
+        </p>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        {publicHighlights.map((item, index) => {
+          const Icon = item.icon
+          return (
+            <article
+              key={item.title}
+              className={`feature-card group animate-fade-up ${getDelayClass(index)} p-6`}
+            >
+              <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-stone-100 text-emerald-900">
+                <Icon size={22} strokeWidth={1.8} />
+              </div>
+
+              <h3 className="mb-2 mt-0 text-xl font-black tracking-tight text-stone-950">
+                {item.title}
+              </h3>
+
+              <p className="m-0 text-[0.92rem] leading-7 text-stone-600">
+                {item.text}
+              </p>
+
+              <Link
+                to={item.to}
+                className="mt-6 inline-flex items-center gap-2 text-sm font-black text-emerald-900 no-underline transition hover:text-[#9a6a12]"
+              >
+                Open
+                <ArrowRight size={15} />
+              </Link>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
 
 function FinalCTA() { return <section className="animate-fade-up relative overflow-hidden rounded-[2rem] bg-[linear-gradient(140deg,#0b1f14_0%,#14321e_50%,#0e2a1a_100%)] p-[clamp(2.5rem,6vw,5rem)] text-center shadow-[0_40px_100px_rgba(10,28,18,0.35)]"><AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" /><div className="relative z-10"><div className="badge-soft mb-5 border border-white/10 bg-white/5 px-3 py-1.5 text-[#f2d48f]"><ShieldCheck size={14} /><span className="text-[0.72rem] font-extrabold uppercase tracking-[0.24em]">Member Verified Portal</span></div><h2 className="display-title text-balance mx-auto mb-6 max-w-3xl text-[clamp(2.2rem,5vw,4rem)] leading-tight text-white">Apply, get approved,<br /><em className="text-[#d8a949]">access member support</em></h2><p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">Create your account, submit membership form, receive digital member ID and use verified services including education, health, welfare, employment and donation support.</p><div className="flex flex-wrap justify-center gap-4"><Link to="/signup" className="pressable lift-hover inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-8 py-4 text-sm font-extrabold text-[#0B1F14] shadow-[0_10px_30px_rgba(176,125,42,0.4)]">Apply for Membership<ArrowRight size={16} /></Link><Link to="/programs/employment" className="ghost-btn pressable lift-hover">Employment</Link><Link to="/donate" className="ghost-btn pressable lift-hover">Donate</Link><Link to="/donors" className="ghost-btn pressable lift-hover">Donors</Link></div></div></section> }
 

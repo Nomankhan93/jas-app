@@ -1,5 +1,16 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Edit3, Loader2, Save, Search, ShieldAlert, Trash2, UserPlus, Users } from 'lucide-react'
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Edit3,
+  Loader2,
+  Save,
+  Search,
+  ShieldAlert,
+  Trash2,
+  UserPlus,
+  Users,
+} from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
   addCommitteeMember,
@@ -21,6 +32,7 @@ import {
   type CommitteeStatus,
   type CommitteeType,
   type DesignationRecord,
+  type MemberSearchFilters,
   type MemberSearchResult,
 } from '../../../lib/committees'
 
@@ -50,7 +62,8 @@ type MemberForm = {
   appointmentNotes: string
 }
 
-const inputClass = 'h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'
+const inputClass =
+  'h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100'
 
 function AdminCommitteeDetailPage() {
   const { id } = Route.useParams()
@@ -59,11 +72,13 @@ function AdminCommitteeDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [memberSaving, setMemberSaving] = useState(false)
+  const [memberSearching, setMemberSearching] = useState(false)
   const [message, setMessage] = useState('')
   const [memberSearch, setMemberSearch] = useState('')
   const [memberResults, setMemberResults] = useState<MemberSearchResult[]>([])
   const [selectedMember, setSelectedMember] = useState<MemberSearchResult | null>(null)
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
+  const [limitSearchToCommitteeArea, setLimitSearchToCommitteeArea] = useState(true)
   const [committeeForm, setCommitteeForm] = useState<CommitteeForm>({
     committeeType: 'central',
     name: '',
@@ -85,9 +100,139 @@ function AdminCommitteeDetailPage() {
     appointmentNotes: '',
   })
 
+  const committeeMembers = useMemo(() => {
+    return [...(committee?.members ?? [])].sort((a, b) => {
+      if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order
+      return a.designation_title.localeCompare(b.designation_title)
+    })
+  }, [committee])
+
+  const activeOfficeBearers = useMemo(
+    () => committeeMembers.filter((member) => member.status === 'active'),
+    [committeeMembers],
+  )
+
+  const selectedDesignationTaken = useMemo(() => {
+    const normalizedTitle = memberForm.designationTitle.trim().toLowerCase()
+    if (!normalizedTitle) return null
+
+    return activeOfficeBearers.find((member) => {
+      if (member.id === editingMemberId) return false
+      return member.designation_title.trim().toLowerCase() === normalizedTitle
+    })
+  }, [activeOfficeBearers, editingMemberId, memberForm.designationTitle])
+
+  const selectedMemberAlreadyAssigned = useMemo(() => {
+    if (!selectedMember) return null
+
+    return activeOfficeBearers.find(
+      (member) => member.member_id === selectedMember.id && member.id !== editingMemberId,
+    )
+  }, [activeOfficeBearers, editingMemberId, selectedMember])
+
+  const memberSearchFilters = useMemo<MemberSearchFilters>(() => {
+    if (!limitSearchToCommitteeArea) {
+      return { requireMemberNo: true }
+    }
+
+    if (committeeForm.committeeType === 'central') {
+      return { requireMemberNo: true }
+    }
+
+    if (committeeForm.committeeType === 'district') {
+      return {
+        district: committeeForm.district.trim() || null,
+        requireMemberNo: true,
+      }
+    }
+
+    return {
+      district: committeeForm.district.trim() || null,
+      taluka: committeeForm.taluka.trim() || null,
+      requireMemberNo: true,
+    }
+  }, [committeeForm.committeeType, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
+
+  const searchScopeLabel = useMemo(() => {
+    if (!limitSearchToCommitteeArea || committeeForm.committeeType === 'central') {
+      return 'Searching all approved JAS members with issued member numbers.'
+    }
+
+    if (committeeForm.committeeType === 'district') {
+      return committeeForm.district.trim()
+        ? `Searching approved members in ${committeeForm.district.trim()}.`
+        : 'Add committee district first or turn off area filter.'
+    }
+
+    const parts = [committeeForm.taluka.trim(), committeeForm.district.trim()].filter(Boolean)
+    return parts.length
+      ? `Searching approved members in ${parts.join(', ')}.`
+      : 'Add committee district/taluka first or turn off area filter.'
+  }, [committeeForm.committeeType, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
+
   useEffect(() => {
     void loadDetails()
   }, [id])
+
+  useEffect(() => {
+    if (!committee) return
+
+    let cancelled = false
+
+    async function loadScopedDesignations() {
+      try {
+        const designationList = await fetchDesignations(committeeForm.committeeType)
+        if (!cancelled) {
+          setDesignations(designationList.filter((item) => item.is_active))
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setMessage(err instanceof Error ? err.message : 'Failed to load designations.')
+        }
+      }
+    }
+
+    void loadScopedDesignations()
+
+    return () => {
+      cancelled = true
+    }
+  }, [committee, committeeForm.committeeType])
+
+  useEffect(() => {
+    if (editingMemberId) return
+
+    const query = memberSearch.trim()
+    if (query.length < 2) {
+      setMemberResults([])
+      setMemberSearching(false)
+      return
+    }
+
+    let cancelled = false
+    setMemberSearching(true)
+
+    const timer = window.setTimeout(() => {
+      void searchApprovedMembers(query, memberSearchFilters)
+        .then((results) => {
+          if (!cancelled) setMemberResults(results)
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) {
+            setMessage(err instanceof Error ? err.message : 'Member search failed.')
+            setMemberResults([])
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setMemberSearching(false)
+        })
+    }, 350)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [editingMemberId, memberSearch, memberSearchFilters])
 
   async function loadDetails() {
     setLoading(true)
@@ -122,6 +267,10 @@ function AdminCommitteeDetailPage() {
         publicDisplay: details.public_display,
         notes: details.notes ?? '',
       })
+      setMemberForm((current) => ({
+        ...current,
+        sortOrder: String((details.members?.length ?? 0) + 1),
+      }))
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Failed to load committee.')
     } finally {
@@ -136,12 +285,18 @@ function AdminCommitteeDetailPage() {
 
     try {
       if (!committeeForm.name.trim()) throw new Error('Committee name is required.')
+      if (committeeForm.committeeType !== 'central' && !committeeForm.district.trim()) {
+        throw new Error('District is required for district/taluka committees.')
+      }
+      if (committeeForm.committeeType === 'taluka' && !committeeForm.taluka.trim()) {
+        throw new Error('Taluka is required for taluka committees.')
+      }
 
       await updateCommittee(id, {
         committee_type: committeeForm.committeeType,
         name: committeeForm.name.trim(),
-        district: committeeForm.district.trim() || null,
-        taluka: committeeForm.taluka.trim() || null,
+        district: committeeForm.committeeType === 'central' ? null : committeeForm.district.trim(),
+        taluka: committeeForm.committeeType === 'taluka' ? committeeForm.taluka.trim() : null,
         tenure_start: committeeForm.tenureStart || null,
         tenure_end: committeeForm.tenureEnd || null,
         status: committeeForm.status,
@@ -159,13 +314,33 @@ function AdminCommitteeDetailPage() {
   }
 
   async function handleMemberSearch() {
+    const query = memberSearch.trim()
+    if (query.length < 2) {
+      setMessage('Enter at least 2 characters to search approved members.')
+      return
+    }
+
+    setMemberSearching(true)
     setMessage('')
 
     try {
-      setMemberResults(await searchApprovedMembers(memberSearch))
+      setMemberResults(await searchApprovedMembers(query, memberSearchFilters))
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'Member search failed.')
+      setMemberResults([])
+    } finally {
+      setMemberSearching(false)
     }
+  }
+
+  function handleCommitteeTypeChange(value: CommitteeType) {
+    setCommitteeForm((current) => ({
+      ...current,
+      committeeType: value,
+      district: value === 'central' ? '' : current.district,
+      taluka: value === 'taluka' ? current.taluka : '',
+    }))
+    resetMemberForm({ keepSearch: true })
   }
 
   function handleDesignationChange(value: string) {
@@ -178,9 +353,16 @@ function AdminCommitteeDetailPage() {
     }))
   }
 
+  function selectMember(member: MemberSearchResult) {
+    setSelectedMember(member)
+    setMemberSearch(`${member.full_name} ${member.member_no ?? ''}`.trim())
+  }
+
   function startEditMember(member: CommitteeMemberRecord) {
     setEditingMemberId(member.id)
     setSelectedMember(null)
+    setMemberSearch('')
+    setMemberResults([])
     setMemberForm({
       designationId: member.designation_id ?? '',
       designationTitle: member.designation_title,
@@ -192,10 +374,10 @@ function AdminCommitteeDetailPage() {
     })
   }
 
-  function resetMemberForm() {
+  function resetMemberForm(options?: { keepSearch?: boolean }) {
     setEditingMemberId(null)
     setSelectedMember(null)
-    setMemberSearch('')
+    if (!options?.keepSearch) setMemberSearch('')
     setMemberResults([])
     setMemberForm({
       designationId: '',
@@ -231,6 +413,12 @@ function AdminCommitteeDetailPage() {
         setMessage('Committee member updated successfully.')
       } else {
         if (!selectedMember) throw new Error('Select an approved member first.')
+        if (!selectedMember.member_no) throw new Error('Selected member must have an issued member number.')
+        if (selectedMemberAlreadyAssigned) {
+          throw new Error(
+            `${selectedMember.full_name} is already active in this committee as ${selectedMemberAlreadyAssigned.designation_title}. Edit that record or remove it first.`,
+          )
+        }
 
         await addCommitteeMember({
           committee_id: id,
@@ -264,10 +452,12 @@ function AdminCommitteeDetailPage() {
     }
   }
 
-  const committeeMembers = useMemo(() => committee?.members ?? [], [committee])
-
   if (loading) {
-    return <main className="page-wrap py-10"><StateCard message="Loading committee details..." /></main>
+    return (
+      <main className="page-wrap py-10">
+        <StateCard message="Loading committee details..." />
+      </main>
+    )
   }
 
   if (!committee) {
@@ -281,17 +471,25 @@ function AdminCommitteeDetailPage() {
   return (
     <main className="px-3 py-6 sm:px-4 sm:py-10">
       <div className="page-wrap space-y-6">
-        <Link to="/admin/committees" className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline">
+        <Link
+          to="/admin/committees"
+          className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline"
+        >
           <ArrowLeft size={16} /> Back to Committees
         </Link>
 
         <header className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">{getCommitteeTypeLabel(committee.committee_type)}</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">{committee.name}</h1>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+                {getCommitteeTypeLabel(committee.committee_type)}
+              </p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+                {committee.name}
+              </h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                {committee.district || 'Central'} {committee.taluka ? `· ${committee.taluka}` : ''} · Tenure {formatCommitteeDate(committee.tenure_start)} to {formatCommitteeDate(committee.tenure_end)}
+                {committee.district || 'Central'} {committee.taluka ? `· ${committee.taluka}` : ''} · Tenure{' '}
+                {formatCommitteeDate(committee.tenure_start)} to {formatCommitteeDate(committee.tenure_end)}
               </p>
             </div>
             <span className={`rounded-full px-4 py-2 text-xs font-black uppercase ring-1 ${getCommitteeStatusClass(committee.status)}`}>
@@ -300,128 +498,292 @@ function AdminCommitteeDetailPage() {
           </div>
         </header>
 
-        {message ? <StateCard message={message} tone={message.toLowerCase().includes('failed') || message.toLowerCase().includes('required') || message.toLowerCase().includes('only') ? 'error' : 'default'} /> : null}
+        {message ? (
+          <StateCard
+            message={message}
+            tone={isErrorMessage(message) ? 'error' : 'default'}
+          />
+        ) : null}
 
-        <section className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <section className="grid gap-6 xl:grid-cols-[430px_1fr]">
           <div className="space-y-6">
-            <form onSubmit={handleCommitteeSave} className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
+            <form
+              onSubmit={handleCommitteeSave}
+              className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70"
+            >
               <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800"><Save size={22} /></span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+                  <Save size={22} />
+                </span>
                 <div>
                   <h2 className="text-xl font-black text-slate-950">Committee Details</h2>
-                  <p className="text-sm text-slate-500">Update structure and tenure.</p>
+                  <p className="text-sm text-slate-500">Update structure, location and tenure.</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <Field label="Committee Type"><select value={committeeForm.committeeType} onChange={(e) => setCommitteeForm((c) => ({ ...c, committeeType: e.target.value as CommitteeType }))} className={inputClass}>{committeeTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
-                <Field label="Name"><input value={committeeForm.name} onChange={(e) => setCommitteeForm((c) => ({ ...c, name: e.target.value }))} className={inputClass} /></Field>
-                <Field label="District"><input value={committeeForm.district} onChange={(e) => setCommitteeForm((c) => ({ ...c, district: e.target.value }))} className={inputClass} /></Field>
-                <Field label="Taluka"><input value={committeeForm.taluka} onChange={(e) => setCommitteeForm((c) => ({ ...c, taluka: e.target.value }))} className={inputClass} /></Field>
+                <Field label="Committee Type">
+                  <select
+                    value={committeeForm.committeeType}
+                    onChange={(event) => handleCommitteeTypeChange(event.target.value as CommitteeType)}
+                    className={inputClass}
+                  >
+                    {committeeTypeOptions.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Name">
+                  <input
+                    value={committeeForm.name}
+                    onChange={(event) => setCommitteeForm((current) => ({ ...current, name: event.target.value }))}
+                    className={inputClass}
+                  />
+                </Field>
+
+                {committeeForm.committeeType !== 'central' ? (
+                  <Field label="District">
+                    <input
+                      value={committeeForm.district}
+                      onChange={(event) => setCommitteeForm((current) => ({ ...current, district: event.target.value }))}
+                      className={inputClass}
+                      placeholder="Umerkot"
+                    />
+                  </Field>
+                ) : null}
+
+                {committeeForm.committeeType === 'taluka' ? (
+                  <Field label="Taluka">
+                    <input
+                      value={committeeForm.taluka}
+                      onChange={(event) => setCommitteeForm((current) => ({ ...current, taluka: event.target.value }))}
+                      className={inputClass}
+                      placeholder="Kunri"
+                    />
+                  </Field>
+                ) : null}
+
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <Field label="Tenure Start"><input type="date" value={committeeForm.tenureStart} onChange={(e) => setCommitteeForm((c) => ({ ...c, tenureStart: e.target.value }))} className={inputClass} /></Field>
-                  <Field label="Tenure End"><input type="date" value={committeeForm.tenureEnd} onChange={(e) => setCommitteeForm((c) => ({ ...c, tenureEnd: e.target.value }))} className={inputClass} /></Field>
+                  <Field label="Tenure Start">
+                    <input
+                      type="date"
+                      value={committeeForm.tenureStart}
+                      onChange={(event) => setCommitteeForm((current) => ({ ...current, tenureStart: event.target.value }))}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Tenure End">
+                    <input
+                      type="date"
+                      value={committeeForm.tenureEnd}
+                      onChange={(event) => setCommitteeForm((current) => ({ ...current, tenureEnd: event.target.value }))}
+                      className={inputClass}
+                    />
+                  </Field>
                 </div>
-                <Field label="Status"><select value={committeeForm.status} onChange={(e) => setCommitteeForm((c) => ({ ...c, status: e.target.value as CommitteeStatus }))} className={inputClass}>{committeeStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
-                <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700"><input type="checkbox" checked={committeeForm.publicDisplay} onChange={(e) => setCommitteeForm((c) => ({ ...c, publicDisplay: e.target.checked }))} /> Public display later</label>
-                <Field label="Notes"><textarea value={committeeForm.notes} onChange={(e) => setCommitteeForm((c) => ({ ...c, notes: e.target.value }))} className={`${inputClass} min-h-[90px] py-3`} /></Field>
-                <button type="submit" disabled={saving} className="primary-btn w-full disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving...' : 'Save Committee'}</button>
+
+                <Field label="Status">
+                  <select
+                    value={committeeForm.status}
+                    onChange={(event) => setCommitteeForm((current) => ({ ...current, status: event.target.value as CommitteeStatus }))}
+                    className={inputClass}
+                  >
+                    {committeeStatusOptions.map((item) => (
+                      <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                  </select>
+                </Field>
+
+                <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={committeeForm.publicDisplay}
+                    onChange={(event) => setCommitteeForm((current) => ({ ...current, publicDisplay: event.target.checked }))}
+                  />
+                  Public display later
+                </label>
+
+                <Field label="Notes">
+                  <textarea
+                    value={committeeForm.notes}
+                    onChange={(event) => setCommitteeForm((current) => ({ ...current, notes: event.target.value }))}
+                    className={`${inputClass} min-h-[90px] py-3`}
+                  />
+                </Field>
+
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="primary-btn w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {saving ? 'Saving...' : 'Save Committee'}
+                </button>
               </div>
             </form>
 
-            <form onSubmit={handleMemberSubmit} className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
+            <form
+              onSubmit={handleMemberSubmit}
+              className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70"
+            >
               <div className="mb-5 flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-lime-50 text-lime-800">{editingMemberId ? <Edit3 size={22} /> : <UserPlus size={22} />}</span>
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-lime-50 text-lime-800">
+                  {editingMemberId ? <Edit3 size={22} /> : <UserPlus size={22} />}
+                </span>
                 <div>
-                  <h2 className="text-xl font-black text-slate-950">{editingMemberId ? 'Edit Office Bearer' : 'Add Office Bearer'}</h2>
-                  <p className="text-sm text-slate-500">Assign approved members to designations.</p>
+                  <h2 className="text-xl font-black text-slate-950">
+                    {editingMemberId ? 'Edit Office Bearer' : 'Add Office Bearer'}
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    Select an approved member and assign a designation.
+                  </p>
                 </div>
               </div>
 
               {!editingMemberId ? (
-                <div className="mb-4 space-y-3">
-                  <Field label="Search Approved Member">
-                    <div className="flex gap-2">
-                      <input value={memberSearch} onChange={(e) => setMemberSearch(e.target.value)} className={inputClass} placeholder="Name or member no" />
-                      <button type="button" onClick={() => void handleMemberSearch()} className="secondary-btn px-4"><Search size={16} /></button>
-                    </div>
-                  </Field>
-
-                  {memberResults.length ? (
-                    <div className="grid gap-2">
-                      {memberResults.map((member) => (
-                        <button key={member.id} type="button" onClick={() => setSelectedMember(member)} className={`rounded-2xl border p-3 text-left text-sm transition ${selectedMember?.id === member.id ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
-                          <span className="block font-black text-slate-950">{member.full_name}</span>
-                          <span className="block text-xs">{member.member_no ?? 'No member no'} · {member.district ?? 'District N/A'} {member.taluka ? `· ${member.taluka}` : ''}</span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : null}
+                <MemberPicker
+                  memberSearch={memberSearch}
+                  onSearchChange={(value) => {
+                    setMemberSearch(value)
+                    setSelectedMember(null)
+                  }}
+                  onSearch={() => void handleMemberSearch()}
+                  memberSearching={memberSearching}
+                  memberResults={memberResults}
+                  selectedMember={selectedMember}
+                  onSelectMember={selectMember}
+                  alreadyAssignedMemberId={selectedMemberAlreadyAssigned?.member_id ?? null}
+                  searchScopeLabel={searchScopeLabel}
+                  limitSearchToCommitteeArea={limitSearchToCommitteeArea}
+                  onToggleAreaFilter={setLimitSearchToCommitteeArea}
+                />
+              ) : (
+                <div className="mb-4 rounded-2xl bg-amber-50 p-4 text-sm font-bold text-amber-900 ring-1 ring-amber-100">
+                  Editing designation details only. To change the person, remove this record and add the correct approved member again.
                 </div>
-              ) : null}
+              )}
 
               <div className="space-y-4">
                 <Field label="Designation">
-                  <select value={memberForm.designationId} onChange={(e) => handleDesignationChange(e.target.value)} className={inputClass}>
+                  <select
+                    value={memberForm.designationId}
+                    onChange={(event) => handleDesignationChange(event.target.value)}
+                    className={inputClass}
+                  >
                     <option value="">Custom designation</option>
-                    {designations.map((designation) => <option key={designation.id} value={designation.id}>{designation.title}</option>)}
+                    {designations.map((designation) => (
+                      <option key={designation.id} value={designation.id}>{designation.title}</option>
+                    ))}
                   </select>
                 </Field>
-                <Field label="Designation Title"><input value={memberForm.designationTitle} onChange={(e) => setMemberForm((c) => ({ ...c, designationTitle: e.target.value }))} className={inputClass} placeholder="General Secretary" /></Field>
+
+                <Field label="Designation Title">
+                  <input
+                    value={memberForm.designationTitle}
+                    onChange={(event) => setMemberForm((current) => ({ ...current, designationTitle: event.target.value }))}
+                    className={inputClass}
+                    placeholder="General Secretary"
+                  />
+                </Field>
+
+                {selectedDesignationTaken ? (
+                  <div className="rounded-2xl bg-amber-50 p-4 text-sm font-bold text-amber-900 ring-1 ring-amber-100">
+                    {selectedDesignationTaken.designation_title} is already assigned to {selectedDesignationTaken.full_name_snapshot}. You can still save if this designation may have multiple office bearers.
+                  </div>
+                ) : null}
+
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <Field label="Status"><select value={memberForm.status} onChange={(e) => setMemberForm((c) => ({ ...c, status: e.target.value as CommitteeStatus }))} className={inputClass}>{committeeStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></Field>
-                  <Field label="Display Order"><input type="number" min="1" value={memberForm.sortOrder} onChange={(e) => setMemberForm((c) => ({ ...c, sortOrder: e.target.value }))} className={inputClass} /></Field>
+                  <Field label="Status">
+                    <select
+                      value={memberForm.status}
+                      onChange={(event) => setMemberForm((current) => ({ ...current, status: event.target.value as CommitteeStatus }))}
+                      className={inputClass}
+                    >
+                      {committeeStatusOptions.map((item) => (
+                        <option key={item.value} value={item.value}>{item.label}</option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Display Order">
+                    <input
+                      type="number"
+                      min="1"
+                      value={memberForm.sortOrder}
+                      onChange={(event) => setMemberForm((current) => ({ ...current, sortOrder: event.target.value }))}
+                      className={inputClass}
+                    />
+                  </Field>
                 </div>
+
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <Field label="Tenure Start"><input type="date" value={memberForm.tenureStart} onChange={(e) => setMemberForm((c) => ({ ...c, tenureStart: e.target.value }))} className={inputClass} /></Field>
-                  <Field label="Tenure End"><input type="date" value={memberForm.tenureEnd} onChange={(e) => setMemberForm((c) => ({ ...c, tenureEnd: e.target.value }))} className={inputClass} /></Field>
+                  <Field label="Tenure Start">
+                    <input
+                      type="date"
+                      value={memberForm.tenureStart}
+                      onChange={(event) => setMemberForm((current) => ({ ...current, tenureStart: event.target.value }))}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Tenure End">
+                    <input
+                      type="date"
+                      value={memberForm.tenureEnd}
+                      onChange={(event) => setMemberForm((current) => ({ ...current, tenureEnd: event.target.value }))}
+                      className={inputClass}
+                    />
+                  </Field>
                 </div>
-                <Field label="Appointment Notes"><textarea value={memberForm.appointmentNotes} onChange={(e) => setMemberForm((c) => ({ ...c, appointmentNotes: e.target.value }))} className={`${inputClass} min-h-[86px] py-3`} /></Field>
+
+                <Field label="Appointment Notes">
+                  <textarea
+                    value={memberForm.appointmentNotes}
+                    onChange={(event) => setMemberForm((current) => ({ ...current, appointmentNotes: event.target.value }))}
+                    className={`${inputClass} min-h-[86px] py-3`}
+                    placeholder="Appointment reference, decision note or meeting record."
+                  />
+                </Field>
+
                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-                  <button type="submit" disabled={memberSaving} className="primary-btn disabled:cursor-not-allowed disabled:opacity-60">{memberSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{editingMemberId ? 'Update Office Bearer' : 'Add Office Bearer'}</button>
-                  {editingMemberId ? <button type="button" onClick={resetMemberForm} className="secondary-btn">Cancel Edit</button> : null}
+                  <button
+                    type="submit"
+                    disabled={memberSaving}
+                    className="primary-btn disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {memberSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {editingMemberId ? 'Update Office Bearer' : 'Add Office Bearer'}
+                  </button>
+                  <button type="button" onClick={() => resetMemberForm()} className="secondary-btn">
+                    {editingMemberId ? 'Cancel Edit' : 'Clear Selection'}
+                  </button>
                 </div>
               </div>
             </form>
           </div>
 
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
-            <div className="mb-5 flex items-center justify-between gap-4">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-black text-slate-950">Office Bearers</h2>
-                <p className="mt-1 text-sm text-slate-500">{committeeMembers.length} assigned member{committeeMembers.length === 1 ? '' : 's'}.</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {committeeMembers.length} assigned member{committeeMembers.length === 1 ? '' : 's'} · {activeOfficeBearers.length} active.
+                </p>
               </div>
-              <Users className="h-6 w-6 text-emerald-700" />
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
+                <Users className="h-4 w-4" /> Committee List
+              </div>
             </div>
 
-            {committeeMembers.length === 0 ? <StateCard message="No office bearers assigned yet." /> : null}
+            {committeeMembers.length === 0 ? <StateCard message="No office bearers assigned yet. Use the form on the left to search an approved member and add the first office bearer." /> : null}
 
             <div className="grid gap-4 lg:grid-cols-2">
               {committeeMembers.map((member) => (
-                <article key={member.id} className="rounded-[1.4rem] border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-wide text-emerald-700">{member.designation_title}</p>
-                      <h3 className="mt-1 text-xl font-black text-slate-950">{member.full_name_snapshot}</h3>
-                      <p className="mt-1 text-sm font-semibold text-slate-500">{member.member_no_snapshot ?? 'No member no'} · Father: {member.father_name_snapshot ?? 'N/A'}</p>
-                    </div>
-                    <span className={`rounded-full px-3 py-1 text-xs font-black uppercase ring-1 ${getCommitteeStatusClass(member.status)}`}>{getCommitteeStatusLabel(member.status)}</span>
-                  </div>
-
-                  <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-                    <Info label="Location" value={`${member.district_snapshot ?? 'N/A'}${member.taluka_snapshot ? ` · ${member.taluka_snapshot}` : ''}`} />
-                    <Info label="Order" value={String(member.sort_order)} />
-                    <Info label="Tenure" value={`${formatCommitteeDate(member.tenure_start)} → ${formatCommitteeDate(member.tenure_end)}`} />
-                    <Info label="Updated" value={formatCommitteeDate(member.updated_at)} />
-                  </div>
-
-                  {member.appointment_notes ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600 ring-1 ring-slate-100">{member.appointment_notes}</p> : null}
-
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => startEditMember(member)} className="secondary-btn"><Edit3 size={15} /> Edit</button>
-                    <button type="button" onClick={() => void handleRemoveMember(member.id)} className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 shadow-sm transition hover:bg-red-100"><Trash2 size={15} /> Remove</button>
-                  </div>
-                </article>
+                <OfficeBearerCard
+                  key={member.id}
+                  member={member}
+                  onEdit={startEditMember}
+                  onRemove={(memberId) => void handleRemoveMember(memberId)}
+                />
               ))}
             </div>
           </section>
@@ -431,14 +793,242 @@ function AdminCommitteeDetailPage() {
   )
 }
 
+function MemberPicker({
+  memberSearch,
+  onSearchChange,
+  onSearch,
+  memberSearching,
+  memberResults,
+  selectedMember,
+  onSelectMember,
+  alreadyAssignedMemberId,
+  searchScopeLabel,
+  limitSearchToCommitteeArea,
+  onToggleAreaFilter,
+}: {
+  memberSearch: string
+  onSearchChange: (value: string) => void
+  onSearch: () => void
+  memberSearching: boolean
+  memberResults: MemberSearchResult[]
+  selectedMember: MemberSearchResult | null
+  onSelectMember: (member: MemberSearchResult) => void
+  alreadyAssignedMemberId: string | null
+  searchScopeLabel: string
+  limitSearchToCommitteeArea: boolean
+  onToggleAreaFilter: (value: boolean) => void
+}) {
+  const queryReady = memberSearch.trim().length >= 2
+
+  return (
+    <div className="mb-4 space-y-3 rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
+      <Field label="Search & Select Approved Member">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={memberSearch}
+              onChange={(event) => onSearchChange(event.target.value)}
+              className={`${inputClass} pl-10`}
+              placeholder="Name, father name, mobile or JAS member no"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={onSearch}
+            disabled={memberSearching || !queryReady}
+            className="secondary-btn px-4 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {memberSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search size={16} />}
+          </button>
+        </div>
+      </Field>
+
+      <label className="flex items-start gap-2 rounded-2xl bg-white p-3 text-xs font-bold text-slate-600 ring-1 ring-slate-200">
+        <input
+          type="checkbox"
+          checked={limitSearchToCommitteeArea}
+          onChange={(event) => onToggleAreaFilter(event.target.checked)}
+          className="mt-0.5"
+        />
+        <span>
+          Limit search to committee area.
+          <span className="mt-1 block font-semibold text-slate-500">{searchScopeLabel}</span>
+        </span>
+      </label>
+
+      {selectedMember ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-1 h-5 w-5 shrink-0 text-emerald-700" />
+            <div>
+              <p className="font-black">Selected: {selectedMember.full_name}</p>
+              <p className="mt-1 text-xs font-bold text-emerald-800">
+                {selectedMember.member_no} · Father: {selectedMember.father_name || 'N/A'}
+              </p>
+              <p className="mt-1 text-xs font-semibold text-emerald-700">
+                {selectedMember.district ?? 'District N/A'} {selectedMember.taluka ? `· ${selectedMember.taluka}` : ''}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {alreadyAssignedMemberId ? (
+        <div className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-800 ring-1 ring-red-100">
+          This member is already active in this committee. Edit/remove the existing record first.
+        </div>
+      ) : null}
+
+      {memberSearching ? <StateCard message="Searching approved members..." /> : null}
+
+      {!memberSearching && queryReady && memberResults.length === 0 ? (
+        <div className="rounded-2xl bg-white p-4 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
+          No approved member found. Try member number, father name, mobile number, or turn off area filter.
+        </div>
+      ) : null}
+
+      {memberResults.length ? (
+        <div className="grid max-h-[360px] gap-2 overflow-y-auto pr-1">
+          {memberResults.map((member) => {
+            const isSelected = selectedMember?.id === member.id
+            const isAlreadyAssigned = alreadyAssignedMemberId === member.id
+
+            return (
+              <button
+                key={member.id}
+                type="button"
+                onClick={() => onSelectMember(member)}
+                className={`rounded-2xl border p-3 text-left text-sm transition ${
+                  isSelected
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="block truncate font-black text-slate-950">{member.full_name}</span>
+                    <span className="mt-1 block text-xs font-bold text-slate-500">
+                      {member.member_no ?? 'No member no'} · Father: {member.father_name || 'N/A'}
+                    </span>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      {member.district ?? 'District N/A'} {member.taluka ? `· ${member.taluka}` : ''}
+                    </span>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-[0.65rem] font-black uppercase ring-1 ${isSelected ? 'bg-emerald-100 text-emerald-800 ring-emerald-200' : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
+                    {isSelected ? 'Selected' : isAlreadyAssigned ? 'Assigned' : 'Select'}
+                  </span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function OfficeBearerCard({
+  member,
+  onEdit,
+  onRemove,
+}: {
+  member: CommitteeMemberRecord
+  onEdit: (member: CommitteeMemberRecord) => void
+  onRemove: (memberId: string) => void
+}) {
+  return (
+    <article className="rounded-[1.4rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+            {member.designation_title}
+          </p>
+          <h3 className="mt-1 text-xl font-black text-slate-950">{member.full_name_snapshot}</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-500">
+            {member.member_no_snapshot ?? 'No member no'} · Father: {member.father_name_snapshot ?? 'N/A'}
+          </p>
+        </div>
+        <span className={`rounded-full px-3 py-1 text-xs font-black uppercase ring-1 ${getCommitteeStatusClass(member.status)}`}>
+          {getCommitteeStatusLabel(member.status)}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+        <Info label="Location" value={`${member.district_snapshot ?? 'N/A'}${member.taluka_snapshot ? ` · ${member.taluka_snapshot}` : ''}`} />
+        <Info label="Order" value={String(member.sort_order)} />
+        <Info label="Tenure" value={`${formatCommitteeDate(member.tenure_start)} → ${formatCommitteeDate(member.tenure_end)}`} />
+        <Info label="Updated" value={formatCommitteeDate(member.updated_at)} />
+      </div>
+
+      {member.appointment_notes ? (
+        <p className="mt-4 rounded-xl bg-slate-50 p-3 text-sm leading-6 text-slate-600 ring-1 ring-slate-100">
+          {member.appointment_notes}
+        </p>
+      ) : null}
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button type="button" onClick={() => onEdit(member)} className="secondary-btn">
+          <Edit3 size={15} /> Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => onRemove(member.id)}
+          className="inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-700 shadow-sm transition hover:bg-red-100"
+        >
+          <Trash2 size={15} /> Remove
+        </button>
+      </div>
+    </article>
+  )
+}
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="block"><span className="mb-2 block text-sm font-black text-slate-800">{label}</span>{children}</label>
+  return (
+    <label className="block">
+      <span className="mb-2 block text-sm font-black text-slate-800">{label}</span>
+      {children}
+    </label>
+  )
 }
 
 function Info({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100"><p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p><p className="mt-1 font-bold text-slate-950">{value}</p></div>
+  return (
+    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
+      <p className="text-xs font-black uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-1 font-bold text-slate-950">{value}</p>
+    </div>
+  )
 }
 
-function StateCard({ message, tone = 'default' }: { message: string; tone?: 'default' | 'error' }) {
-  return <div className={`rounded-2xl p-5 text-sm font-bold ring-1 ${tone === 'error' ? 'bg-red-50 text-red-700 ring-red-100' : 'bg-slate-50 text-slate-600 ring-slate-200'}`}>{tone === 'error' ? <ShieldAlert className="mr-2 inline h-4 w-4" /> : null}{message}</div>
+function StateCard({
+  message,
+  tone = 'default',
+}: {
+  message: string
+  tone?: 'default' | 'error'
+}) {
+  return (
+    <div
+      className={`rounded-2xl p-5 text-sm font-bold ring-1 ${
+        tone === 'error'
+          ? 'bg-red-50 text-red-700 ring-red-100'
+          : 'bg-slate-50 text-slate-600 ring-slate-200'
+      }`}
+    >
+      {tone === 'error' ? <ShieldAlert className="mr-2 inline h-4 w-4" /> : null}
+      {message}
+    </div>
+  )
+}
+
+function isErrorMessage(message: string) {
+  const value = message.toLowerCase()
+  return (
+    value.includes('failed') ||
+    value.includes('required') ||
+    value.includes('only') ||
+    value.includes('already') ||
+    value.includes('not found')
+  )
 }
