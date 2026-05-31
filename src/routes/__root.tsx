@@ -42,7 +42,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
       { title: 'Jatt Alliance Sindh | Member & Programs Portal' },
       {
         name: 'description',
@@ -50,6 +50,13 @@ export const Route = createRootRoute({
           'Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education, health, welfare and employment support platform.',
       },
       { name: 'theme-color', content: '#0b2a1d' },
+      { name: 'application-name', content: 'JAS' },
+      { name: 'mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-capable', content: 'yes' },
+      { name: 'apple-mobile-web-app-title', content: 'JAS' },
+      { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+      { name: 'msapplication-TileColor', content: '#0b2a1d' },
+      { name: 'format-detection', content: 'telephone=no' },
       {
         property: 'og:title',
         content: 'Jatt Alliance Sindh Member & Programs Portal',
@@ -189,6 +196,7 @@ function RootComponent() {
           aria-hidden="true"
         />
 
+        <PwaBootstrap />
         {!isPublicVerifyPage ? <Header compact={isCardPreviewPage} /> : null}
 
         <div className="animate-fade-up relative z-10">
@@ -219,6 +227,33 @@ function RootDocument({ children }: { children: ReactNode }) {
       </body>
     </html>
   )
+}
+
+
+function PwaBootstrap() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!('serviceWorker' in navigator)) return
+
+    const registerServiceWorker = () => {
+      navigator.serviceWorker.register('/sw.js').catch((error) => {
+        console.warn('JAS service worker registration failed:', error)
+      })
+    }
+
+    if (document.readyState === 'complete') {
+      registerServiceWorker()
+      return
+    }
+
+    window.addEventListener('load', registerServiceWorker, { once: true })
+
+    return () => {
+      window.removeEventListener('load', registerServiceWorker)
+    }
+  }, [])
+
+  return null
 }
 
 function Header({ compact }: { compact: boolean }) {
@@ -342,9 +377,9 @@ function Header({ compact }: { compact: boolean }) {
 
   return (
     <header className={`site-header ${compact ? 'shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''}`}>
-      <div className="page-wrap flex items-center gap-3 py-3">
-        <div className="animate-fade-up min-w-0 flex-1 sm:flex-none">
-          <Link to="/" className="brand-pill lift-hover pressable min-w-0 rounded-[1.35rem] px-3 py-2.5 sm:px-4" aria-label="Jatt Alliance Sindh home">
+      <div className="site-header-inner page-wrap flex items-center gap-3 py-3">
+        <div className="site-brand-wrap animate-fade-up min-w-0 flex-1 sm:flex-none">
+          <Link to="/" className="site-brand-link brand-pill lift-hover pressable min-w-0 rounded-[1.35rem] px-3 py-2.5 sm:px-4" aria-label="Jatt Alliance Sindh home">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10"><ShieldCheck size={18} className="text-[#d8a949]" aria-hidden="true" /></span>
             <span className="min-w-0"><span className="block truncate font-[Manrope,Inter,sans-serif] text-xl font-extrabold tracking-tight text-white sm:text-2xl">Jatt Alliance Sindh</span><span className="mt-0.5 block truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-white/60">Member Platform</span></span>
             <span className="hidden shrink-0 rounded-full border border-white/12 bg-white/10 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white/90 sm:inline-flex">JAS</span>
@@ -396,12 +431,12 @@ function Header({ compact }: { compact: boolean }) {
           {authLoading ? <div className="h-11 w-28 animate-pulse rounded-[var(--r-lg)] bg-white/25" /> : isLoggedIn ? <><Link to={isAdmin ? '/admin' : '/dashboard'} className="primary-btn animate-fade-up pressable lift-hover">{isAdmin ? 'Admin Panel' : 'Dashboard'}</Link><button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn animate-fade-up pressable lift-hover disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? 'Logging out...' : 'Logout'}</button></> : <><Link to="/login" className="secondary-btn animate-fade-up pressable lift-hover">Login</Link><Link to="/signup" className="animate-fade-up inline-flex min-h-[2.75rem] items-center justify-center rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-7 py-3 text-sm font-black text-[#102719] shadow-[0_14px_32px_rgba(196,145,44,0.28)] transition duration-200 hover:-translate-y-0.5 active:scale-[0.985]">Join Now</Link></>}
         </div>
 
-        <button type="button" className="secondary-btn animate-fade-up pressable inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl px-0 md:hidden" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-controls="mobile-navigation" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}>{mobileOpen ? <X size={20} /> : <Menu size={20} />}</button>
+        <button type="button" className="site-mobile-menu-button animate-fade-up pressable md:hidden" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-controls="mobile-navigation" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
       </div>
 
       {mobileOpen ? (
-        <div id="mobile-navigation" className="border-t border-[var(--line)] bg-[#fbf8f2] px-3 pb-4 pt-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:hidden">
-          <div className="soft-panel animate-slide-down page-wrap max-w-7xl rounded-[1.5rem] bg-white/90 p-2 backdrop-blur">
+        <div id="mobile-navigation" className="mobile-navigation-panel border-t border-[var(--line)] bg-[#fbf8f2] px-3 pt-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:hidden">
+          <div className="mobile-navigation-card soft-panel animate-slide-down page-wrap max-w-7xl rounded-[1.5rem] bg-white/90 p-2 backdrop-blur">
             <nav className="grid gap-1" aria-label="Mobile navigation">
               <MobileNavLink to="/" label="Home" icon={<Home size={16} />} active={isActive('/')} delayClass="delay-1" />
               <div className="my-1 rounded-[1rem] bg-amber-50/70 p-2">

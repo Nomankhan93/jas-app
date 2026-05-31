@@ -1,20 +1,51 @@
 {
+  "id": "/",
   "short_name": "JAS",
-  "name": "Jatt Alliance Sindh",
+  "name": "Jatt Alliance Sindh Member Platform",
+  "description": "JAS membership, digital card, programs, donations and verified member services.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "theme_color": "#0b2a1d",
+  "background_color": "#f8f4ee",
+  "categories": ["community", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
-  "display": "standalone",
-  "theme_color": "#064e3b",
-  "background_color": "#f7faf8"
+  "shortcuts": [
+    {
+      "name": "Member Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open your JAS member dashboard.",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Digital Card",
+      "short_name": "Card",
+      "description": "Open the JAS digital membership card.",
+      "url": "/card",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Donate",
+      "short_name": "Donate",
+      "description": "Submit a JAS donation record.",
+      "url": "/donate",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }
