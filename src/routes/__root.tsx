@@ -12,16 +12,21 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   BadgeIndianRupee,
+  Bell,
+  BookOpenText,
   BriefcaseBusiness,
   ChevronDown,
   ChevronRight,
+  FileText,
   GraduationCap,
   HeartPulse,
   HandHeart,
   Home,
+  Landmark,
   IdCard,
   LogOut,
   Menu,
+  ScrollText,
   ShieldCheck,
   Trophy,
   UserPlus,
@@ -70,6 +75,7 @@ type NavItem = {
 }
 
 type ProgramItem = NavItem & { description: string }
+type PublicPageItem = NavItem & { description: string }
 
 const adminRoleNames = [
   'admin',
@@ -82,6 +88,45 @@ const adminRoleNames = [
   'welfare_admin',
   'finance_admin',
 ] as const
+
+const publicPageItems: PublicPageItem[] = [
+  {
+    to: '/about',
+    label: 'About JAS',
+    icon: <ShieldCheck size={16} />,
+    description: 'Introduction, purpose and community platform overview',
+  },
+  {
+    to: '/vision-mission',
+    label: 'Vision & Mission',
+    icon: <Landmark size={16} />,
+    description: 'JAS vision, mission and service direction',
+  },
+  {
+    to: '/manifesto',
+    label: 'Manifesto / Manshoor',
+    icon: <ScrollText size={16} />,
+    description: 'Core manifesto points and public commitment',
+  },
+  {
+    to: '/constitution',
+    label: 'Constitution',
+    icon: <BookOpenText size={16} />,
+    description: 'Rules, structure and constitutional framework',
+  },
+  {
+    to: '/cwc',
+    label: 'Central Working Committee',
+    icon: <FileText size={16} />,
+    description: 'Central cabinet and top-level governing body',
+  },
+  {
+    to: '/contact',
+    label: 'Contact',
+    icon: <HandHeart size={16} />,
+    description: 'Contact, WhatsApp and coordination details',
+  },
+]
 
 const programItems: ProgramItem[] = [
   {
@@ -170,6 +215,7 @@ function Header({ compact }: { compact: boolean }) {
   const [isAdmin, setIsAdmin] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [programsOpen, setProgramsOpen] = useState(false)
+  const [pagesOpen, setPagesOpen] = useState(false)
 
   const checkAdmin = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -200,6 +246,7 @@ function Header({ compact }: { compact: boolean }) {
   useEffect(() => {
     setMobileOpen(false)
     setProgramsOpen(false)
+    setPagesOpen(false)
   }, [pathname])
 
   useEffect(() => {
@@ -245,6 +292,7 @@ function Header({ compact }: { compact: boolean }) {
 
     items.push(
       { to: '/donors', label: 'Donors', icon: <Trophy size={16} /> },
+      { to: '/notifications', label: 'Updates', icon: <Bell size={16} /> },
       { to: '/register', label: 'Register', icon: <UserPlus size={16} /> },
       { to: '/card', label: 'Card', icon: <IdCard size={16} /> },
     )
@@ -273,6 +321,7 @@ function Header({ compact }: { compact: boolean }) {
     return pathname === path || pathname.startsWith(`${path}/`)
   }
 
+  const publicPagesActive = publicPageItems.some((item) => isActive(item.to))
   const programsActive = pathname.startsWith('/programs/')
 
   return (
@@ -291,9 +340,27 @@ function Header({ compact }: { compact: boolean }) {
           <div className="relative">
             <button
               type="button"
+              onClick={() => setPagesOpen((open) => !open)}
+              onMouseEnter={() => setPagesOpen(true)}
+              className={`nav-link animate-fade-up delay-2 gap-1 ${publicPagesActive ? 'is-active' : ''}`}
+              aria-expanded={pagesOpen}
+              aria-haspopup="menu"
+            >
+              Organization
+              <ChevronDown size={14} className={`transition ${pagesOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {pagesOpen ? (
+              <div onMouseLeave={() => setPagesOpen(false)} className="absolute left-0 top-full z-[60] mt-4 w-[340px] rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+                {publicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
+              </div>
+            ) : null}
+          </div>
+          <div className="relative">
+            <button
+              type="button"
               onClick={() => setProgramsOpen((open) => !open)}
               onMouseEnter={() => setProgramsOpen(true)}
-              className={`nav-link animate-fade-up delay-2 gap-1 ${programsActive ? 'is-active' : ''}`}
+              className={`nav-link animate-fade-up delay-3 gap-1 ${programsActive ? 'is-active' : ''}`}
               aria-expanded={programsOpen}
               aria-haspopup="menu"
             >
@@ -306,7 +373,7 @@ function Header({ compact }: { compact: boolean }) {
               </div>
             ) : null}
           </div>
-          {navItems.filter((item) => item.to !== '/').map((item, index) => <NavLink key={item.to} to={item.to} label={item.label} active={isActive(item.to)} delayClass={getDelayClass(index + 2)} />)}
+          {navItems.filter((item) => item.to !== '/').map((item, index) => <NavLink key={item.to} to={item.to} label={item.label} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
         </nav>
 
         <div className="ml-auto hidden items-center gap-3 md:flex">
@@ -321,11 +388,15 @@ function Header({ compact }: { compact: boolean }) {
           <div className="soft-panel animate-slide-down page-wrap max-w-7xl rounded-[1.5rem] bg-white/90 p-2 backdrop-blur">
             <nav className="grid gap-1" aria-label="Mobile navigation">
               <MobileNavLink to="/" label="Home" icon={<Home size={16} />} active={isActive('/')} delayClass="delay-1" />
+              <div className="my-1 rounded-[1rem] bg-amber-50/70 p-2">
+                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-amber-800">Organization</p>
+                {publicPageItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
+              </div>
               <div className="my-1 rounded-[1rem] bg-emerald-50/60 p-2">
                 <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-emerald-800">Programs</p>
                 {programItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
               </div>
-              {navItems.filter((item) => item.to !== '/').map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 2)} />)}
+              {navItems.filter((item) => item.to !== '/').map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
             </nav>
             {!authLoading ? <div className="mt-3 border-t border-[var(--line)] pt-3">{isLoggedIn ? <button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? 'Logging out...' : 'Logout'}</button> : <div className="grid grid-cols-2 gap-2"><Link to="/login" className="secondary-btn pressable px-4">Login</Link><Link to="/signup" className="primary-btn pressable px-4">Join Now</Link></div>}</div> : null}
           </div>
@@ -333,6 +404,10 @@ function Header({ compact }: { compact: boolean }) {
       ) : null}
     </header>
   )
+}
+
+function PublicPageDropdownItem({ item, active }: { item: PublicPageItem; active: boolean }) {
+  return <Link to={item.to} className={`group flex items-start gap-3 rounded-2xl p-3 no-underline transition ${active ? 'bg-amber-50 text-amber-900' : 'text-slate-700 hover:bg-slate-50 hover:text-amber-900'}`}><span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-800 group-hover:bg-white">{item.icon}</span><span className="min-w-0"><span className="block text-sm font-black">{item.label}</span><span className="mt-0.5 block text-xs font-semibold leading-5 text-slate-500">{item.description}</span></span></Link>
 }
 
 function ProgramDropdownItem({ item, active }: { item: ProgramItem; active: boolean }) {

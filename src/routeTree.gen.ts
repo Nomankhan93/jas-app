@@ -9,14 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VisionMissionRouteImport } from './routes/vision-mission'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DonorsRouteImport } from './routes/donors'
 import { Route as DonateRouteImport } from './routes/donate'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CwcRouteImport } from './routes/cwc'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ConstitutionRouteImport } from './routes/constitution'
 import { Route as CardRouteImport } from './routes/card'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyMemberNoRouteImport } from './routes/verify/$memberNo'
 import { Route as ProgramsWelfareRouteImport } from './routes/programs/welfare'
@@ -24,6 +31,7 @@ import { Route as ProgramsHealthRouteImport } from './routes/programs/health'
 import { Route as ProgramsEmploymentRouteImport } from './routes/programs/employment'
 import { Route as ProgramsEducationRouteImport } from './routes/programs/education'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
+import { Route as AdminCmsRouteImport } from './routes/admin/cms'
 import { Route as ProgramsWelfareMyApplicationsRouteImport } from './routes/programs/welfare/my-applications'
 import { Route as ProgramsWelfareApplyRouteImport } from './routes/programs/welfare/apply'
 import { Route as ProgramsWelfareIdRouteImport } from './routes/programs/welfare/$id'
@@ -41,12 +49,18 @@ import { Route as AdminProgramsHealthRouteImport } from './routes/admin/programs
 import { Route as AdminProgramsEmploymentRouteImport } from './routes/admin/programs/employment'
 import { Route as AdminProgramsEducationRouteImport } from './routes/admin/programs/education'
 import { Route as AdminMembersIdRouteImport } from './routes/admin/members/$id'
+import { Route as AdminCmsSlugRouteImport } from './routes/admin/cms/$slug'
 import { Route as AdminProgramsWelfareIdRouteImport } from './routes/admin/programs/welfare/$id'
 import { Route as AdminProgramsHealthIdRouteImport } from './routes/admin/programs/health/$id'
 import { Route as AdminProgramsEmploymentIdRouteImport } from './routes/admin/programs/employment/$id'
 import { Route as AdminProgramsEducationIdRouteImport } from './routes/admin/programs/education/$id'
 import { Route as AdminMembersIdCardRouteImport } from './routes/admin/members/$id/card'
 
+const VisionMissionRoute = VisionMissionRouteImport.update({
+  id: '/vision-mission',
+  path: '/vision-mission',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
@@ -55,6 +69,16 @@ const SignupRoute = SignupRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManifestoRoute = ManifestoRouteImport.update({
+  id: '/manifesto',
+  path: '/manifesto',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -77,6 +101,21 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CwcRoute = CwcRouteImport.update({
+  id: '/cwc',
+  path: '/cwc',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConstitutionRoute = ConstitutionRouteImport.update({
+  id: '/constitution',
+  path: '/constitution',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CardRoute = CardRouteImport.update({
   id: '/card',
   path: '/card',
@@ -85,6 +124,11 @@ const CardRoute = CardRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -120,6 +164,11 @@ const ProgramsEducationRoute = ProgramsEducationRouteImport.update({
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCmsRoute = AdminCmsRouteImport.update({
+  id: '/cms',
+  path: '/cms',
   getParentRoute: () => AdminRoute,
 } as any)
 const ProgramsWelfareMyApplicationsRoute =
@@ -211,6 +260,11 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
   path: '/members/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCmsSlugRoute = AdminCmsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AdminCmsRoute,
+} as any)
 const AdminProgramsWelfareIdRoute = AdminProgramsWelfareIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -241,20 +295,29 @@ const AdminMembersIdCardRoute = AdminMembersIdCardRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
+  '/constitution': typeof ConstitutionRoute
+  '/contact': typeof ContactRoute
+  '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/login': typeof LoginRoute
+  '/manifesto': typeof ManifestoRoute
+  '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
+  '/vision-mission': typeof VisionMissionRoute
+  '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/finance': typeof AdminFinanceRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
   '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
   '/verify/$memberNo': typeof VerifyMemberNoRoute
+  '/admin/cms/$slug': typeof AdminCmsSlugRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/employment': typeof AdminProgramsEmploymentRouteWithChildren
@@ -280,20 +343,29 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
+  '/constitution': typeof ConstitutionRoute
+  '/contact': typeof ContactRoute
+  '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/login': typeof LoginRoute
+  '/manifesto': typeof ManifestoRoute
+  '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
+  '/vision-mission': typeof VisionMissionRoute
+  '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/finance': typeof AdminFinanceRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
   '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
   '/verify/$memberNo': typeof VerifyMemberNoRoute
+  '/admin/cms/$slug': typeof AdminCmsSlugRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/employment': typeof AdminProgramsEmploymentRouteWithChildren
@@ -320,20 +392,29 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
   '/card': typeof CardRoute
+  '/constitution': typeof ConstitutionRoute
+  '/contact': typeof ContactRoute
+  '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/login': typeof LoginRoute
+  '/manifesto': typeof ManifestoRoute
+  '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
   '/signup': typeof SignupRoute
+  '/vision-mission': typeof VisionMissionRoute
+  '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/finance': typeof AdminFinanceRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
   '/programs/health': typeof ProgramsHealthRouteWithChildren
   '/programs/welfare': typeof ProgramsWelfareRouteWithChildren
   '/verify/$memberNo': typeof VerifyMemberNoRoute
+  '/admin/cms/$slug': typeof AdminCmsSlugRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/employment': typeof AdminProgramsEmploymentRouteWithChildren
@@ -361,20 +442,29 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/admin'
     | '/card'
+    | '/constitution'
+    | '/contact'
+    | '/cwc'
     | '/dashboard'
     | '/donate'
     | '/donors'
     | '/login'
+    | '/manifesto'
+    | '/notifications'
     | '/register'
     | '/signup'
+    | '/vision-mission'
+    | '/admin/cms'
     | '/admin/finance'
     | '/programs/education'
     | '/programs/employment'
     | '/programs/health'
     | '/programs/welfare'
     | '/verify/$memberNo'
+    | '/admin/cms/$slug'
     | '/admin/members/$id'
     | '/admin/programs/education'
     | '/admin/programs/employment'
@@ -400,20 +490,29 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/admin'
     | '/card'
+    | '/constitution'
+    | '/contact'
+    | '/cwc'
     | '/dashboard'
     | '/donate'
     | '/donors'
     | '/login'
+    | '/manifesto'
+    | '/notifications'
     | '/register'
     | '/signup'
+    | '/vision-mission'
+    | '/admin/cms'
     | '/admin/finance'
     | '/programs/education'
     | '/programs/employment'
     | '/programs/health'
     | '/programs/welfare'
     | '/verify/$memberNo'
+    | '/admin/cms/$slug'
     | '/admin/members/$id'
     | '/admin/programs/education'
     | '/admin/programs/employment'
@@ -439,20 +538,29 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/admin'
     | '/card'
+    | '/constitution'
+    | '/contact'
+    | '/cwc'
     | '/dashboard'
     | '/donate'
     | '/donors'
     | '/login'
+    | '/manifesto'
+    | '/notifications'
     | '/register'
     | '/signup'
+    | '/vision-mission'
+    | '/admin/cms'
     | '/admin/finance'
     | '/programs/education'
     | '/programs/employment'
     | '/programs/health'
     | '/programs/welfare'
     | '/verify/$memberNo'
+    | '/admin/cms/$slug'
     | '/admin/members/$id'
     | '/admin/programs/education'
     | '/admin/programs/employment'
@@ -479,14 +587,21 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
   CardRoute: typeof CardRoute
+  ConstitutionRoute: typeof ConstitutionRoute
+  ContactRoute: typeof ContactRoute
+  CwcRoute: typeof CwcRoute
   DashboardRoute: typeof DashboardRoute
   DonateRoute: typeof DonateRoute
   DonorsRoute: typeof DonorsRoute
   LoginRoute: typeof LoginRoute
+  ManifestoRoute: typeof ManifestoRoute
+  NotificationsRoute: typeof NotificationsRoute
   RegisterRoute: typeof RegisterRoute
   SignupRoute: typeof SignupRoute
+  VisionMissionRoute: typeof VisionMissionRoute
   ProgramsEducationRoute: typeof ProgramsEducationRouteWithChildren
   ProgramsEmploymentRoute: typeof ProgramsEmploymentRouteWithChildren
   ProgramsHealthRoute: typeof ProgramsHealthRouteWithChildren
@@ -496,6 +611,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vision-mission': {
+      id: '/vision-mission'
+      path: '/vision-mission'
+      fullPath: '/vision-mission'
+      preLoaderRoute: typeof VisionMissionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -508,6 +630,20 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manifesto': {
+      id: '/manifesto'
+      path: '/manifesto'
+      fullPath: '/manifesto'
+      preLoaderRoute: typeof ManifestoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -538,6 +674,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cwc': {
+      id: '/cwc'
+      path: '/cwc'
+      fullPath: '/cwc'
+      preLoaderRoute: typeof CwcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/constitution': {
+      id: '/constitution'
+      path: '/constitution'
+      fullPath: '/constitution'
+      preLoaderRoute: typeof ConstitutionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/card': {
       id: '/card'
       path: '/card'
@@ -550,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -599,6 +763,13 @@ declare module '@tanstack/react-router' {
       path: '/finance'
       fullPath: '/admin/finance'
       preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/cms': {
+      id: '/admin/cms'
+      path: '/cms'
+      fullPath: '/admin/cms'
+      preLoaderRoute: typeof AdminCmsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/programs/welfare/my-applications': {
@@ -720,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/cms/$slug': {
+      id: '/admin/cms/$slug'
+      path: '/$slug'
+      fullPath: '/admin/cms/$slug'
+      preLoaderRoute: typeof AdminCmsSlugRouteImport
+      parentRoute: typeof AdminCmsRoute
+    }
     '/admin/programs/welfare/$id': {
       id: '/admin/programs/welfare/$id'
       path: '/$id'
@@ -757,6 +935,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AdminCmsRouteChildren {
+  AdminCmsSlugRoute: typeof AdminCmsSlugRoute
+}
+
+const AdminCmsRouteChildren: AdminCmsRouteChildren = {
+  AdminCmsSlugRoute: AdminCmsSlugRoute,
+}
+
+const AdminCmsRouteWithChildren = AdminCmsRoute._addFileChildren(
+  AdminCmsRouteChildren,
+)
 
 interface AdminMembersIdRouteChildren {
   AdminMembersIdCardRoute: typeof AdminMembersIdCardRoute
@@ -821,6 +1011,7 @@ const AdminProgramsWelfareRouteWithChildren =
   AdminProgramsWelfareRoute._addFileChildren(AdminProgramsWelfareRouteChildren)
 
 interface AdminRouteChildren {
+  AdminCmsRoute: typeof AdminCmsRouteWithChildren
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminMembersIdRoute: typeof AdminMembersIdRouteWithChildren
   AdminProgramsEducationRoute: typeof AdminProgramsEducationRouteWithChildren
@@ -830,6 +1021,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCmsRoute: AdminCmsRouteWithChildren,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminMembersIdRoute: AdminMembersIdRouteWithChildren,
   AdminProgramsEducationRoute: AdminProgramsEducationRouteWithChildren,
@@ -904,14 +1096,21 @@ const ProgramsWelfareRouteWithChildren = ProgramsWelfareRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
   CardRoute: CardRoute,
+  ConstitutionRoute: ConstitutionRoute,
+  ContactRoute: ContactRoute,
+  CwcRoute: CwcRoute,
   DashboardRoute: DashboardRoute,
   DonateRoute: DonateRoute,
   DonorsRoute: DonorsRoute,
   LoginRoute: LoginRoute,
+  ManifestoRoute: ManifestoRoute,
+  NotificationsRoute: NotificationsRoute,
   RegisterRoute: RegisterRoute,
   SignupRoute: SignupRoute,
+  VisionMissionRoute: VisionMissionRoute,
   ProgramsEducationRoute: ProgramsEducationRouteWithChildren,
   ProgramsEmploymentRoute: ProgramsEmploymentRouteWithChildren,
   ProgramsHealthRoute: ProgramsHealthRouteWithChildren,

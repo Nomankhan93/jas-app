@@ -16,6 +16,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  FileText,
   Filter,
   HeartPulse,
   HandHeart,
@@ -58,6 +59,7 @@ type AdminModuleKey =
   | 'welfare'
   | 'employment'
   | 'finance'
+  | 'cms'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type StatusFilter = 'all' | MemberStatus
@@ -87,6 +89,7 @@ type AdminRouteTo =
   | '/admin/programs/welfare'
   | '/admin/programs/employment'
   | '/admin/finance'
+  | '/admin/cms'
 
 type ModuleCardConfig = {
   key: AdminModuleKey
@@ -102,6 +105,7 @@ type ModuleCardConfig = {
     | 'welfare'
     | 'employment'
     | 'finance'
+    | 'cms'
   metric?: string
   metricLabel?: string
 }
@@ -835,12 +839,22 @@ function AdminProgramShortcuts({
       icon: BadgeIndianRupee,
       tone: 'finance',
     },
+    {
+      key: 'cms',
+      title: 'Public Website CMS',
+      description:
+        'Update public pages such as About, Vision & Mission, Manifesto, Constitution, CWC and Contact.',
+      to: '/admin/cms',
+      actionLabel: 'Open CMS',
+      icon: FileText,
+      tone: 'cms',
+    },
   ]
 
   const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
 
   return (
-    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
       {visibleCards.map((card) => (
         <AdminModuleCard key={card.key} card={card} />
       ))}
@@ -931,6 +945,11 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
       card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white',
       icon: 'bg-emerald-100 text-emerald-800',
       button: 'hover:bg-emerald-900',
+    },
+    cms: {
+      card: 'border-violet-200 bg-gradient-to-br from-violet-50 to-white',
+      icon: 'bg-violet-100 text-violet-800',
+      button: 'hover:bg-violet-900',
     },
   }
 
@@ -1278,6 +1297,7 @@ function canAccessAdminModule(
     welfare: 'welfare_admin',
     employment: 'employment_admin',
     finance: 'finance_admin',
+    cms: 'admin',
   }
 
   return roles.includes(roleByModule[moduleKey])
@@ -1295,6 +1315,7 @@ function getPrimaryAdminRoute(
   | '/admin/programs/welfare'
   | '/admin/programs/employment'
   | '/admin/finance'
+  | '/admin/cms'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
   if (roles.includes('health_admin')) return '/admin/programs/health'
