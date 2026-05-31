@@ -985,6 +985,32 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      role_management_assign_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: undefined
+      }
+      role_management_remove_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _target_user_id: string
+        }
+        Returns: undefined
+      }
+      role_management_search_users: {
+        Args: { _query?: string }
+        Returns: {
+          auth_created_at: string
+          email: string
+          member_full_name: string
+          member_no: string
+          member_status: string
+          roles: string[]
+          user_id: string
+        }[]
+      }
       verify_membership_no: { Args: { _membership_no: string }; Returns: Json }
     }
     Enums: {
