@@ -202,8 +202,8 @@ function CardBack({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-        <div className="relative grid h-full min-h-0 grid-cols-[1fr_250px] gap-4 p-5">
-          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-3 gap-3">
+        <div className="relative grid h-full min-h-0 grid-cols-[1fr_250px] gap-4 p-4">
+          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[0.92fr_0.92fr_1.34fr] gap-3">
             <BackPanel title="Residential Address" tone="gold">
               <p className="font-black text-slate-950">
                 {member.address || 'Full street address not provided.'}
@@ -274,23 +274,30 @@ function CardBack({
               </ul>
             </BackPanel>
 
-            <BackPanel title="Issuing Authority" tone="dark">
-              <div className="flex h-[64px] items-end">
-                <img
-                  src={SIGNATURE_PATH}
-                  alt="Authorized signature"
-                  className="h-[64px] max-w-[280px] object-contain object-left-bottom"
-                  draggable={false}
-                />
-              </div>
+            <BackPanel
+  title="Issuing Authority"
+  tone="dark"
+  contentClassName="flex flex-1 flex-col justify-end"
+>
+  <div className="flex h-[94px] items-center overflow-hidden">
+    <img
+      src={SIGNATURE_PATH}
+      alt="Authorized signature"
+      className="h-[90px] w-[470px] max-w-full object-contain object-left-center brightness-75 contrast-150 saturate-0"
+      style={{ transform: 'scaleX(1.08)' }}
+      draggable={false}
+    />
+  </div>
 
-              <div className="mt-1 h-px w-64 bg-slate-400" />
+  <div className="mt-2 h-[2px] w-[470px] max-w-full bg-slate-500" />
 
-              <p className="mt-1 font-black text-slate-950">
-                Authorized Signature
-              </p>
-              <p className="mt-0.5 text-slate-600">Digital membership office</p>
-            </BackPanel>
+  <p className="mt-2 text-[17px] font-black leading-none text-slate-950">
+    Authorized Signature
+  </p>
+  <p className="mt-1 text-[13px] font-black uppercase tracking-[0.06em] text-slate-600">
+    GENERAL SECRETARY
+  </p>
+</BackPanel>
           </section>
 
           <aside className="flex h-full min-h-0 flex-col justify-between rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-lg">
@@ -480,10 +487,12 @@ function BackPanel({
   title,
   children,
   tone = 'light',
+  contentClassName = '',
 }: {
   title: string
   children: ReactNode
   tone?: 'light' | 'gold' | 'dark'
+  contentClassName?: string
 }) {
   const toneClass =
     tone === 'gold'
@@ -494,13 +503,15 @@ function BackPanel({
 
   return (
     <section
-      className={`min-h-0 overflow-hidden rounded-[1rem] border p-3 shadow-sm ${toneClass}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-[1rem] border p-3 shadow-sm ${toneClass}`}
     >
-      <h3 className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">
+      <h3 className="shrink-0 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">
         {title}
       </h3>
 
-      <div className="mt-2 text-[12.5px] font-semibold leading-[1.45] text-slate-700">
+      <div
+        className={`mt-2 min-h-0 text-[12.5px] font-semibold leading-[1.45] text-slate-700 ${contentClassName}`}
+      >
         {children}
       </div>
     </section>
@@ -544,7 +555,7 @@ function QrPanel({
 
 function CardFooter({ children }: { children: ReactNode }) {
   return (
-    <footer className="shrink-0 border-t border-slate-200 bg-slate-50 px-8 py-3">
+    <footer className="shrink-0 border-t border-slate-200 bg-slate-50 px-8 py-2.5">
       <p className="text-[12px] font-semibold leading-5 text-slate-500">
         {children}
       </p>
