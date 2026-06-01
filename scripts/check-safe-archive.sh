@@ -18,7 +18,7 @@ if ! command -v unzip >/dev/null 2>&1; then
   exit 2
 fi
 
-forbidden='(^|/)(\.env($|\.)|\.env\.local$|\.git/|node_modules/|\.output/|supabase/\.temp/|supabase/snippets/|backups/|exports/|.*\.log$)'
+forbidden='(^|/)(.env0.env.local0.env.(development|production|test|preview|staging)0.git/|node_modules/|.output/|supabase/.temp/|supabase/snippets/|backups/|exports/|.*.log1000 4 24 27 30 46 100 1000 1001'
 
 matches=$(unzip -Z1 "$ZIP_PATH" | grep -E "$forbidden" || true)
 
