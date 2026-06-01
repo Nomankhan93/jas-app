@@ -1116,6 +1116,14 @@ export type Database = {
         Args: { _action?: string; _module_key: string }
         Returns: boolean
       }
+      current_user_can_access_finance_area: {
+        Args: { _action?: string; _district?: string; _taluka?: string }
+        Returns: boolean
+      }
+      current_user_can_access_membership_area: {
+        Args: { _action?: string; _district?: string; _taluka?: string }
+        Returns: boolean
+      }
       current_user_can_approve_program: {
         Args: {
           _district?: string
@@ -1126,6 +1134,7 @@ export type Database = {
       }
       current_user_can_manage_cms: { Args: never; Returns: boolean }
       current_user_can_manage_finance: { Args: never; Returns: boolean }
+      current_user_can_manage_membership: { Args: never; Returns: boolean }
       current_user_can_manage_organization: { Args: never; Returns: boolean }
       current_user_can_manage_program: {
         Args: {
@@ -1152,6 +1161,10 @@ export type Database = {
         Returns: boolean
       }
       current_user_can_view_donor_leaderboard: { Args: never; Returns: boolean }
+      current_user_can_view_finance_audit_log: {
+        Args: { _entity_id: string; _entity_type: string }
+        Returns: boolean
+      }
       current_user_can_view_program: {
         Args: {
           _district?: string
