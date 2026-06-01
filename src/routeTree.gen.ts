@@ -48,6 +48,7 @@ import { Route as AdminCommitteesRouteImport } from './routes/admin/committees'
 import { Route as AdminCmsRouteImport } from './routes/admin/cms'
 import { Route as AdminAuditLogsRouteImport } from './routes/admin/audit-logs'
 import { Route as AdminAreaPermissionsRouteImport } from './routes/admin/area-permissions'
+import { Route as VerifyOfficeBearerOfficeBearerIdRouteImport } from './routes/verify/office-bearer/$officeBearerId'
 import { Route as ProgramsWelfareMyApplicationsRouteImport } from './routes/programs/welfare/my-applications'
 import { Route as ProgramsWelfareApplyRouteImport } from './routes/programs/welfare/apply'
 import { Route as ProgramsWelfareIdRouteImport } from './routes/programs/welfare/$id'
@@ -270,6 +271,12 @@ const AdminAreaPermissionsRoute = AdminAreaPermissionsRouteImport.update({
   path: '/area-permissions',
   getParentRoute: () => AdminRoute,
 } as any)
+const VerifyOfficeBearerOfficeBearerIdRoute =
+  VerifyOfficeBearerOfficeBearerIdRouteImport.update({
+    id: '/verify/office-bearer/$officeBearerId',
+    path: '/verify/office-bearer/$officeBearerId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ProgramsWelfareMyApplicationsRoute =
   ProgramsWelfareMyApplicationsRouteImport.update({
     id: '/my-applications',
@@ -468,6 +475,7 @@ export interface FileRoutesByFullPath {
   '/programs/welfare/$id': typeof ProgramsWelfareIdRoute
   '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
   '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
+  '/verify/office-bearer/$officeBearerId': typeof VerifyOfficeBearerOfficeBearerIdRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
   '/admin/members/$id/designation-card': typeof AdminMembersIdDesignationCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
@@ -535,6 +543,7 @@ export interface FileRoutesByTo {
   '/programs/welfare/$id': typeof ProgramsWelfareIdRoute
   '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
   '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
+  '/verify/office-bearer/$officeBearerId': typeof VerifyOfficeBearerOfficeBearerIdRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
   '/admin/members/$id/designation-card': typeof AdminMembersIdDesignationCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
@@ -603,6 +612,7 @@ export interface FileRoutesById {
   '/programs/welfare/$id': typeof ProgramsWelfareIdRoute
   '/programs/welfare/apply': typeof ProgramsWelfareApplyRoute
   '/programs/welfare/my-applications': typeof ProgramsWelfareMyApplicationsRoute
+  '/verify/office-bearer/$officeBearerId': typeof VerifyOfficeBearerOfficeBearerIdRoute
   '/admin/members/$id/card': typeof AdminMembersIdCardRoute
   '/admin/members/$id/designation-card': typeof AdminMembersIdDesignationCardRoute
   '/admin/programs/education/$id': typeof AdminProgramsEducationIdRoute
@@ -672,6 +682,7 @@ export interface FileRouteTypes {
     | '/programs/welfare/$id'
     | '/programs/welfare/apply'
     | '/programs/welfare/my-applications'
+    | '/verify/office-bearer/$officeBearerId'
     | '/admin/members/$id/card'
     | '/admin/members/$id/designation-card'
     | '/admin/programs/education/$id'
@@ -739,6 +750,7 @@ export interface FileRouteTypes {
     | '/programs/welfare/$id'
     | '/programs/welfare/apply'
     | '/programs/welfare/my-applications'
+    | '/verify/office-bearer/$officeBearerId'
     | '/admin/members/$id/card'
     | '/admin/members/$id/designation-card'
     | '/admin/programs/education/$id'
@@ -806,6 +818,7 @@ export interface FileRouteTypes {
     | '/programs/welfare/$id'
     | '/programs/welfare/apply'
     | '/programs/welfare/my-applications'
+    | '/verify/office-bearer/$officeBearerId'
     | '/admin/members/$id/card'
     | '/admin/members/$id/designation-card'
     | '/admin/programs/education/$id'
@@ -841,6 +854,7 @@ export interface RootRouteChildren {
   ProgramsHealthRoute: typeof ProgramsHealthRouteWithChildren
   ProgramsWelfareRoute: typeof ProgramsWelfareRouteWithChildren
   VerifyMemberNoRoute: typeof VerifyMemberNoRoute
+  VerifyOfficeBearerOfficeBearerIdRoute: typeof VerifyOfficeBearerOfficeBearerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1117,6 +1131,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/area-permissions'
       preLoaderRoute: typeof AdminAreaPermissionsRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/verify/office-bearer/$officeBearerId': {
+      id: '/verify/office-bearer/$officeBearerId'
+      path: '/verify/office-bearer/$officeBearerId'
+      fullPath: '/verify/office-bearer/$officeBearerId'
+      preLoaderRoute: typeof VerifyOfficeBearerOfficeBearerIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/programs/welfare/my-applications': {
       id: '/programs/welfare/my-applications'
@@ -1554,6 +1575,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProgramsHealthRoute: ProgramsHealthRouteWithChildren,
   ProgramsWelfareRoute: ProgramsWelfareRouteWithChildren,
   VerifyMemberNoRoute: VerifyMemberNoRoute,
+  VerifyOfficeBearerOfficeBearerIdRoute: VerifyOfficeBearerOfficeBearerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
