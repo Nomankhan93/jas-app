@@ -63,6 +63,66 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          action_label: string
+          actor_email: string | null
+          actor_user_id: string | null
+          changed_data: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_schema: string
+          entity_table: string
+          id: string
+          ip_address: string | null
+          module_key: string
+          new_data: Json | null
+          old_data: Json | null
+          record_label: string | null
+          request_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          action_label: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          changed_data?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_schema?: string
+          entity_table: string
+          id?: string
+          ip_address?: string | null
+          module_key?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_label?: string | null
+          request_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          action_label?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          changed_data?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_schema?: string
+          entity_table?: string
+          id?: string
+          ip_address?: string | null
+          module_key?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_label?: string | null
+          request_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       cms_pages: {
         Row: {
           content: string
@@ -1100,6 +1160,20 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      audit_action_label: {
+        Args: { _action: string; _row_data: Json; _table_name: string }
+        Returns: string
+      }
+      audit_jsonb_diff: { Args: { _new: Json; _old: Json }; Returns: Json }
+      audit_module_for_record: {
+        Args: { _row_data: Json; _table_name: string }
+        Returns: string
+      }
+      audit_record_label: {
+        Args: { _row_data: Json; _table_name: string }
+        Returns: string
+      }
+      audit_redact_jsonb: { Args: { _data: Json }; Returns: Json }
       create_notification: {
         Args: {
           _action_url?: string
@@ -1160,6 +1234,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      current_user_can_view_audit_logs: { Args: never; Returns: boolean }
       current_user_can_view_donor_leaderboard: { Args: never; Returns: boolean }
       current_user_can_view_finance_audit_log: {
         Args: { _entity_id: string; _entity_type: string }
@@ -1206,6 +1281,32 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_audit_logs: {
+        Args: {
+          _actor_user_id?: string
+          _entity_table?: string
+          _limit?: number
+          _module_key?: string
+          _query?: string
+        }
+        Returns: {
+          action: string
+          action_label: string
+          actor_email: string
+          actor_user_id: string
+          changed_data: Json
+          created_at: string
+          entity_id: string
+          entity_table: string
+          id: string
+          ip_address: string
+          module_key: string
+          new_data: Json
+          old_data: Json
+          record_label: string
+          user_agent: string
+        }[]
       }
       get_donor_leaderboard: {
         Args: { _limit?: number }

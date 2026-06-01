@@ -46,6 +46,7 @@ import { Route as AdminEventsRouteImport } from './routes/admin/events'
 import { Route as AdminDesignationsRouteImport } from './routes/admin/designations'
 import { Route as AdminCommitteesRouteImport } from './routes/admin/committees'
 import { Route as AdminCmsRouteImport } from './routes/admin/cms'
+import { Route as AdminAuditLogsRouteImport } from './routes/admin/audit-logs'
 import { Route as AdminAreaPermissionsRouteImport } from './routes/admin/area-permissions'
 import { Route as ProgramsWelfareMyApplicationsRouteImport } from './routes/programs/welfare/my-applications'
 import { Route as ProgramsWelfareApplyRouteImport } from './routes/programs/welfare/apply'
@@ -259,6 +260,11 @@ const AdminCmsRoute = AdminCmsRouteImport.update({
   path: '/cms',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditLogsRoute = AdminAuditLogsRouteImport.update({
+  id: '/audit-logs',
+  path: '/audit-logs',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAreaPermissionsRoute = AdminAreaPermissionsRouteImport.update({
   id: '/area-permissions',
   path: '/area-permissions',
@@ -425,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
   '/admin/area-permissions': typeof AdminAreaPermissionsRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
@@ -491,6 +498,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
   '/admin/area-permissions': typeof AdminAreaPermissionsRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
@@ -558,6 +566,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
   '/admin/area-permissions': typeof AdminAreaPermissionsRoute
+  '/admin/audit-logs': typeof AdminAuditLogsRoute
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
@@ -626,6 +635,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vision-mission'
     | '/admin/area-permissions'
+    | '/admin/audit-logs'
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
@@ -692,6 +702,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vision-mission'
     | '/admin/area-permissions'
+    | '/admin/audit-logs'
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
@@ -758,6 +769,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/vision-mission'
     | '/admin/area-permissions'
+    | '/admin/audit-logs'
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
@@ -1092,6 +1104,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCmsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/audit-logs': {
+      id: '/admin/audit-logs'
+      path: '/audit-logs'
+      fullPath: '/admin/audit-logs'
+      preLoaderRoute: typeof AdminAuditLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/area-permissions': {
       id: '/admin/area-permissions'
       path: '/area-permissions'
@@ -1386,6 +1405,7 @@ const AdminProgramsWelfareRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminAreaPermissionsRoute: typeof AdminAreaPermissionsRoute
+  AdminAuditLogsRoute: typeof AdminAuditLogsRoute
   AdminCmsRoute: typeof AdminCmsRouteWithChildren
   AdminCommitteesRoute: typeof AdminCommitteesRouteWithChildren
   AdminDesignationsRoute: typeof AdminDesignationsRoute
@@ -1404,6 +1424,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAreaPermissionsRoute: AdminAreaPermissionsRoute,
+  AdminAuditLogsRoute: AdminAuditLogsRoute,
   AdminCmsRoute: AdminCmsRouteWithChildren,
   AdminCommitteesRoute: AdminCommitteesRouteWithChildren,
   AdminDesignationsRoute: AdminDesignationsRoute,
