@@ -5,6 +5,10 @@ import { createSupabaseAdminClient } from '../supabase/admin'
 const MIN_REJECTION_REASON_LENGTH = 10
 const MAX_REJECTION_REASON_LENGTH = 500
 
+const MEMBERSHIP_REVIEW_ROLES: Array<
+  'admin' | 'super_admin' | 'membership_admin'
+> = ['admin', 'super_admin', 'membership_admin']
+
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 
 type AdminActionInput = {
@@ -108,7 +112,7 @@ function validateRejectInput(data: unknown): RejectMemberInput {
   }
 }
 
-async function requireAdmin(accessToken: string) {
+async function requireMembershipReviewer(accessToken: string) {
   const supabaseAdmin = createSupabaseAdminClient()
 
   const { data: userData, error: userError } =
@@ -124,9 +128,10 @@ async function requireAdmin(accessToken: string) {
 
   const { data: role, error: roleError } = await supabaseAdmin
     .from('user_roles')
-    .select('id')
+    .select('id, role')
     .eq('user_id', userData.user.id)
-    .eq('role', 'admin')
+    .in('role', MEMBERSHIP_REVIEW_ROLES)
+    .limit(1)
     .maybeSingle()
 
   if (roleError) {
@@ -134,7 +139,7 @@ async function requireAdmin(accessToken: string) {
   }
 
   if (!role) {
-    throw new Error('Admin access required.')
+    throw new Error('Membership admin access required.')
   }
 
   return {
@@ -186,7 +191,7 @@ export const approveMemberAction = createServerFn({ method: 'POST' })
   .inputValidator(validateApproveInput)
   .handler(async ({ data }) => {
     try {
-      const { supabaseAdmin, user } = await requireAdmin(data.accessToken)
+      const { supabaseAdmin, user } = await requireMembershipReviewer(data.accessToken)
 
       const member = await getMemberForReview(supabaseAdmin, data.memberId)
       requirePendingMember(member, 'approve')
@@ -219,7 +224,7 @@ export const rejectMemberAction = createServerFn({ method: 'POST' })
   .inputValidator(validateRejectInput)
   .handler(async ({ data }) => {
     try {
-      const { supabaseAdmin, user } = await requireAdmin(data.accessToken)
+      const { supabaseAdmin, user } = await requireMembershipReviewer(data.accessToken)
 
       const member = await getMemberForReview(supabaseAdmin, data.memberId)
       requirePendingMember(member, 'reject')

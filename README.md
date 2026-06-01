@@ -36,12 +36,13 @@ Required variables:
 
 ```env
 VITE_SUPABASE_URL=
+SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 VITE_SITE_URL=http://localhost:3000
 ```
 
-Important: never commit or share `.env.local`. The service-role key is server-only.
+Important: never commit or share `.env.local`. The service-role key is server-only. `SUPABASE_URL` should normally match `VITE_SUPABASE_URL`, but it is read only by server-side admin actions.
 
 ## Install and run
 
@@ -91,7 +92,7 @@ npx supabase gen types typescript --local --schema public > src/lib/supabase/dat
 
 ## Admin roles
 
-Roles are stored in `public.user_roles`. Common roles:
+Roles are stored in `public.user_roles`. Source of truth: `user_roles` defines the role identity, while `admin_area_permissions` defines district/taluka/module scope for limited admins. Common roles:
 
 - `admin`
 - `super_admin`
@@ -109,6 +110,15 @@ insert into public.user_roles (user_id, role)
 values ('USER_UUID_HERE', 'admin')
 on conflict (user_id, role) do nothing;
 ```
+
+
+Membership review access:
+
+```text
+super_admin, admin, membership_admin
+```
+
+Only these roles should approve/reject membership applications or open admin member card previews. Area-scoped access is handled through `admin_area_permissions`.
 
 Program-specific example:
 

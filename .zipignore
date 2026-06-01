@@ -1,0 +1,23 @@
+# Do not include secrets, local state, or build output in shared project archives
+.env
+.env.*
+.env.local
+*.local
+
+.git/
+node_modules/
+.output/
+dist/
+dist-ssr/
+.tanstack/
+.nitro/
+.vinxi/
+.wrangler/
+__unconfig*/
+
+supabase/.temp/
+supabase/.branches/
+supabase/snippets/
+backups/
+*.log
+.DS_Store

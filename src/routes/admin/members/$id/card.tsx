@@ -37,6 +37,9 @@ const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_FLAG_PATH = '/jas/flag.jpeg'
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+const MEMBERSHIP_REVIEW_ROLES: Array<
+  'admin' | 'super_admin' | 'membership_admin'
+> = ['admin', 'super_admin', 'membership_admin']
 
 type DownloadTarget = CardSide | 'both' | null
 
@@ -789,14 +792,14 @@ async function ensureAdminAccess(): Promise<AdminAccessResult> {
     return { ok: false, redirectTo: '/login' }
   }
 
-  const { data: roleRow, error: roleError } = await supabase
+  const { data: roles, error: roleError } = await supabase
     .from('user_roles')
-    .select('id')
+    .select('id, role')
     .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle()
+    .in('role', MEMBERSHIP_REVIEW_ROLES)
+    .limit(1)
 
-  if (roleError || !roleRow) {
+  if (roleError || !roles?.length) {
     return { ok: false, redirectTo: '/dashboard' }
   }
 

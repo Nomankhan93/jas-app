@@ -75,6 +75,9 @@ type AdminAccessResult =
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
 const MIN_REJECTION_REASON_LENGTH = 10
+const MEMBERSHIP_REVIEW_ROLES: Array<
+  'admin' | 'super_admin' | 'membership_admin'
+> = ['admin', 'super_admin', 'membership_admin']
 
 const MEMBER_SELECT_COLUMNS = [
   'id',
@@ -900,14 +903,14 @@ async function ensureAdminAccess(): Promise<AdminAccessResult> {
     return { ok: false, redirectTo: '/login' }
   }
 
-  const { data: role, error: roleError } = await supabase
+  const { data: roles, error: roleError } = await supabase
     .from('user_roles')
-    .select('id')
+    .select('id, role')
     .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle()
+    .in('role', MEMBERSHIP_REVIEW_ROLES)
+    .limit(1)
 
-  if (roleError || !role) {
+  if (roleError || !roles?.length) {
     return { ok: false, redirectTo: '/dashboard' }
   }
 
