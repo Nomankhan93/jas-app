@@ -37,6 +37,11 @@ import {
   type UserNotification,
 } from '../lib/notifications'
 import { supabase } from '../lib/supabase/client'
+import {
+  formatDisplayDate as formatDate,
+  maskCnic,
+  maskMobile,
+} from '../lib/shared/formatters'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardPage,
@@ -919,32 +924,3 @@ function getMemberStatusLabel(status: MemberStatus) {
   }
 }
 
-function formatDate(value?: string | null) {
-  if (!value) return 'N/A'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/A'
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function maskCnic(value: string | null | undefined) {
-  if (!value) return 'N/A'
-  const digits = value.replace(/\D/g, '')
-  if (digits.length !== 13) return '*****-*******-*'
-  return `${digits.slice(0, 5)}-*****${digits.slice(10, 12)}-${digits.slice(12)}`
-}
-
-function maskMobile(value: string | null | undefined) {
-  if (!value) return 'N/A'
-  const clean = value.replace(/[^\d+]/g, '')
-  if (clean.startsWith('+92') && clean.length >= 13) {
-    return `${clean.slice(0, 6)}*****${clean.slice(-2)}`
-  }
-  if (clean.startsWith('03') && clean.length >= 11) {
-    return `${clean.slice(0, 4)}*****${clean.slice(-2)}`
-  }
-  return '***********'
-}

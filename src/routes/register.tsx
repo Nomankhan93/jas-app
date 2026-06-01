@@ -2,6 +2,14 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import { supabase } from '../lib/supabase/client'
+import {
+  formatCnicInput,
+  formatMobileInput,
+  isPakistaniMobile,
+  normalizeMobile,
+  optionalText,
+  todayDate,
+} from '../lib/shared/formatters'
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
@@ -1539,61 +1547,6 @@ function focusFirstInvalidField() {
 
     firstInvalid?.focus()
   }, 50)
-}
-
-function normalizeMobile(value: string) {
-  let normalized = value.trim().replace(/[^\d+]/g, '')
-
-  if (normalized.startsWith('0092')) {
-    normalized = `+92${normalized.slice(4)}`
-  }
-
-  if (normalized.startsWith('92')) {
-    normalized = `+${normalized}`
-  }
-
-  return normalized
-}
-
-function formatMobileInput(value: string) {
-  const cleaned = value.replace(/[^\d+]/g, '')
-
-  if (cleaned.startsWith('+92')) {
-    return cleaned.slice(0, 13)
-  }
-
-  if (cleaned.startsWith('92')) {
-    return `+${cleaned.slice(0, 12)}`
-  }
-
-  if (cleaned.startsWith('0092')) {
-    return `+92${cleaned.slice(4, 14)}`
-  }
-
-  return cleaned.slice(0, 11)
-}
-
-function formatCnicInput(value: string) {
-  const digits = value.replace(/\D/g, '').slice(0, 13)
-
-  if (digits.length <= 5) return digits
-  if (digits.length <= 12) return `${digits.slice(0, 5)}-${digits.slice(5)}`
-
-  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12)}`
-}
-
-function optionalText(value: string) {
-  const trimmed = value.trim()
-  return trimmed ? trimmed : null
-}
-
-function isPakistaniMobile(value: string) {
-  const normalized = normalizeMobile(value)
-  return /^(\+92|0)3[0-9]{9}$/.test(normalized)
-}
-
-function todayDate() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 const styles = `

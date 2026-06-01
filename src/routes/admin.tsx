@@ -39,6 +39,13 @@ import {
 } from 'lucide-react'
 import { supabase } from '../lib/supabase/client'
 import {
+  csvCell,
+  formatDisplayDate as formatDate,
+  maskCnic,
+  maskMobile,
+  uniqueSorted,
+} from '../lib/shared/formatters'
+import {
   filterRowsByAreaAccess,
   getAreaAccessSummaryText,
   loadCurrentAdminAreaAccess,
@@ -73,6 +80,7 @@ type AdminModuleKey =
   | 'reports'
   | 'roles'
   | 'area-permissions'
+  | 'audit-logs'
   | 'committees'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
@@ -108,6 +116,7 @@ type AdminRouteTo =
   | '/admin/reports'
   | '/admin/roles'
   | '/admin/area-permissions'
+  | '/admin/audit-logs'
   | '/admin/committees'
 
 type ModuleCardConfig = {
@@ -129,6 +138,7 @@ type ModuleCardConfig = {
     | 'reports'
     | 'roles'
     | 'area'
+    | 'audit'
     | 'committees'
   metric?: string
   metricLabel?: string
@@ -937,6 +947,17 @@ function AdminProgramShortcuts({
       badgeLabel: 'Super Admin',
     },
     {
+      key: 'audit-logs',
+      title: 'Audit Logs',
+      description:
+        'Review sensitive admin activity, role changes, area access updates, finance edits and committee actions.',
+      to: '/admin/audit-logs',
+      actionLabel: 'Open Audit Logs',
+      icon: ListChecks,
+      tone: 'audit',
+      badgeLabel: 'Super Admin',
+    },
+    {
       key: 'committees',
       title: 'Committees & Designations',
       description:
@@ -1135,6 +1156,12 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
       icon: 'bg-teal-100 text-teal-800',
       badge: 'bg-teal-100 text-teal-800',
       action: 'bg-slate-950 !text-white hover:bg-teal-900 hover:!text-white',
+    },
+    audit: {
+      card: 'border-rose-200 bg-gradient-to-br from-rose-50 via-white to-white',
+      icon: 'bg-rose-100 text-rose-800',
+      badge: 'bg-rose-100 text-rose-800',
+      action: 'bg-slate-950 !text-white hover:bg-rose-900 hover:!text-white',
     },
     committees: {
       card: 'border-lime-200 bg-gradient-to-br from-lime-50 via-white to-white',
@@ -1481,7 +1508,11 @@ function canAccessAdminModule(
     return true
   }
 
-  if (moduleKey === 'roles' || moduleKey === 'area-permissions') {
+  if (
+    moduleKey === 'roles' ||
+    moduleKey === 'area-permissions' ||
+    moduleKey === 'audit-logs'
+  ) {
     return false
   }
 
@@ -1520,6 +1551,7 @@ function getPrimaryAdminRoute(
   | '/admin/reports'
   | '/admin/roles'
   | '/admin/area-permissions'
+  | '/admin/audit-logs'
   | '/admin/committees'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
@@ -1568,10 +1600,6 @@ function buildMemberSearchText(member: Member) {
 
 function canOpenMemberCard(member: Member) {
   return member.status === 'approved' && Boolean(member.member_no)
-}
-
-function uniqueSorted(values: string[]) {
-  return [...new Set(values)].sort((a, b) => a.localeCompare(b))
 }
 
 function sortMembers(members: Member[], sortBy: SortBy) {
@@ -1647,45 +1675,3 @@ function buildCsv(members: Member[], includeSensitive: boolean) {
   return rows.map((row) => row.map(csvCell).join(',')).join('\n')
 }
 
-function csvCell(value: string) {
-  const safe = value.replace(/"/g, '""')
-  return `"${safe}"`
-}
-
-function formatDate(value: string) {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) return 'N/A'
-
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function maskCnic(value: string | null | undefined) {
-  if (!value) return 'N/A'
-
-  const digits = value.replace(/\D/g, '')
-
-  if (digits.length !== 13) return '*****-*******-*'
-
-  return `${digits.slice(0, 5)}-*****${digits.slice(10, 12)}-${digits.slice(12)}`
-}
-
-function maskMobile(value: string | null | undefined) {
-  if (!value) return 'N/A'
-
-  const clean = value.replace(/[^\d+]/g, '')
-
-  if (clean.startsWith('+92') && clean.length >= 13) {
-    return `${clean.slice(0, 6)}*****${clean.slice(-2)}`
-  }
-
-  if (clean.startsWith('03') && clean.length >= 11) {
-    return `${clean.slice(0, 4)}*****${clean.slice(-2)}`
-  }
-
-  return '***********'
-}

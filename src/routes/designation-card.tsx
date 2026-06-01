@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { toPng } from 'html-to-image'
 import QRCode from 'qrcode'
 import {
   ArrowRight,
@@ -28,6 +27,7 @@ import {
   getOfficeBearerVerificationUrl,
   type DesignationCardRecord,
 } from '../lib/committees-public'
+import { exportElementAsPng } from '../lib/shared/card-export'
 
 export const Route = createFileRoute('/designation-card')({
   component: DesignationCardPage,
@@ -184,13 +184,7 @@ export function OfficeBearerCardPackage({
       throw new Error(`Unable to prepare ${side} side for download.`)
     }
 
-    const dataUrl = await toPng(target, {
-      cacheBust: true,
-      pixelRatio: 2,
-      backgroundColor: '#ffffff',
-    })
-
-    downloadDataUrl(dataUrl, `${officeBearerId}-${side}.png`)
+    await exportElementAsPng(target, `${officeBearerId}-${side}.png`)
   }
 
   async function handleDownload(target: CardSide | 'both') {
@@ -617,9 +611,3 @@ function buildVerificationUrl(card: DesignationCardRecord) {
   return getOfficeBearerVerificationUrl(card)
 }
 
-function downloadDataUrl(dataUrl: string, filename: string) {
-  const link = document.createElement('a')
-  link.href = dataUrl
-  link.download = filename
-  link.click()
-}
