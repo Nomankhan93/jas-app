@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "safe-export": "bash scripts/safe-export.sh",
     "lock:sync": "npm install --package-lock-only",
-    "verify:clean": "npm run check && npm run build"
+    "verify:clean": "npm run check && npm run build",
+    "qa": "bash scripts/verify-project.sh",
+    "qa:archive": "bash scripts/check-safe-archive.sh"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
