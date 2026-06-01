@@ -5,7 +5,7 @@ import {
   fetchDesignationCardsForAdminMember,
   type DesignationCardRecord,
 } from '../../../../lib/committees-public'
-import { OfficeBearerCardPackage } from '../../../designation-card'
+import { OfficeBearerCardPackage } from '../../../../components/cards/OfficeBearerDesignationCard'
 
 export const Route = createFileRoute('/admin/members/$id/designation-card')({
   component: AdminMemberDesignationCardPage,
