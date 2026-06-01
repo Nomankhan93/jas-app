@@ -302,7 +302,7 @@ export function OfficeBearerCardPackage({
       <div className="overflow-x-auto rounded-[1.65rem] bg-slate-100 p-3 print:overflow-visible print:bg-white print:p-0">
         <div className="relative mx-auto w-max">
           <div className={selectedSide === 'front' ? 'block' : 'absolute left-0 top-0 -z-10 opacity-0 print:static print:z-auto print:mb-6 print:opacity-100'}>
-            <OfficeBearerCardFront ref={frontRef} card={card} officeBearerId={officeBearerId} />
+            <OfficeBearerCardFront ref={frontRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
           </div>
           <div className={selectedSide === 'back' ? 'block' : 'absolute left-0 top-0 -z-10 opacity-0 print:static print:z-auto print:opacity-100'}>
             <OfficeBearerCardBack ref={backRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
@@ -319,7 +319,9 @@ export function DesignationCard({ card }: { card: DesignationCardRecord }) {
 
 const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
   card: DesignationCardRecord
+  qrDataUrl: string
   officeBearerId: string
+  verificationUrl: string
 }>(function OfficeBearerCardFront(
   { card, officeBearerId },
   ref,
@@ -333,7 +335,6 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
   const location = committee ? getCommitteeLocation(committee) : getSnapshotLocation(card)
   const tenure = formatTenure(card.tenure_start || committee?.tenure_start, card.tenure_end || committee?.tenure_end)
   const level = committee ? getCommitteeTypeLabel(committee.committee_type) : 'JAS Committee'
-
   return (
     <div
       ref={ref}
@@ -398,37 +399,25 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
             </div>
           </div>
 
-          <aside className="flex flex-col justify-between gap-4">
-            <div className="rounded-[26px] border border-[#f6d56f]/50 bg-[#f6d56f] px-5 py-5 text-emerald-950 shadow-[0_18px_42px_rgba(0,0,0,0.26)]">
+          <aside className="flex flex-col gap-4">
+            <div className="rounded-[26px] border border-[#f6d56f]/45 bg-[#f6d56f] p-5 text-emerald-950 shadow-[0_18px_42px_rgba(0,0,0,0.25)]">
               <p className="text-[12px] font-black uppercase tracking-[0.2em]">Card Type</p>
-              <p className="mt-2 text-[25px] font-black uppercase leading-none">Authority</p>
-              <p className="mt-3 text-[10.5px] font-black uppercase tracking-[0.12em] opacity-70">Office bearer designation</p>
+              <p className="mt-2 text-[27px] font-black uppercase leading-none">Authority</p>
+              <p className="mt-4 text-[11px] font-black uppercase tracking-[0.17em] opacity-75">Office Bearer Designation</p>
             </div>
 
             <div className="rounded-[26px] border border-[#f6d56f]/40 bg-[#06130f]/78 px-5 py-5 shadow-[0_18px_42px_rgba(0,0,0,0.22)]">
               <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Office Bearer ID</p>
-              <p className="mt-3 break-all text-[18px] font-black leading-tight text-white">{officeBearerId}</p>
-              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/42">Full verification on reverse side</p>
+              <p className="mt-3 break-words text-[18px] font-black leading-tight text-white">{officeBearerId}</p>
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/42">Verified on reverse side</p>
             </div>
 
-            <div className="rounded-[26px] border border-white/12 bg-white/10 px-5 py-5 shadow-[0_18px_42px_rgba(0,0,0,0.18)] backdrop-blur">
+            <div className="mt-auto rounded-[26px] border border-white/12 bg-white/10 p-5 shadow-[0_18px_42px_rgba(0,0,0,0.18)] backdrop-blur">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-emerald-950">
                 <QrCode className="h-6 w-6" />
               </div>
-              <p className="mt-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">QR on back</p>
-              <p className="mt-2 text-[13px] font-bold leading-5 text-white/68">
-                Scan the reverse side QR code to verify the active authority record.
-              </p>
-            </div>
-
-            <div className="rounded-[26px] border border-emerald-300/20 bg-emerald-400/10 px-5 py-4 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
-              <p className="flex items-center gap-2 text-[18px] font-black uppercase text-white">
-                <BadgeCheck className="h-6 w-6 text-[#f6d56f]" />
-                Active Record
-              </p>
-              <p className="mt-2 text-[11.5px] font-bold leading-4 text-white/58">
-                Valid only while the designation remains active in JAS records.
-              </p>
+              <p className="mt-4 text-[12px] font-black uppercase tracking-[0.22em] text-[#f6d56f]">QR on Back</p>
+              <p className="mt-2 text-[12px] font-bold leading-5 text-white/72">Scan the reverse-side QR code to confirm this office bearer authority.</p>
             </div>
           </aside>
         </div>
@@ -495,7 +484,7 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
               <BackInfo label="Verification Status" value="Active authority record" />
             </div>
 
-            <div className="grid flex-1 grid-cols-[1fr_285px] gap-4">
+            <div className="grid flex-1 grid-cols-[1fr_245px] gap-4">
               <div className="rounded-[24px] border border-slate-200 bg-white/84 p-4 shadow-sm">
                 <p className="text-[13px] font-black uppercase tracking-[0.2em] text-emerald-800">Terms & Conditions</p>
                 <ul className="mt-3 space-y-2 text-[12.5px] font-bold leading-5 text-slate-700">
@@ -503,16 +492,16 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
                   <li>• Misuse, transfer, alteration or unauthorized use of this authority card is prohibited.</li>
                   <li>• Verify through QR before accepting any office bearer authority.</li>
                 </ul>
-                <p className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 text-[11.5px] font-black uppercase tracking-[0.08em] text-amber-900 ring-1 ring-amber-100">Expired, suspended, resigned or completed designations make this card invalid.</p>
+                <p className="mt-3 rounded-2xl bg-amber-50 px-3 py-2 text-[10.8px] font-black uppercase tracking-[0.07em] text-amber-900 ring-1 ring-amber-100">Expired, suspended, resigned or completed designations make this card invalid.</p>
               </div>
 
               <div className="rounded-[24px] border border-slate-200 bg-white/88 p-4 shadow-sm">
                 <p className="text-[12px] font-black uppercase tracking-[0.18em] text-emerald-800">Authorized Signature</p>
-                <div className="mt-2 flex h-[112px] items-center justify-center overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-100">
-                  <img src={JAS_SIGNATURE_PATH} alt="Authorized signature" className="h-[106px] w-[262px] scale-[1.14] object-contain brightness-75 contrast-150 saturate-0" draggable={false} />
+                <div className="mt-2 flex h-[70px] items-center justify-center overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+                  <img src={JAS_SIGNATURE_PATH} alt="Authorized signature" className="h-[66px] w-[214px] object-contain brightness-75 contrast-150 saturate-0" draggable={false} />
                 </div>
                 <div className="mt-2 h-[2px] w-full bg-slate-500" />
-                <p className="mt-1.5 text-[13px] font-black text-slate-950">Authorized Signature</p>
+                <p className="mt-2 text-[13px] font-black text-slate-950">Authorized Signature</p>
                 <p className="mt-0.5 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">JAS Central Office</p>
               </div>
             </div>
@@ -541,7 +530,7 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
 
             <div className="mt-auto rounded-[22px] border border-white/12 bg-white/10 p-3.5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Official Notice</p>
-              <p className="mt-1.5 text-[11.5px] font-semibold leading-4 text-white/70">This card does not replace the membership card. It verifies current office bearer authority only.</p>
+              <p className="mt-1.5 text-[11px] font-semibold leading-4 text-white/70">This card verifies current office bearer authority only and does not replace the membership card.</p>
             </div>
           </aside>
         </div>
