@@ -1,8 +1,23 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowRight, BadgeCheck, CalendarDays, IdCard, MapPin, Printer, ShieldCheck, UserRound } from 'lucide-react'
-import { type ReactNode, useEffect, useState } from 'react'
+import { toPng } from 'html-to-image'
+import QRCode from 'qrcode'
+import {
+  ArrowRight,
+  Award,
+  BadgeCheck,
+  CalendarDays,
+  Download,
+  Landmark,
+  MapPin,
+  Printer,
+  QrCode,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react'
+import { forwardRef, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchMyDesignationCards,
+  formatOrganizationDate,
   formatTenure,
   getCommitteeLocation,
   getCommitteeTypeLabel,
@@ -13,6 +28,13 @@ import {
 export const Route = createFileRoute('/designation-card')({
   component: DesignationCardPage,
 })
+
+const JAS_LOGO_PATH = '/jas/logo.jpeg'
+const JAS_SIGNATURE_PATH = '/jas/signature.png'
+const OFFICE_CARD_WIDTH = 1012
+const OFFICE_CARD_HEIGHT = 638
+
+type CardSide = 'front' | 'back'
 
 function DesignationCardPage() {
   const [cards, setCards] = useState<DesignationCardRecord[]>([])
@@ -31,7 +53,11 @@ function DesignationCardPage() {
         if (!cancelled) setCards(data)
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load designation card.')
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Failed to load office bearer card.',
+          )
         }
       } finally {
         if (!cancelled) setLoading(false)
@@ -48,41 +74,48 @@ function DesignationCardPage() {
   return (
     <main className="px-3 py-8 sm:px-4 sm:py-12">
       <div className="page-wrap space-y-7">
-        <section className="rounded-[2rem] bg-[linear-gradient(135deg,#fffdf8,#f7f1e6_54%,#edf4ee)] p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="section-eyebrow mb-3">Official Designation</p>
-              <h1 className="text-[clamp(2.2rem,5vw,4.4rem)] font-black leading-[0.98] tracking-[-0.055em] text-slate-950">
-                My Designation Card
-              </h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-                Digital designation card for active JAS committee office bearers. Membership card remains separate from designation card.
-              </p>
-            </div>
+        <section className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200/70">
+          <div className="relative bg-[linear-gradient(135deg,#031c18,#073827_45%,#102133)] p-6 text-white sm:p-8">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'radial-gradient(circle at 24px 24px,#f6d56f 2px,transparent 2px)', backgroundSize: '44px 44px' }} />
+            <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="inline-flex items-center gap-2 rounded-full border border-[#f6d56f]/35 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.24em] text-[#f6d56f]">
+                  <Award className="h-4 w-4" />
+                  Official Authority Card
+                </p>
+                <h1 className="mt-4 text-[clamp(2.3rem,5vw,4.8rem)] font-black leading-[0.92] tracking-[-0.06em]">
+                  Office Bearer
+                  <span className="block text-[#f6d56f]">Designation Card</span>
+                </h1>
+                <p className="mt-5 max-w-3xl text-base leading-8 text-white/72">
+                  Premium digital authority card for active JAS committee office bearers. This card is separate from the standard membership card and remains valid only while the designation is active.
+                </p>
+              </div>
 
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => window.print()} className="secondary-btn no-underline">
-                <Printer size={16} />
-                Print
-              </button>
-              <Link to="/committees" className="primary-btn no-underline">
-                Public Committees
-                <ArrowRight size={16} />
-              </Link>
+              <div className="flex flex-wrap gap-3">
+                <button type="button" onClick={() => window.print()} className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white px-5 text-sm font-black text-emerald-950 shadow-sm transition hover:bg-[#f6d56f]">
+                  <Printer size={16} />
+                  Print
+                </button>
+                <Link to="/committees" className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#f6d56f] px-5 text-sm font-black text-emerald-950 no-underline shadow-sm transition hover:bg-amber-300">
+                  Public Committees
+                  <ArrowRight size={16} />
+                </Link>
+              </div>
             </div>
           </div>
         </section>
 
         {loading ? (
-          <StateCard message="Loading designation card..." />
+          <StateCard message="Loading office bearer card..." />
         ) : error ? (
           <StateCard message={error} tone="error" />
         ) : cards.length === 0 ? (
           <EmptyDesignationState />
         ) : (
-          <section className="grid gap-7 xl:grid-cols-2">
+          <section className="space-y-8">
             {cards.map((card) => (
-              <DesignationCard key={card.id} card={card} />
+              <OfficeBearerCardPackage key={card.id} card={card} />
             ))}
           </section>
         )}
@@ -91,78 +124,415 @@ function DesignationCardPage() {
   )
 }
 
-export function DesignationCard({ card }: { card: DesignationCardRecord }) {
-  const committee = card.committee
-  const location = committee ? getCommitteeLocation(committee) : [card.taluka_snapshot, card.district_snapshot].filter(Boolean).join(', ') || 'Sindh'
+export function OfficeBearerCardPackage({
+  card,
+  adminPreview = false,
+}: {
+  card: DesignationCardRecord
+  adminPreview?: boolean
+}) {
+  const frontRef = useRef<HTMLDivElement>(null)
+  const backRef = useRef<HTMLDivElement>(null)
+  const [selectedSide, setSelectedSide] = useState<CardSide>('front')
+  const [qrDataUrl, setQrDataUrl] = useState('')
+  const [downloading, setDownloading] = useState<CardSide | 'both' | null>(null)
+  const [downloadError, setDownloadError] = useState('')
+
+  const verificationUrl = useMemo(() => buildVerificationUrl(card), [card])
+  const officeBearerId = useMemo(() => buildOfficeBearerId(card), [card])
+  const cardTitle = adminPreview ? 'Admin office bearer card preview' : 'My office bearer card'
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function generateQr() {
+      try {
+        const dataUrl = await QRCode.toDataURL(verificationUrl, {
+          width: 340,
+          margin: 1,
+          errorCorrectionLevel: 'H',
+          color: {
+            dark: '#06130f',
+            light: '#ffffff',
+          },
+        })
+
+        if (!cancelled) setQrDataUrl(dataUrl)
+      } catch {
+        if (!cancelled) setQrDataUrl('')
+      }
+    }
+
+    void generateQr()
+
+    return () => {
+      cancelled = true
+    }
+  }, [verificationUrl])
+
+  async function downloadSide(side: CardSide) {
+    const target = side === 'front' ? frontRef.current : backRef.current
+
+    if (!target) {
+      throw new Error(`Unable to prepare ${side} side for download.`)
+    }
+
+    const dataUrl = await toPng(target, {
+      cacheBust: true,
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+    })
+
+    downloadDataUrl(dataUrl, `${officeBearerId}-${side}.png`)
+  }
+
+  async function handleDownload(target: CardSide | 'both') {
+    setDownloadError('')
+    setDownloading(target)
+
+    try {
+      if (target === 'both') {
+        await downloadSide('front')
+        await new Promise((resolve) => window.setTimeout(resolve, 250))
+        await downloadSide('back')
+      } else {
+        await downloadSide(target)
+      }
+    } catch (err) {
+      setDownloadError(
+        err instanceof Error ? err.message : 'Failed to download office bearer card.',
+      )
+    } finally {
+      setDownloading(null)
+    }
+  }
 
   return (
-    <article className="overflow-hidden rounded-[2rem] bg-white shadow-[0_28px_80px_rgba(15,23,42,0.14)] ring-1 ring-slate-200 print:shadow-none">
-      <div className="relative overflow-hidden bg-[linear-gradient(135deg,#052e22,#0b3a28,#113f30)] p-6 text-white">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle at 20px 20px,#f2d48f 2px,transparent 2px)', backgroundSize: '34px 34px' }} />
-        <div className="relative z-10 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#d8a949]/60 bg-white/10 text-[#f2d48f]">
-              <ShieldCheck size={30} />
-            </div>
-            <div>
-              <p className="text-[0.68rem] font-black uppercase tracking-[0.24em] text-[#f2d48f]">Jatt Alliance Sindh</p>
-              <h2 className="mt-1 text-2xl font-black uppercase tracking-tight">Official Designation Card</h2>
-              <p className="mt-1 text-sm font-semibold text-white/70">Committee office bearer record</p>
-            </div>
-          </div>
-
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#f2d48f] px-3 py-1 text-xs font-black uppercase text-emerald-950">
-            <BadgeCheck size={13} /> Active
-          </span>
-        </div>
-      </div>
-
-      <div className="grid gap-6 p-6 sm:grid-cols-[150px_1fr]">
-        <div className="space-y-3">
-          {card.photoSignedUrl ? (
-            <img src={card.photoSignedUrl} alt={card.member.full_name} className="h-36 w-36 rounded-[1.4rem] object-cover ring-4 ring-white shadow-lg" />
-          ) : (
-            <div className="flex h-36 w-36 items-center justify-center rounded-[1.4rem] bg-emerald-950 text-3xl font-black text-[#f2d48f] shadow-lg ring-4 ring-white">
-              {getInitials(card.member.full_name)}
-            </div>
-          )}
-
-          <div className="rounded-2xl bg-amber-50 p-3 text-center ring-1 ring-amber-100">
-            <p className="text-[0.65rem] font-black uppercase tracking-wide text-amber-800">Member ID</p>
-            <p className="mt-1 text-sm font-black text-slate-950">{card.member.member_no || card.member_no_snapshot || 'Not issued'}</p>
-          </div>
-        </div>
-
+    <article className="rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5 print:p-0 print:shadow-none print:ring-0">
+      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between print:hidden">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">{card.designation_title}</p>
-          <h3 className="mt-2 text-3xl font-black leading-tight tracking-tight text-slate-950">{card.member.full_name || card.full_name_snapshot}</h3>
-          {(card.member.father_name || card.father_name_snapshot) ? (
-            <p className="mt-1 text-sm font-bold text-slate-500">Father: {card.member.father_name || card.father_name_snapshot}</p>
-          ) : null}
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+            {cardTitle}
+          </p>
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+            {card.designation_title} · {card.member.full_name || card.full_name_snapshot}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Office bearer ID: <span className="font-black text-slate-700">{officeBearerId}</span>
+          </p>
+        </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <InfoBox icon={<ShieldCheck size={16} />} label="Committee" value={committee?.name || 'Committee record'} />
-            <InfoBox icon={<IdCard size={16} />} label="Committee Type" value={committee ? getCommitteeTypeLabel(committee.committee_type) : 'JAS Committee'} />
-            <InfoBox icon={<MapPin size={16} />} label="Location" value={location} />
-            <InfoBox icon={<CalendarDays size={16} />} label="Tenure" value={formatTenure(card.tenure_start || committee?.tenure_start, card.tenure_end || committee?.tenure_end)} />
-          </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedSide('front')}
+            className={`rounded-2xl px-4 py-2 text-sm font-black transition ${selectedSide === 'front' ? 'bg-emerald-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            Front
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedSide('back')}
+            className={`rounded-2xl px-4 py-2 text-sm font-black transition ${selectedSide === 'back' ? 'bg-emerald-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDownload(selectedSide)}
+            disabled={Boolean(downloading)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#f6d56f] px-4 py-2 text-sm font-black text-emerald-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Download size={16} />
+            {downloading === selectedSide ? 'Downloading...' : 'Download Side'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDownload('both')}
+            disabled={Boolean(downloading)}
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Download size={16} />
+            Both Sides
+          </button>
         </div>
       </div>
 
-      <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
-        <p className="text-xs font-semibold leading-6 text-slate-500">
-          This card verifies an active designation assignment in the JAS committee system. It does not replace the standard digital membership card.
-        </p>
+      {downloadError ? (
+        <div className="mb-5 rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700 ring-1 ring-red-100 print:hidden">
+          {downloadError}
+        </div>
+      ) : null}
+
+      <div className="overflow-x-auto rounded-[1.65rem] bg-slate-100 p-3 print:overflow-visible print:bg-white print:p-0">
+        <div className="relative mx-auto w-max">
+          <div className={selectedSide === 'front' ? 'block' : 'absolute left-0 top-0 -z-10 opacity-0 print:static print:z-auto print:mb-6 print:opacity-100'}>
+            <OfficeBearerCardFront ref={frontRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
+          </div>
+          <div className={selectedSide === 'back' ? 'block' : 'absolute left-0 top-0 -z-10 opacity-0 print:static print:z-auto print:opacity-100'}>
+            <OfficeBearerCardBack ref={backRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
+          </div>
+        </div>
       </div>
     </article>
   )
 }
 
-function InfoBox({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+export function DesignationCard({ card }: { card: DesignationCardRecord }) {
+  return <OfficeBearerCardPackage card={card} />
+}
+
+const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
+  card: DesignationCardRecord
+  qrDataUrl: string
+  officeBearerId: string
+  verificationUrl: string
+}>(function OfficeBearerCardFront(
+  { card, qrDataUrl, officeBearerId, verificationUrl },
+  ref,
+) {
+  const committee = card.committee
+  const memberName = card.member.full_name || card.full_name_snapshot
+  const fatherName = card.member.father_name || card.father_name_snapshot || 'N/A'
+  const memberNo = card.member.member_no || card.member_no_snapshot || 'Not issued'
+  const location = committee ? getCommitteeLocation(committee) : getSnapshotLocation(card)
+  const tenure = formatTenure(card.tenure_start || committee?.tenure_start, card.tenure_end || committee?.tenure_end)
+  const level = committee ? getCommitteeTypeLabel(committee.committee_type) : 'JAS Committee'
+
   return (
-    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
-      <div className="flex items-center gap-2 text-emerald-700">{icon}<span className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">{label}</span></div>
-      <p className="mt-2 text-sm font-black leading-6 text-slate-950">{value}</p>
+    <div
+      ref={ref}
+      className="relative overflow-hidden rounded-[34px] bg-[#06130f] text-white shadow-2xl ring-1 ring-amber-200/60"
+      style={{ width: OFFICE_CARD_WIDTH, height: OFFICE_CARD_HEIGHT }}
+    >
+      <PremiumCardBackground />
+      <div className="relative z-10 flex h-full flex-col p-[34px]">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <div className="relative flex h-[106px] w-[106px] items-center justify-center rounded-[28px] border border-[#f6d56f]/50 bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,0.28)]">
+              <img src={JAS_LOGO_PATH} alt="JAS" className="h-full w-full rounded-[22px] object-cover" draggable={false} />
+            </div>
+            <div>
+              <p className="text-[18px] font-black uppercase tracking-[0.42em] text-[#f6d56f]">Jatt Alliance Sindh</p>
+              <h3 className="mt-3 text-[58px] font-black uppercase leading-[0.88] tracking-[-0.06em]">Office Bearer</h3>
+              <p className="mt-3 text-[20px] font-black uppercase tracking-[0.18em] text-white/70">Official designation authority card</p>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-[#f6d56f]/40 bg-[#f6d56f] px-7 py-4 text-right text-emerald-950 shadow-[0_18px_45px_rgba(0,0,0,0.28)]">
+            <p className="text-[13px] font-black uppercase tracking-[0.2em]">Status</p>
+            <p className="mt-1 flex items-center justify-end gap-2 text-[24px] font-black uppercase">
+              <BadgeCheck className="h-6 w-6" /> Active
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-9 grid flex-1 grid-cols-[245px_1fr_180px] gap-7">
+          <div className="space-y-4">
+            <div className="relative h-[245px] w-[245px] overflow-hidden rounded-[34px] border-[6px] border-white bg-white shadow-[0_22px_55px_rgba(0,0,0,0.33)]">
+              {card.photoSignedUrl ? (
+                <img src={card.photoSignedUrl} alt={memberName} className="h-full w-full object-cover" draggable={false} />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#08251c,#0f5138)] text-[58px] font-black text-[#f6d56f]">
+                  {getInitials(memberName)}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[25px] border border-white/12 bg-white/10 p-4 backdrop-blur">
+              <p className="text-[12px] font-black uppercase tracking-[0.2em] text-[#f6d56f]">Member ID</p>
+              <p className="mt-1 break-words text-[21px] font-black uppercase leading-tight text-white">{memberNo}</p>
+            </div>
+          </div>
+
+          <div className="min-w-0 rounded-[34px] border border-white/12 bg-white/[0.08] p-6 backdrop-blur">
+            <p className="text-[17px] font-black uppercase tracking-[0.25em] text-[#f6d56f]">{card.designation_title}</p>
+            <h4 className="mt-4 text-[52px] font-black leading-[0.95] tracking-[-0.055em] text-white">{memberName}</h4>
+            <p className="mt-3 text-[20px] font-bold text-white/68">Father: {fatherName}</p>
+
+            <div className="mt-7 grid grid-cols-2 gap-4">
+              <PremiumInfo label="Committee" value={committee?.name || 'Committee record'} icon={<Landmark className="h-5 w-5" />} />
+              <PremiumInfo label="Level" value={level} icon={<ShieldCheck className="h-5 w-5" />} />
+              <PremiumInfo label="Location" value={location} icon={<MapPin className="h-5 w-5" />} />
+              <PremiumInfo label="Tenure" value={tenure} icon={<CalendarDays className="h-5 w-5" />} />
+            </div>
+
+            <div className="mt-6 rounded-[22px] border border-[#f6d56f]/30 bg-[#f6d56f]/10 px-5 py-4">
+              <p className="text-[13px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Authority note</p>
+              <p className="mt-2 text-[15px] font-semibold leading-6 text-white/74">This card verifies the bearer as an active office bearer of Jatt Alliance Sindh for the listed committee and tenure.</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col justify-between gap-4">
+            <div className="rounded-[28px] bg-white p-4 text-center text-slate-950 shadow-[0_20px_45px_rgba(0,0,0,0.26)]">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="Verification QR" className="mx-auto h-[146px] w-[146px]" draggable={false} />
+              ) : (
+                <div className="flex h-[146px] w-[146px] items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><QrCode /></div>
+              )}
+              <p className="mt-2 text-[12px] font-black uppercase tracking-[0.22em] text-slate-500">Scan to verify</p>
+            </div>
+
+            <div className="rounded-[25px] border border-[#f6d56f]/40 bg-black/25 p-4">
+              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Office Bearer ID</p>
+              <p className="mt-2 break-words text-[20px] font-black leading-tight text-white">{officeBearerId}</p>
+            </div>
+
+            <div className="rounded-[25px] border border-white/10 bg-white/[0.07] p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/45">Verification URL</p>
+              <p className="mt-2 break-all text-[12px] font-semibold leading-5 text-white/65">{verificationUrl}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
+  card: DesignationCardRecord
+  qrDataUrl: string
+  officeBearerId: string
+  verificationUrl: string
+}>(function OfficeBearerCardBack(
+  { card, qrDataUrl, officeBearerId, verificationUrl },
+  ref,
+) {
+  const committee = card.committee
+  const memberName = card.member.full_name || card.full_name_snapshot
+  const memberNo = card.member.member_no || card.member_no_snapshot || 'Not issued'
+  const location = committee ? getCommitteeLocation(committee) : getSnapshotLocation(card)
+  const tenureStart = card.tenure_start || committee?.tenure_start || null
+  const tenureEnd = card.tenure_end || committee?.tenure_end || null
+
+  return (
+    <div
+      ref={ref}
+      className="relative overflow-hidden rounded-[34px] bg-[#f8faf7] text-slate-950 shadow-2xl ring-1 ring-amber-200/80"
+      style={{ width: OFFICE_CARD_WIDTH, height: OFFICE_CARD_HEIGHT }}
+    >
+      <div className="absolute inset-0 opacity-[0.55]" style={{ backgroundImage: 'radial-gradient(circle at 18% 16%,rgba(246,213,111,.32),transparent 24%),radial-gradient(circle at 88% 14%,rgba(6,83,61,.12),transparent 28%),linear-gradient(135deg,#ffffff,#fbf7e8 48%,#eef8f2)' }} />
+      <div className="absolute -right-16 -top-20 h-72 w-72 rounded-full bg-[#06130f]/10" />
+      <div className="absolute -left-20 -bottom-24 h-72 w-72 rounded-full bg-[#f6d56f]/30" />
+
+      <div className="relative z-10 flex h-full flex-col p-[34px]">
+        <div className="flex items-start justify-between gap-6 border-b-4 border-[#d5ad44] pb-7">
+          <div className="flex items-center gap-5">
+            <div className="flex h-[92px] w-[92px] items-center justify-center rounded-[26px] bg-[#06130f] p-2 shadow-xl">
+              <img src={JAS_LOGO_PATH} alt="JAS" className="h-full w-full rounded-[20px] object-cover" draggable={false} />
+            </div>
+            <div>
+              <p className="text-[15px] font-black uppercase tracking-[0.35em] text-emerald-800">Issuing Authority</p>
+              <h3 className="mt-2 text-[42px] font-black uppercase tracking-[-0.045em] text-slate-950">Jatt Alliance Sindh</h3>
+              <p className="mt-1 text-[17px] font-bold text-slate-500">Office bearer verification and conditions</p>
+            </div>
+          </div>
+          <div className="rounded-[26px] bg-[#06130f] px-7 py-4 text-right text-white shadow-xl">
+            <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Card Type</p>
+            <p className="mt-1 text-[24px] font-black uppercase">Authority</p>
+          </div>
+        </div>
+
+        <div className="mt-7 grid flex-1 grid-cols-[1fr_292px] gap-7">
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <BackInfo label="Bearer Name" value={memberName} />
+              <BackInfo label="Member Number" value={memberNo} />
+              <BackInfo label="Designation" value={card.designation_title} />
+              <BackInfo label="Office Bearer ID" value={officeBearerId} />
+              <BackInfo label="Committee" value={committee?.name || 'Committee record'} />
+              <BackInfo label="Jurisdiction" value={location} />
+              <BackInfo label="Tenure Start" value={formatOrganizationDate(tenureStart)} />
+              <BackInfo label="Tenure End" value={formatOrganizationDate(tenureEnd)} />
+            </div>
+
+            <div className="rounded-[28px] border border-slate-200 bg-white/78 p-5 shadow-sm">
+              <p className="text-[14px] font-black uppercase tracking-[0.2em] text-emerald-800">Terms & Conditions</p>
+              <ul className="mt-3 space-y-2 text-[15px] font-semibold leading-6 text-slate-700">
+                <li>• This card is valid only with active designation status in the JAS committee record.</li>
+                <li>• Misuse, transfer or alteration of this authority card is not permitted.</li>
+                <li>• Verify through QR before accepting office bearer authority.</li>
+                <li>• If designation is suspended, resigned, completed or expired, this card becomes invalid.</li>
+              </ul>
+            </div>
+
+            <div className="grid grid-cols-[1fr_230px] gap-5">
+              <div className="rounded-[28px] border border-slate-200 bg-white/78 p-5 shadow-sm">
+                <p className="text-[14px] font-black uppercase tracking-[0.22em] text-emerald-800">Authorized Signature</p>
+                <div className="mt-3 flex h-[82px] items-center overflow-hidden">
+                  <img src={JAS_SIGNATURE_PATH} alt="Authorized signature" className="h-[78px] w-[260px] object-contain object-left-center brightness-75 contrast-150 saturate-0" draggable={false} />
+                </div>
+                <div className="h-[2px] w-[300px] max-w-full bg-slate-500" />
+                <p className="mt-2 text-[16px] font-black text-slate-950">Authorized Signature</p>
+                <p className="mt-1 text-[12px] font-black uppercase tracking-[0.12em] text-slate-500">General Secretary</p>
+              </div>
+
+              <div className="rounded-[28px] border border-amber-200 bg-[#fff8dd] p-5 shadow-sm">
+                <p className="text-[12px] font-black uppercase tracking-[0.18em] text-amber-800">Official Seal</p>
+                <div className="mt-3 flex h-[94px] items-center justify-center rounded-[24px] border-2 border-dashed border-amber-300 bg-white/65 text-center text-[16px] font-black uppercase tracking-[0.12em] text-amber-900">
+                  JAS<br />Verified
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside className="flex flex-col gap-5 rounded-[32px] bg-[#06130f] p-5 text-white shadow-xl">
+            <div className="rounded-[26px] bg-white p-4 text-center text-slate-950">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="Verification QR" className="mx-auto h-[210px] w-[210px]" draggable={false} />
+              ) : (
+                <div className="flex h-[210px] w-[210px] items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><QrCode /></div>
+              )}
+              <p className="mt-2 text-[13px] font-black uppercase tracking-[0.22em] text-slate-500">Scan to verify</p>
+            </div>
+
+            <div className="rounded-[24px] border border-white/12 bg-white/10 p-4">
+              <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Verification URL</p>
+              <p className="mt-2 break-all text-[13px] font-semibold leading-5 text-white/70">{verificationUrl}</p>
+            </div>
+
+            <div className="rounded-[24px] border border-[#f6d56f]/40 bg-[#f6d56f] p-4 text-emerald-950">
+              <p className="text-[12px] font-black uppercase tracking-[0.18em]">Organization</p>
+              <p className="mt-2 text-[19px] font-black leading-tight">Jatt Alliance Sindh</p>
+              <p className="mt-1 text-[13px] font-bold opacity-75">Sindh, Pakistan</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+function PremiumCardBackground() {
+  return (
+    <>
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,#06130f,#073827_42%,#0f172a)]" />
+      <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: 'radial-gradient(circle at 18% 18%,#f6d56f 0,transparent 28%),radial-gradient(circle at 88% 12%,#d5ad44 0,transparent 25%),radial-gradient(circle at 90% 90%,#10b981 0,transparent 30%)' }} />
+      <div className="absolute -right-24 -top-24 h-96 w-96 rounded-full border-[54px] border-[#f6d56f]/12" />
+      <div className="absolute -bottom-32 -left-24 h-96 w-96 rounded-full bg-[#f6d56f]/10" />
+      <div className="absolute inset-x-0 top-0 h-[10px] bg-[#f6d56f]" />
+      <div className="absolute inset-x-0 bottom-0 h-[10px] bg-[#f6d56f]" />
+    </>
+  )
+}
+
+function PremiumInfo({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+      <div className="flex items-center gap-2 text-[#f6d56f]">
+        {icon}
+        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-white/48">{label}</p>
+      </div>
+      <p className="mt-2 line-clamp-2 text-[17px] font-black leading-6 text-white">{value}</p>
+    </div>
+  )
+}
+
+function BackInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[22px] border border-slate-200 bg-white/78 px-4 py-3 shadow-sm">
+      <p className="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">{label}</p>
+      <p className="mt-1 line-clamp-2 text-[16px] font-black leading-6 text-slate-950">{value}</p>
     </div>
   )
 }
@@ -170,10 +540,10 @@ function InfoBox({ icon, label, value }: { icon: ReactNode; label: string; value
 function EmptyDesignationState() {
   return (
     <section className="rounded-[2rem] bg-white p-6 text-center shadow-sm ring-1 ring-slate-200/70 sm:p-10">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-50 text-slate-500 ring-1 ring-slate-200">
-        <UserRound size={30} />
+      <div className="mx-auto flex h-18 w-18 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#06130f,#0f5138)] text-[#f6d56f] shadow-sm ring-1 ring-emerald-900/10">
+        <UserRound size={32} />
       </div>
-      <h2 className="mt-5 text-2xl font-black text-slate-950">No active designation found</h2>
+      <h2 className="mt-5 text-2xl font-black text-slate-950">No active office bearer designation found</h2>
       <p className="mx-auto mt-2 max-w-xl text-sm leading-7 text-slate-600">
         Your membership account does not currently have an active committee designation. If you were appointed, ask the admin to assign your committee role.
       </p>
@@ -191,4 +561,29 @@ function StateCard({ message, tone = 'default' }: { message: string; tone?: 'def
       {message}
     </div>
   )
+}
+
+function getSnapshotLocation(card: DesignationCardRecord) {
+  return [card.taluka_snapshot, card.district_snapshot].filter(Boolean).join(', ') || 'Sindh'
+}
+
+function buildVerificationUrl(card: DesignationCardRecord) {
+  if (typeof window === 'undefined') {
+    return `/committees/${card.committee_id}`
+  }
+
+  return `${window.location.origin}/committees/${encodeURIComponent(card.committee_id)}`
+}
+
+function buildOfficeBearerId(card: DesignationCardRecord) {
+  const year = new Date(card.created_at || Date.now()).getFullYear()
+  const shortId = card.id.replace(/-/g, '').slice(0, 8).toUpperCase()
+  return `JAS-OB-${year}-${shortId}`
+}
+
+function downloadDataUrl(dataUrl: string, filename: string) {
+  const link = document.createElement('a')
+  link.href = dataUrl
+  link.download = filename
+  link.click()
 }

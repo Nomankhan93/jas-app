@@ -116,9 +116,11 @@ function AdminMemberDetailPage() {
   })
 
   const normalizedPathname = pathname.replace(/\/+$/, '')
-  const isCardRoute = normalizedPathname === `/admin/members/${id}/card`
+  const isNestedMemberRoute =
+    normalizedPathname === `/admin/members/${id}/card` ||
+    normalizedPathname === `/admin/members/${id}/designation-card`
 
-  if (isCardRoute) {
+  if (isNestedMemberRoute) {
     return <Outlet />
   }
 
@@ -360,7 +362,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               <div className="flex flex-col items-start gap-3 lg:items-end">
                 <StatusBadge status={member.status} />
 
-                <div className="grid w-full gap-2 sm:grid-cols-2 lg:flex lg:w-auto">
+                <div className="grid w-full gap-2 sm:grid-cols-2 xl:flex xl:w-auto">
                   <button
                     type="button"
                     onClick={() => void loadMember(undefined, { silent: true })}
@@ -374,15 +376,27 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                   </button>
 
                   {canViewCard ? (
-                    <Link
-                      to="/admin/members/$id/card"
-                      params={{ id: member.id }}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-                      style={{ color: '#ffffff' }}
-                    >
-                      <CreditCard className="h-4 w-4" />
-                      View Card
-                    </Link>
+                    <>
+                      <Link
+                        to="/admin/members/$id/card"
+                        params={{ id: member.id }}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                        style={{ color: '#ffffff' }}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        View Card
+                      </Link>
+
+                      <Link
+                        to="/admin/members/$id/designation-card"
+                        params={{ id: member.id }}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-950 to-slate-950 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:from-emerald-900 hover:to-slate-900 hover:!text-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                        style={{ color: '#ffffff' }}
+                      >
+                        <BadgeCheck className="h-4 w-4 text-amber-300" />
+                        Office Bearer Card
+                      </Link>
+                    </>
                   ) : null}
                 </div>
 
@@ -477,15 +491,27 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               </div>
 
               {canViewCard ? (
-                <Link
-                  to="/admin/members/$id/card"
-                  params={{ id: member.id }}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-                  style={{ color: '#ffffff' }}
-                >
-                  <CreditCard className="h-4 w-4" />
-                  Open Card
-                </Link>
+                <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+                  <Link
+                    to="/admin/members/$id/card"
+                    params={{ id: member.id }}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+                    style={{ color: '#ffffff' }}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Open Card
+                  </Link>
+
+                  <Link
+                    to="/admin/members/$id/designation-card"
+                    params={{ id: member.id }}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-950 px-4 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:bg-emerald-900 hover:!text-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
+                    style={{ color: '#ffffff' }}
+                  >
+                    <BadgeCheck className="h-4 w-4 text-amber-300" />
+                    Office Card
+                  </Link>
+                </div>
               ) : null}
             </div>
 
@@ -650,15 +676,27 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               </div>
 
               {canViewCard ? (
-                <Link
-                  to="/admin/members/$id/card"
-                  params={{ id: member.id }}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white"
-                  style={{ color: '#ffffff' }}
-                >
-                  <CreditCard className="h-4 w-4" />
-                  View Card
-                </Link>
+                <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+                  <Link
+                    to="/admin/members/$id/card"
+                    params={{ id: member.id }}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm transition hover:bg-slate-800 hover:!text-white"
+                    style={{ color: '#ffffff' }}
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    View Card
+                  </Link>
+
+                  <Link
+                    to="/admin/members/$id/designation-card"
+                    params={{ id: member.id }}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-950 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:bg-emerald-900 hover:!text-white"
+                    style={{ color: '#ffffff' }}
+                  >
+                    <BadgeCheck className="h-4 w-4 text-amber-300" />
+                    Office Card
+                  </Link>
+                </div>
               ) : (
                 <Link
                   to="/admin"

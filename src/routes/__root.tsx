@@ -8,7 +8,7 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
   BadgeIndianRupee,
@@ -88,6 +88,7 @@ type NavItem = {
 
 type ProgramItem = NavItem & { description: string }
 type PublicPageItem = NavItem & { description: string }
+type HeaderMenuKey = 'programs' | 'more' | 'account' | null
 
 const adminRoleNames = [
   'admin',
@@ -318,8 +319,12 @@ function Header({ compact }: { compact: boolean }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [programsOpen, setProgramsOpen] = useState(false)
-  const [pagesOpen, setPagesOpen] = useState(false)
+  const [openMenu, setOpenMenu] = useState<HeaderMenuKey>(null)
+  const headerRef = useRef<HTMLElement | null>(null)
+
+  const programsOpen = openMenu === 'programs'
+  const moreOpen = openMenu === 'more'
+  const accountOpen = openMenu === 'account'
 
   const checkAdmin = useCallback(async (userId: string) => {
     const { data, error } = await supabase
@@ -349,9 +354,38 @@ function Header({ compact }: { compact: boolean }) {
 
   useEffect(() => {
     setMobileOpen(false)
-    setProgramsOpen(false)
-    setPagesOpen(false)
+    setOpenMenu(null)
   }, [pathname])
+
+  useEffect(() => {
+    if (!openMenu) return
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      const target = event.target
+
+      if (target instanceof Node && headerRef.current?.contains(target)) {
+        return
+      }
+
+      setOpenMenu(null)
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpenMenu(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [openMenu])
 
   useEffect(() => {
     let mounted = true
@@ -381,12 +415,8 @@ function Header({ compact }: { compact: boolean }) {
     }
   }, [syncAuthState])
 
-  const navItems = useMemo(() => {
-    const items: NavItem[] = [
-      { to: '/', label: 'Home', icon: <Home size={16} /> },
-      { to: '/news', label: 'News', icon: <Newspaper size={16} /> },
-      { to: '/donate', label: 'Donate', icon: <BadgeIndianRupee size={16} /> },
-    ]
+  const memberItems = useMemo(() => {
+    const items: NavItem[] = []
 
     if (authLoading) return items
 
@@ -399,12 +429,40 @@ function Header({ compact }: { compact: boolean }) {
       { to: '/donors', label: 'Donors', icon: <Trophy size={16} /> },
       { to: '/notifications', label: 'Updates', icon: <Bell size={16} /> },
       { to: '/register', label: 'Register', icon: <UserPlus size={16} /> },
-      { to: '/card', label: 'Card', icon: <IdCard size={16} /> },
+      { to: '/card', label: 'Digital Card', icon: <IdCard size={16} /> },
+      { to: '/designation-card', label: 'Office Bearer Card', icon: <ShieldCheck size={16} /> },
     )
 
-    if (isAdmin) items.push({ to: '/admin', label: 'Admin', icon: <ShieldCheck size={16} /> })
     return items
-  }, [authLoading, isAdmin, isLoggedIn])
+  }, [authLoading, isLoggedIn])
+
+  const mobileNavItems = useMemo(() => {
+    const items: NavItem[] = [
+      { to: '/news', label: 'News', icon: <Newspaper size={16} /> },
+      { to: '/donate', label: 'Donate', icon: <BadgeIndianRupee size={16} /> },
+      ...memberItems,
+    ]
+
+    if (isAdmin) items.push({ to: '/admin', label: 'Admin Panel', icon: <ShieldCheck size={16} /> })
+
+    return items
+  }, [isAdmin, memberItems])
+
+  const moreActive =
+    publicPageItems.some((item) => isActive(item.to)) ||
+    memberItems.some((item) => isActive(item.to))
+  const programsActive = pathname.startsWith('/programs/')
+  const dashboardPath = isAdmin ? '/admin' : '/dashboard'
+  const dashboardLabel = isAdmin ? 'Admin Panel' : 'Dashboard'
+  const accountInitial = isAdmin ? 'A' : 'N'
+
+  function toggleMenu(menu: Exclude<HeaderMenuKey, null>) {
+    setOpenMenu((current) => (current === menu ? null : menu))
+  }
+
+  function closeMenus() {
+    setOpenMenu(null)
+  }
 
   async function handleLogout() {
     setLogoutLoading(true)
@@ -415,6 +473,7 @@ function Header({ compact }: { compact: boolean }) {
       return
     }
     setMobileOpen(false)
+    setOpenMenu(null)
     setIsLoggedIn(false)
     setIsAdmin(false)
     setLogoutLoading(false)
@@ -426,11 +485,8 @@ function Header({ compact }: { compact: boolean }) {
     return pathname === path || pathname.startsWith(`${path}/`)
   }
 
-  const publicPagesActive = publicPageItems.some((item) => isActive(item.to))
-  const programsActive = pathname.startsWith('/programs/')
-
   return (
-    <header className={`site-header ${compact ? 'shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''}`}>
+    <header ref={headerRef} className={`site-header ${compact ? 'shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''}`}>
       <div className="site-header-inner page-wrap flex items-center gap-3 py-3">
         <div className="site-brand-wrap animate-fade-up min-w-0 flex-1 sm:flex-none">
           <Link to="/" className="site-brand-link brand-pill lift-hover pressable min-w-0 rounded-[1.35rem] px-3 py-2.5 sm:px-4" aria-label="Jatt Alliance Sindh home">
@@ -442,30 +498,12 @@ function Header({ compact }: { compact: boolean }) {
 
         <nav className="hidden items-center gap-4 lg:gap-5 md:flex" aria-label="Main navigation">
           <NavLink to="/" label="Home" active={isActive('/')} delayClass="delay-1" />
+
           <div className="relative">
             <button
               type="button"
-              onClick={() => setPagesOpen((open) => !open)}
-              onMouseEnter={() => setPagesOpen(true)}
-              className={`nav-link animate-fade-up delay-2 gap-1 ${publicPagesActive ? 'is-active' : ''}`}
-              aria-expanded={pagesOpen}
-              aria-haspopup="menu"
-            >
-              Organization
-              <ChevronDown size={14} className={`transition ${pagesOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {pagesOpen ? (
-              <div onMouseLeave={() => setPagesOpen(false)} className="absolute left-0 top-full z-[60] mt-4 w-[340px] rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
-                {publicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
-              </div>
-            ) : null}
-          </div>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProgramsOpen((open) => !open)}
-              onMouseEnter={() => setProgramsOpen(true)}
-              className={`nav-link animate-fade-up delay-3 gap-1 ${programsActive ? 'is-active' : ''}`}
+              onClick={() => toggleMenu('programs')}
+              className={`nav-link animate-fade-up delay-2 gap-1 ${programsActive ? 'is-active' : ''}`}
               aria-expanded={programsOpen}
               aria-haspopup="menu"
             >
@@ -473,19 +511,117 @@ function Header({ compact }: { compact: boolean }) {
               <ChevronDown size={14} className={`transition ${programsOpen ? 'rotate-180' : ''}`} />
             </button>
             {programsOpen ? (
-              <div onMouseLeave={() => setProgramsOpen(false)} className="absolute left-0 top-full z-[60] mt-4 w-[320px] rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+              <div onClick={closeMenus} className="absolute left-0 top-full z-[60] mt-4 w-[320px] rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
                 {programItems.map((item) => <ProgramDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
               </div>
             ) : null}
           </div>
-          {navItems.filter((item) => item.to !== '/').map((item, index) => <NavLink key={item.to} to={item.to} label={item.label} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
+
+          <NavLink to="/donate" label="Donate" active={isActive('/donate')} delayClass="delay-3" />
+          <NavLink to="/news" label="News" active={isActive('/news')} delayClass="delay-4" />
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleMenu('more')}
+              className={`nav-link animate-fade-up delay-5 gap-1 ${moreActive ? 'is-active' : ''}`}
+              aria-expanded={moreOpen}
+              aria-haspopup="menu"
+            >
+              More
+              <ChevronDown size={14} className={`transition ${moreOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {moreOpen ? (
+              <div onClick={closeMenus} className="absolute right-0 top-full z-[60] mt-4 w-[420px] rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+                <div className="grid gap-3">
+                  <DropdownGroup title="Organization">
+                    <div className="grid gap-1 sm:grid-cols-2">
+                      {publicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
+                    </div>
+                  </DropdownGroup>
+
+                  {memberItems.length ? (
+                    <DropdownGroup title={isLoggedIn ? 'Member Access' : 'Membership'}>
+                      <div className="grid gap-1 sm:grid-cols-2">
+                        {memberItems.map((item) => <CompactDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
+                      </div>
+                    </DropdownGroup>
+                  ) : null}
+
+                  {isAdmin ? (
+                    <DropdownGroup title="Admin">
+                      <div className="grid gap-1 sm:grid-cols-2">
+                        <CompactDropdownItem item={{ to: '/admin', label: 'Admin Panel', icon: <ShieldCheck size={16} /> }} active={isActive('/admin')} />
+                      </div>
+                    </DropdownGroup>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </nav>
 
         <div className="ml-auto hidden items-center gap-3 md:flex">
-          {authLoading ? <div className="h-11 w-28 animate-pulse rounded-[var(--r-lg)] bg-white/25" /> : isLoggedIn ? <><Link to={isAdmin ? '/admin' : '/dashboard'} className="primary-btn animate-fade-up pressable lift-hover">{isAdmin ? 'Admin Panel' : 'Dashboard'}</Link><button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn animate-fade-up pressable lift-hover disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? 'Logging out...' : 'Logout'}</button></> : <><Link to="/login" className="secondary-btn animate-fade-up pressable lift-hover">Login</Link><Link to="/signup" className="animate-fade-up inline-flex min-h-[2.75rem] items-center justify-center rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-7 py-3 text-sm font-black text-[#102719] shadow-[0_14px_32px_rgba(196,145,44,0.28)] transition duration-200 hover:-translate-y-0.5 active:scale-[0.985]">Join Now</Link></>}
+          {authLoading ? (
+            <div className="h-11 w-28 animate-pulse rounded-[var(--r-lg)] bg-white/25" />
+          ) : isLoggedIn ? (
+            <>
+              <Link to={dashboardPath} className="primary-btn animate-fade-up pressable lift-hover">
+                {dashboardLabel}
+              </Link>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => toggleMenu('account')}
+                  className="animate-fade-up flex h-12 w-12 items-center justify-center rounded-full bg-emerald-900 text-sm font-black text-white shadow-sm ring-1 ring-white/25 transition hover:-translate-y-0.5 hover:bg-emerald-800"
+                  aria-label="Open account menu"
+                  aria-expanded={accountOpen}
+                >
+                  {accountInitial}
+                </button>
+
+                {accountOpen ? (
+                  <div onClick={closeMenus} className="absolute right-0 top-full z-[70] mt-3 w-64 rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
+                    <CompactDropdownItem item={{ to: dashboardPath, label: dashboardLabel, icon: <ShieldCheck size={16} /> }} active={isActive(dashboardPath)} />
+                    <CompactDropdownItem item={{ to: '/card', label: 'Digital Card', icon: <IdCard size={16} /> }} active={isActive('/card')} />
+                    <CompactDropdownItem item={{ to: '/designation-card', label: 'Office Bearer Card', icon: <ShieldCheck size={16} /> }} active={isActive('/designation-card')} />
+                    <CompactDropdownItem item={{ to: '/notifications', label: 'Updates', icon: <Bell size={16} /> }} active={isActive('/notifications')} />
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      disabled={logoutLoading}
+                      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <LogOut size={16} aria-hidden="true" />
+                      {logoutLoading ? 'Logging out...' : 'Logout'}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="secondary-btn animate-fade-up pressable lift-hover">Login</Link>
+              <Link to="/signup" className="animate-fade-up inline-flex min-h-[2.75rem] items-center justify-center rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-7 py-3 text-sm font-black text-[#102719] shadow-[0_14px_32px_rgba(196,145,44,0.28)] transition duration-200 hover:-translate-y-0.5 active:scale-[0.985]">Join Now</Link>
+            </>
+          )}
         </div>
 
-        <button type="button" className="site-mobile-menu-button animate-fade-up pressable md:hidden" onClick={() => setMobileOpen((open) => !open)} aria-expanded={mobileOpen} aria-controls="mobile-navigation" aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
+        <button
+          type="button"
+          className="site-mobile-menu-button animate-fade-up pressable md:hidden"
+          onClick={() => {
+            setOpenMenu(null)
+            setMobileOpen((open) => !open)
+          }}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-navigation"
+          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+        >
+          {mobileOpen ? <X size={21} /> : <Menu size={21} />}
+        </button>
       </div>
 
       {mobileOpen ? (
@@ -501,13 +637,38 @@ function Header({ compact }: { compact: boolean }) {
                 <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-emerald-800">Programs</p>
                 {programItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
               </div>
-              {navItems.filter((item) => item.to !== '/').map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
+              {mobileNavItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
             </nav>
             {!authLoading ? <div className="mt-3 border-t border-[var(--line)] pt-3">{isLoggedIn ? <button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? 'Logging out...' : 'Logout'}</button> : <div className="grid grid-cols-2 gap-2"><Link to="/login" className="secondary-btn pressable px-4">Login</Link><Link to="/signup" className="primary-btn pressable px-4">Join Now</Link></div>}</div> : null}
           </div>
         </div>
       ) : null}
     </header>
+  )
+}
+
+function DropdownGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl bg-slate-50/70 p-2 ring-1 ring-slate-100">
+      <p className="px-2 pb-1 text-[0.65rem] font-black uppercase tracking-[0.18em] text-slate-500">
+        {title}
+      </p>
+      {children}
+    </section>
+  )
+}
+
+function CompactDropdownItem({ item, active }: { item: NavItem; active: boolean }) {
+  return (
+    <Link
+      to={item.to}
+      className={`group flex items-center gap-3 rounded-2xl p-3 no-underline transition ${active ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-white hover:text-emerald-900'}`}
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm ring-1 ring-slate-100">
+        {item.icon}
+      </span>
+      <span className="min-w-0 text-sm font-black leading-tight">{item.label}</span>
+    </Link>
   )
 }
 

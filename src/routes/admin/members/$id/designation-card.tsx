@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { ArrowLeft, Printer, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, Printer, ShieldAlert, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   fetchDesignationCardsForAdminMember,
   type DesignationCardRecord,
 } from '../../../../lib/committees-public'
-import { DesignationCard } from '../../../designation-card'
+import { OfficeBearerCardPackage } from '../../../designation-card'
 
 export const Route = createFileRoute('/admin/members/$id/designation-card')({
   component: AdminMemberDesignationCardPage,
@@ -59,12 +59,12 @@ function AdminMemberDesignationCardPage() {
         </div>
 
         <section className="rounded-[2rem] bg-[linear-gradient(135deg,#fffdf8,#f7f1e6_54%,#edf4ee)] p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8">
-          <p className="section-eyebrow mb-3">Admin Preview</p>
+          <p className="section-eyebrow mb-3 inline-flex items-center gap-2"><Sparkles size={15} /> Admin Preview</p>
           <h1 className="text-[clamp(2.1rem,5vw,4rem)] font-black leading-[0.98] tracking-[-0.055em] text-slate-950">
-            Member Designation Card
+            Premium Office Bearer Card
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-            This admin preview shows active committee designation cards assigned to the selected member.
+            This admin preview shows premium office bearer authority cards assigned to the selected member. Membership card remains separate from office bearer card.
           </p>
         </section>
 
@@ -73,11 +73,11 @@ function AdminMemberDesignationCardPage() {
         ) : error ? (
           <StateCard message={error} tone="error" />
         ) : cards.length === 0 ? (
-          <StateCard message="This member does not have an active committee designation." />
+          <StateCard message="This member does not have an active office bearer designation." />
         ) : (
           <section className="grid gap-7 xl:grid-cols-2">
             {cards.map((card) => (
-              <DesignationCard key={card.id} card={card} />
+              <OfficeBearerCardPackage key={card.id} card={card} adminPreview />
             ))}
           </section>
         )}

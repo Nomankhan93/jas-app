@@ -288,7 +288,27 @@ async function createPhotoSignedUrl(path: string | null | undefined) {
     .createSignedUrl(path, 60 * 60)
 
   if (error || !data?.signedUrl) return null
-  return data.signedUrl
+
+  const dataUrl = await imageUrlToDataUrl(data.signedUrl)
+  return dataUrl || data.signedUrl
+}
+
+async function imageUrlToDataUrl(url: string) {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return null
+
+    const blob = await response.blob()
+
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(String(reader.result || ''))
+      reader.onerror = () => reject(new Error('Unable to read image data.'))
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
 }
 
 export { getCommitteeStatusClass, getCommitteeStatusLabel, getCommitteeTypeLabel }
