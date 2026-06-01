@@ -39,6 +39,7 @@ VITE_SUPABASE_URL=
 SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+VITE_PUBLIC_SITE_URL=http://localhost:3000
 VITE_SITE_URL=http://localhost:3000
 ```
 
@@ -126,6 +127,50 @@ Program-specific example:
 insert into public.user_roles (user_id, role)
 values ('USER_UUID_HERE', 'employment_admin')
 on conflict (user_id, role) do nothing;
+```
+
+
+## Safe project export
+
+Never share a raw project zip created from the whole folder. Raw exports can accidentally include `.env.local`, `.git`, `.output`, `node_modules`, Supabase local state, logs, backups, or old zip files.
+
+Use the safe export script instead:
+
+```bash
+npm run safe-export
+```
+
+The archive will be created in `exports/` and will exclude secrets, git history, build output, dependencies, Supabase temp folders and generated archives.
+
+Manual fallback if needed:
+
+```bash
+zip -r jas-app-safe.zip . \
+  -x ".env" ".env.local" ".env.production" ".env.development" ".env.test" ".env.*.local" "*.local" \
+  -x ".git/*" "node_modules/*" ".output/*" "dist/*" "dist-ssr/*" \
+  -x ".tanstack/*" ".nitro/*" ".vinxi/*" ".wrangler/*" "__unconfig*/*" \
+  -x "supabase/.temp/*" "supabase/.branches/*" "supabase/snippets/*" \
+  -x "backups/*" "exports/*" "*.log" "*.zip" ".DS_Store"
+```
+
+If a real Supabase service-role key was ever included in a shared archive, rotate it from the Supabase dashboard immediately.
+
+## Lockfile sync
+
+After dependency changes, sync the npm lockfile before committing:
+
+```bash
+npm run lock:sync
+npm run check
+npm run build
+```
+
+For clean machine/Vercel-style verification, use:
+
+```bash
+npm ci
+npm run check
+npm run build
 ```
 
 ## Key routes

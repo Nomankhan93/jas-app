@@ -1,7 +1,11 @@
-# Do not include secrets, local state, or build output in shared project archives
+# Do not include secrets, local state, dependencies, or build output in shared project archives.
+# Note: .env.example is intentionally allowed and should remain safe placeholder-only documentation.
 .env
-.env.*
 .env.local
+.env.production
+.env.development
+.env.test
+.env.*.local
 *.local
 
 .git/
@@ -19,5 +23,7 @@ supabase/.temp/
 supabase/.branches/
 supabase/snippets/
 backups/
+exports/
 *.log
+*.zip
 .DS_Store
