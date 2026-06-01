@@ -1,5 +1,6 @@
 // src/lib/reports.ts
 import { supabase } from './supabase/client'
+import { filterRowsByAreaAccess, loadCurrentAdminAreaAccess } from './area-permissions'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 type ProgramKey = 'education' | 'health' | 'welfare' | 'employment'
@@ -123,29 +124,22 @@ const programLabels: Record<ProgramKey, string> = {
 const programKeys: ProgramKey[] = ['education', 'health', 'welfare', 'employment']
 
 export async function currentUserCanViewReports() {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+  const access = await loadCurrentAdminAreaAccess('reports', 'view', {
+    requiredRoles: ['admin', 'super_admin'],
+  })
 
-  if (userError || !user) return false
-
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .in('role', ['admin', 'super_admin'])
-    .limit(1)
-
-  if (error) {
-    console.error('Reports role check failed:', error.message)
-    return false
-  }
-
-  return Boolean(data?.length)
+  return access.ok
 }
 
 export async function loadReportsCenterData(): Promise<ReportsCenterData> {
+  const areaAccess = await loadCurrentAdminAreaAccess('reports', 'view', {
+    requiredRoles: ['admin', 'super_admin'],
+  })
+
+  if (!areaAccess.ok) {
+    throw new Error(areaAccess.message)
+  }
+
   const [membersResult, applicationsResult, donationsResult, expensesResult] =
     await Promise.all([
       supabase
@@ -178,10 +172,10 @@ export async function loadReportsCenterData(): Promise<ReportsCenterData> {
   if (donationsResult.error) throw donationsResult.error
   if (expensesResult.error) throw expensesResult.error
 
-  const members = membersResult.data ?? []
-  const applications = applicationsResult.data ?? []
-  const donations = donationsResult.data ?? []
-  const expenses = expensesResult.data ?? []
+  const members = filterRowsByAreaAccess(membersResult.data ?? [], areaAccess)
+  const applications = filterRowsByAreaAccess(applicationsResult.data ?? [], areaAccess)
+  const donations = filterRowsByAreaAccess(donationsResult.data ?? [], areaAccess)
+  const expenses = filterRowsByAreaAccess(expensesResult.data ?? [], areaAccess)
 
   const approvedDonations = donations.filter((item) => isApprovedStatus(item.status))
   const paidExpenses = expenses.filter((item) => isPaidExpenseStatus(item.status))

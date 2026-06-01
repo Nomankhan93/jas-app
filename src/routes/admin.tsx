@@ -38,6 +38,11 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase/client'
+import {
+  filterRowsByAreaAccess,
+  getAreaAccessSummaryText,
+  loadCurrentAdminAreaAccess,
+} from '../lib/area-permissions'
 
 export const Route = createFileRoute('/admin')({
   component: AdminPage,
@@ -166,6 +171,7 @@ function AdminPage() {
   const [search, setSearch] = useState('')
   const [showSensitive, setShowSensitive] = useState(false)
   const [error, setError] = useState('')
+  const [areaNotice, setAreaNotice] = useState('')
 
   const loadAdmin = useCallback(
     async (
@@ -181,6 +187,7 @@ function AdminPage() {
       }
 
       setError('')
+      setAreaNotice('')
 
       try {
         const access = await ensureAdminAccess()
@@ -205,6 +212,14 @@ function AdminPage() {
           setAdminRoles(access.roles)
         }
 
+        const areaAccess = await loadCurrentAdminAreaAccess('membership', 'view', {
+          requiredRoles: ['admin', 'super_admin', 'membership_admin'],
+        })
+
+        if (!areaAccess.ok) {
+          throw new Error(areaAccess.message)
+        }
+
         const { data, error: membersError } = await supabase
           .from('members')
           .select(
@@ -226,12 +241,13 @@ function AdminPage() {
 
         if (membersError) throw membersError
 
-        const safeMembers = data ?? []
+        const safeMembers = filterRowsByAreaAccess(data ?? [], areaAccess)
         const signedUrls = await createSignedPhotoUrls(safeMembers)
 
         if (!cancelledRef?.current) {
           setMembers(safeMembers)
           setPhotoUrls(signedUrls)
+          setAreaNotice(getAreaAccessSummaryText(areaAccess))
         }
       } catch (err) {
         if (!cancelledRef?.current) {
@@ -522,6 +538,14 @@ function AdminPage() {
         </header>
 
         <AdminProgramShortcuts roles={adminRoles} stats={stats} />
+
+
+        {areaNotice ? (
+          <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-black text-emerald-800">
+            <MapPin className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>{areaNotice}</span>
+          </div>
+        ) : null}
 
         {error ? (
           <div className="flex items-start gap-3 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-100">

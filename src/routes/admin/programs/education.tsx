@@ -26,6 +26,11 @@ import {
   getEducationStatusLabel,
   type EducationApplicationDetails,
 } from '../../../lib/programs/education'
+import {
+  filterRowsByAreaAccess,
+  getAreaAccessSummaryText,
+  loadCurrentAdminAreaAccess,
+} from '../../../lib/area-permissions'
 
 export const Route = createFileRoute('/admin/programs/education')({
   component: AdminEducationRoute,
@@ -80,6 +85,7 @@ function AdminEducationApplicationsPage() {
   >([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [areaNotice, setAreaNotice] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [districtFilter, setDistrictFilter] = useState('all')
   const [talukaFilter, setTalukaFilter] = useState('all')
@@ -92,6 +98,7 @@ function AdminEducationApplicationsPage() {
   async function loadApplications() {
     setLoading(true)
     setMessage('')
+    setAreaNotice('')
 
     const {
       data: { user },
@@ -100,6 +107,18 @@ function AdminEducationApplicationsPage() {
 
     if (userError || !user) {
       setMessage('Admin panel dekhne ke liye pehle login karen.')
+      setApplications([])
+      setLoading(false)
+      return
+    }
+
+
+    const areaAccess = await loadCurrentAdminAreaAccess('education', 'view', {
+      requiredRoles: ['admin', 'super_admin', 'education_admin'],
+    })
+
+    if (!areaAccess.ok) {
+      setMessage(areaAccess.message)
       setApplications([])
       setLoading(false)
       return
@@ -120,7 +139,13 @@ function AdminEducationApplicationsPage() {
       return
     }
 
-    setApplications((data || []) as unknown as EducationApplicationListItem[])
+    const scopedApplications = filterRowsByAreaAccess(
+      (data || []) as unknown as EducationApplicationListItem[],
+      areaAccess,
+    )
+
+    setApplications(scopedApplications)
+    setAreaNotice(getAreaAccessSummaryText(areaAccess))
     setLoading(false)
   }
 
@@ -260,7 +285,14 @@ function AdminEducationApplicationsPage() {
                 disabled={loading}
                 className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60"
               >
-                {loading ? (
+      
+          {areaNotice ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-800">
+              {areaNotice}
+            </div>
+          ) : null}
+
+          {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />

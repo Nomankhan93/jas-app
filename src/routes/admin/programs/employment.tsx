@@ -22,6 +22,11 @@ import {
   getShortlistStatusLabel,
   type EmploymentApplicationDetails,
 } from '../../../lib/programs/employment'
+import {
+  filterRowsByAreaAccess,
+  getAreaAccessSummaryText,
+  loadCurrentAdminAreaAccess,
+} from '../../../lib/area-permissions'
 
 export const Route = createFileRoute('/admin/programs/employment')({
   component: AdminEmploymentRoute,
@@ -60,6 +65,7 @@ function AdminEmploymentApplicationsPage() {
   const [applications, setApplications] = useState<EmploymentApplicationListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [, setAreaNotice] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [districtFilter, setDistrictFilter] = useState('all')
   const [talukaFilter, setTalukaFilter] = useState('all')
@@ -69,27 +75,19 @@ function AdminEmploymentApplicationsPage() {
   useEffect(() => { void loadApplications() }, [])
 
   async function ensureAccess() {
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    if (userError || !user) return false
-
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .in('role', ['admin', 'super_admin', 'employment_admin'])
-      .limit(1)
-
-    if (error) return false
-    return Boolean(data?.length)
+    return loadCurrentAdminAreaAccess('employment', 'view', {
+      requiredRoles: ['admin', 'super_admin', 'employment_admin'],
+    })
   }
 
   async function loadApplications() {
     setLoading(true)
     setMessage('')
+    setAreaNotice('')
 
-    const allowed = await ensureAccess()
-    if (!allowed) {
-      setMessage('Employment admin access required.')
+    const access = await ensureAccess()
+    if (!access.ok) {
+      setMessage(access.message)
       setApplications([])
       setLoading(false)
       return
@@ -105,7 +103,13 @@ function AdminEmploymentApplicationsPage() {
       setMessage(error.message)
       setApplications([])
     } else {
-      setApplications((data || []) as unknown as EmploymentApplicationListItem[])
+      const scopedApplications = filterRowsByAreaAccess(
+        (data || []) as unknown as EmploymentApplicationListItem[],
+        access,
+      )
+
+      setApplications(scopedApplications)
+      setAreaNotice(getAreaAccessSummaryText(access))
     }
 
     setLoading(false)

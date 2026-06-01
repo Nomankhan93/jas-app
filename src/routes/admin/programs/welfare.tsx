@@ -28,6 +28,11 @@ import {
   sortWelfareCasesByPriority,
   type WelfareApplicationDetails,
 } from '../../../lib/programs/welfare'
+import {
+  filterRowsByAreaAccess,
+  getAreaAccessSummaryText,
+  loadCurrentAdminAreaAccess,
+} from '../../../lib/area-permissions'
 
 export const Route = createFileRoute('/admin/programs/welfare')({
   component: AdminWelfareRoute,
@@ -74,6 +79,7 @@ function AdminWelfareApplicationsPage() {
   const [applications, setApplications] = useState<WelfareApplicationListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [areaNotice, setAreaNotice] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [districtFilter, setDistrictFilter] = useState('all')
   const [talukaFilter, setTalukaFilter] = useState('all')
@@ -90,11 +96,23 @@ function AdminWelfareApplicationsPage() {
   async function loadApplications() {
     setLoading(true)
     setMessage('')
+    setAreaNotice('')
 
     const access = await ensureWelfareAdminAccess()
 
     if (!access.ok) {
       setMessage(access.message)
+      setApplications([])
+      setLoading(false)
+      return
+    }
+
+    const areaAccess = await loadCurrentAdminAreaAccess('welfare', 'view', {
+      requiredRoles: ['admin', 'super_admin', 'welfare_admin', 'ration_admin'],
+    })
+
+    if (!areaAccess.ok) {
+      setMessage(areaAccess.message)
       setApplications([])
       setLoading(false)
       return
@@ -113,7 +131,13 @@ function AdminWelfareApplicationsPage() {
       return
     }
 
-    setApplications((data || []) as unknown as WelfareApplicationListItem[])
+    const scopedApplications = filterRowsByAreaAccess(
+      (data || []) as unknown as WelfareApplicationListItem[],
+      areaAccess,
+    )
+
+    setApplications(scopedApplications)
+    setAreaNotice(getAreaAccessSummaryText(areaAccess))
     setLoading(false)
   }
 
@@ -234,6 +258,13 @@ function AdminWelfareApplicationsPage() {
               <Select value={committeeFilter} onChange={setCommitteeFilter} options={committeeOptions.map((value) => ({ value, label: value === 'all' ? 'Committee Decision' : getWelfareCommitteeDecisionLabel(value) }))} />
             </div>
           </div>
+
+
+          {areaNotice ? (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-800">
+              {areaNotice}
+            </div>
+          ) : null}
 
           {loading ? (
             <div className="flex justify-center rounded-3xl border border-slate-200 bg-white p-12 shadow-sm"><Loader2 className="h-10 w-10 animate-spin text-amber-500" /></div>

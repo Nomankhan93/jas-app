@@ -58,6 +58,24 @@ export type AreaPermissionFormInput = {
   notes?: string | null
 }
 
+export type AreaScopedRow = {
+  district?: string | null
+  taluka?: string | null
+}
+
+export type AdminAreaAccessContext = {
+  ok: boolean
+  message: string
+  userId: string | null
+  moduleKey: AreaPermissionModule
+  action: AreaPermissionAction
+  roles: string[]
+  permissions: AdminAreaPermission[]
+  isGlobalAdmin: boolean
+  isRestricted: boolean
+  summary: string
+}
+
 export const areaPermissionModuleOptions: Array<{
   value: AreaPermissionModule
   label: string
@@ -83,6 +101,18 @@ export const areaPermissionScopeOptions: Array<{
   { value: 'taluka', label: 'Taluka', description: 'Access limited to one taluka inside a district.' },
 ]
 
+const moduleAdminRoles: Partial<Record<AreaPermissionModule, string[]>> = {
+  membership: ['membership_admin'],
+  education: ['education_admin'],
+  health: ['health_admin'],
+  welfare: ['welfare_admin', 'ration_admin'],
+  employment: ['employment_admin'],
+  finance: ['finance_admin'],
+  reports: [],
+}
+
+const globalAdminRoles = ['admin', 'super_admin']
+
 export function getAreaPermissionModuleLabel(moduleKey: AreaPermissionModule | string) {
   return areaPermissionModuleOptions.find((item) => item.value === moduleKey)?.label ?? moduleKey
 }
@@ -103,6 +133,18 @@ export function getPermissionActionText(permission: Pick<AdminAreaPermission, 'c
   if (permission.can_review) actions.push('Review')
   if (permission.can_approve) actions.push('Approve')
   return actions.length ? actions.join(' / ') : 'No actions'
+}
+
+export function hasGlobalAdminRole(roles: readonly string[]) {
+  return roles.some((role) => globalAdminRoles.includes(role))
+}
+
+export function getModuleAdminRoles(moduleKey: AreaPermissionModule) {
+  return moduleAdminRoles[moduleKey] ?? []
+}
+
+export function hasModuleAdminRole(roles: readonly string[], moduleKey: AreaPermissionModule) {
+  return roles.some((role) => getModuleAdminRoles(moduleKey).includes(role))
 }
 
 export async function currentUserCanManageAreaPermissions() {
@@ -177,20 +219,193 @@ export function canAccessArea(
   taluka: string | null | undefined,
   action: AreaPermissionAction = 'view',
 ) {
-  return permissions.some((permission) => {
-    if (!permission.is_active) return false
-    if (permission.module_key !== 'all' && permission.module_key !== moduleKey) return false
+  return permissions.some((permission) => permissionMatchesArea(permission, moduleKey, district, taluka, action))
+}
 
-    const canAction =
-      action === 'view'
-        ? permission.can_view
-        : action === 'review'
-          ? permission.can_review
-          : permission.can_approve
+export async function loadCurrentAdminAreaAccess(
+  moduleKey: AreaPermissionModule,
+  action: AreaPermissionAction = 'view',
+  options?: { requiredRoles?: string[]; allowAreaPermissionOnly?: boolean },
+): Promise<AdminAreaAccessContext> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-    if (!canAction) return false
-    if (permission.scope === 'all') return true
-    if (permission.scope === 'district') return permission.district === district
-    return permission.district === district && permission.taluka === taluka
-  })
+  if (userError || !user) {
+    return emptyAreaAccess(moduleKey, action, 'Admin area dekhne ke liye pehle login karen.')
+  }
+
+  const { data: roleRows, error: roleError } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+
+  if (roleError) {
+    return emptyAreaAccess(moduleKey, action, roleError.message, user.id)
+  }
+
+  const roles = ((roleRows ?? []) as Array<{ role: string }>).map((item) => item.role)
+  const isGlobalAdmin = hasGlobalAdminRole(roles)
+  const requiredRoles = options?.requiredRoles ?? [...globalAdminRoles, ...getModuleAdminRoles(moduleKey)]
+  const hasRequiredRole = roles.some((role) => requiredRoles.includes(role))
+  const permissions = isGlobalAdmin ? [] : await safeFetchMyAreaPermissions()
+  const relevantPermissions = permissions.filter((permission) =>
+    permissionMatchesModuleAndAction(permission, moduleKey, action),
+  )
+
+  if (isGlobalAdmin) {
+    return {
+      ok: true,
+      message: '',
+      userId: user.id,
+      moduleKey,
+      action,
+      roles,
+      permissions: [],
+      isGlobalAdmin: true,
+      isRestricted: false,
+      summary: 'All Sindh access active',
+    }
+  }
+
+  if (relevantPermissions.length > 0) {
+    return {
+      ok: true,
+      message: '',
+      userId: user.id,
+      moduleKey,
+      action,
+      roles,
+      permissions: relevantPermissions,
+      isGlobalAdmin: false,
+      isRestricted: true,
+      summary: buildAreaAccessSummary(relevantPermissions, moduleKey),
+    }
+  }
+
+  if (options?.allowAreaPermissionOnly === false && !hasRequiredRole) {
+    return emptyAreaAccess(
+      moduleKey,
+      action,
+      `${getAreaPermissionModuleLabel(moduleKey)} admin access required.`,
+      user.id,
+      roles,
+    )
+  }
+
+  if (hasRequiredRole) {
+    return emptyAreaAccess(
+      moduleKey,
+      action,
+      `No active ${getAreaPermissionModuleLabel(moduleKey)} area permission assigned. Super admin must assign district/taluka access first.`,
+      user.id,
+      roles,
+    )
+  }
+
+  return emptyAreaAccess(
+    moduleKey,
+    action,
+    `${getAreaPermissionModuleLabel(moduleKey)} area access required.`,
+    user.id,
+    roles,
+  )
+}
+
+export function filterRowsByAreaAccess<T extends AreaScopedRow>(
+  rows: T[],
+  access: AdminAreaAccessContext,
+) {
+  if (!access.ok) return []
+  if (!access.isRestricted || access.isGlobalAdmin) return rows
+
+  return rows.filter((row) =>
+    access.permissions.some((permission) =>
+      permissionMatchesArea(permission, access.moduleKey, row.district, row.taluka, access.action),
+    ),
+  )
+}
+
+export function getAreaAccessSummaryText(access: AdminAreaAccessContext) {
+  if (!access.ok) return access.message
+  return access.summary
+}
+
+export function getAreaAccessBadgeTone(access: AdminAreaAccessContext) {
+  if (!access.ok) return 'border-red-200 bg-red-50 text-red-800'
+  if (access.isRestricted) return 'border-amber-200 bg-amber-50 text-amber-800'
+  return 'border-emerald-200 bg-emerald-50 text-emerald-800'
+}
+
+function permissionMatchesArea(
+  permission: AdminAreaPermission,
+  moduleKey: AreaPermissionModule,
+  district: string | null | undefined,
+  taluka: string | null | undefined,
+  action: AreaPermissionAction = 'view',
+) {
+  if (!permissionMatchesModuleAndAction(permission, moduleKey, action)) return false
+
+  const normalizedDistrict = normalizeAreaValue(district)
+  const normalizedTaluka = normalizeAreaValue(taluka)
+  const permissionDistrict = normalizeAreaValue(permission.district)
+  const permissionTaluka = normalizeAreaValue(permission.taluka)
+
+  if (permission.scope === 'all') return true
+  if (permission.scope === 'district') return permissionDistrict === normalizedDistrict
+  return permissionDistrict === normalizedDistrict && permissionTaluka === normalizedTaluka
+}
+
+function permissionMatchesModuleAndAction(
+  permission: AdminAreaPermission,
+  moduleKey: AreaPermissionModule,
+  action: AreaPermissionAction,
+) {
+  if (!permission.is_active) return false
+  if (permission.module_key !== 'all' && permission.module_key !== moduleKey) return false
+
+  if (action === 'review') return permission.can_review
+  if (action === 'approve') return permission.can_approve
+  return permission.can_view
+}
+
+function normalizeAreaValue(value?: string | null) {
+  return value?.trim().toLowerCase() || ''
+}
+
+async function safeFetchMyAreaPermissions() {
+  try {
+    return await fetchMyAreaPermissions()
+  } catch (error) {
+    console.error('Failed to fetch area permissions:', error)
+    return []
+  }
+}
+
+function buildAreaAccessSummary(permissions: AdminAreaPermission[], moduleKey: AreaPermissionModule) {
+  const areas = permissions.map((permission) => describeAreaPermission(permission))
+  const uniqueAreas = Array.from(new Set(areas))
+  return `${getAreaPermissionModuleLabel(moduleKey)} area access active: ${uniqueAreas.join(' · ')}`
+}
+
+function emptyAreaAccess(
+  moduleKey: AreaPermissionModule,
+  action: AreaPermissionAction,
+  message: string,
+  userId: string | null = null,
+  roles: string[] = [],
+): AdminAreaAccessContext {
+  return {
+    ok: false,
+    message,
+    userId,
+    moduleKey,
+    action,
+    roles,
+    permissions: [],
+    isGlobalAdmin: false,
+    isRestricted: true,
+    summary: message,
+  }
 }

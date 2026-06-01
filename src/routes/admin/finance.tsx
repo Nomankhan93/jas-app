@@ -23,6 +23,11 @@ import {
 } from "react";
 import { supabase } from "../../lib/supabase/client";
 import {
+  filterRowsByAreaAccess,
+  getAreaAccessSummaryText,
+  loadCurrentAdminAreaAccess,
+} from "../../lib/area-permissions";
+import {
   FINANCE_DOCUMENT_ACCEPT,
   FINANCE_DOCUMENT_BUCKET,
   buildDonationReceiptText,
@@ -121,6 +126,7 @@ function FinanceAdminPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [areaNotice, setAreaNotice] = useState("");
   const [success, setSuccess] = useState("");
   const [activePanel, setActivePanel] = useState<
     "dashboard" | "donations" | "expenses" | "audit"
@@ -145,11 +151,26 @@ function FinanceAdminPage() {
     setLoading(true);
     setMessage("");
     setSuccess("");
+    setAreaNotice("");
 
     const access = await ensureFinanceAdminAccess();
 
     if (!access.ok) {
       setMessage(access.message);
+      setDonations([]);
+      setExpenses([]);
+      setAuditLogs([]);
+      setLoading(false);
+      return;
+    }
+
+
+    const areaAccess = await loadCurrentAdminAreaAccess("finance", "view", {
+      requiredRoles: ["admin", "super_admin", "finance_admin"],
+    });
+
+    if (!areaAccess.ok) {
+      setMessage(areaAccess.message);
       setDonations([]);
       setExpenses([]);
       setAuditLogs([]);
@@ -187,9 +208,10 @@ function FinanceAdminPage() {
       return;
     }
 
-    setDonations(donationResult.data || []);
-    setExpenses(expenseResult.data || []);
+    setDonations(filterRowsByAreaAccess(donationResult.data || [], areaAccess));
+    setExpenses(filterRowsByAreaAccess(expenseResult.data || [], areaAccess));
     setAuditLogs(auditResult.data || []);
+    setAreaNotice(getAreaAccessSummaryText(areaAccess));
     setLoading(false);
   }
 
@@ -701,7 +723,14 @@ function FinanceAdminPage() {
           {message ? <Alert tone="error" message={message} /> : null}
           {success ? <Alert tone="success" message={success} /> : null}
 
-          <div className="grid gap-4 md:grid-cols-4">
+    
+      {areaNotice ? (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-800">
+          {areaNotice}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 md:grid-cols-4">
             <StatCard
               title="Total Donations"
               value={formatFinanceMoney(dashboard.totalDonations)}

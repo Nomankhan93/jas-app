@@ -1112,6 +1112,10 @@ export type Database = {
         }
         Returns: string
       }
+      current_user_can_access_area_module: {
+        Args: { _action?: string; _module_key: string }
+        Returns: boolean
+      }
       current_user_can_approve_program: {
         Args: {
           _district?: string
