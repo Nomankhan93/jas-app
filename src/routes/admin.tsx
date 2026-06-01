@@ -72,6 +72,7 @@ type AdminModuleKey =
   | 'media'
   | 'reports'
   | 'roles'
+  | 'area-permissions'
   | 'committees'
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
@@ -106,6 +107,7 @@ type AdminRouteTo =
   | '/admin/news'
   | '/admin/reports'
   | '/admin/roles'
+  | '/admin/area-permissions'
   | '/admin/committees'
 
 type ModuleCardConfig = {
@@ -126,6 +128,7 @@ type ModuleCardConfig = {
     | 'media'
     | 'reports'
     | 'roles'
+    | 'area'
     | 'committees'
   metric?: string
   metricLabel?: string
@@ -923,6 +926,17 @@ function AdminProgramShortcuts({
       badgeLabel: 'Super Admin',
     },
     {
+      key: 'area-permissions',
+      title: 'Area Permissions',
+      description:
+        'Assign district, taluka and All Sindh access for module admins after giving them roles.',
+      to: '/admin/area-permissions',
+      actionLabel: 'Manage Area Access',
+      icon: MapPin,
+      tone: 'area',
+      badgeLabel: 'Super Admin',
+    },
+    {
       key: 'committees',
       title: 'Committees & Designations',
       description:
@@ -1115,6 +1129,12 @@ function getModuleTone(tone: ModuleCardConfig['tone']) {
       icon: 'bg-slate-900 text-white',
       badge: 'bg-slate-900 text-white',
       action: 'bg-slate-950 !text-white hover:bg-slate-800 hover:!text-white',
+    },
+    area: {
+      card: 'border-teal-200 bg-gradient-to-br from-teal-50 via-white to-white',
+      icon: 'bg-teal-100 text-teal-800',
+      badge: 'bg-teal-100 text-teal-800',
+      action: 'bg-slate-950 !text-white hover:bg-teal-900 hover:!text-white',
     },
     committees: {
       card: 'border-lime-200 bg-gradient-to-br from-lime-50 via-white to-white',
@@ -1461,7 +1481,7 @@ function canAccessAdminModule(
     return true
   }
 
-  if (moduleKey === 'roles') {
+  if (moduleKey === 'roles' || moduleKey === 'area-permissions') {
     return false
   }
 
@@ -1499,6 +1519,7 @@ function getPrimaryAdminRoute(
   | '/admin/news'
   | '/admin/reports'
   | '/admin/roles'
+  | '/admin/area-permissions'
   | '/admin/committees'
   | '/dashboard' {
   if (roles.includes('education_admin')) return '/admin/programs/education'
