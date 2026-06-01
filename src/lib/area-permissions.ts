@@ -329,6 +329,12 @@ export function filterRowsByAreaAccess<T extends AreaScopedRow>(
 
 export function getAreaAccessSummaryText(access: AdminAreaAccessContext) {
   if (!access.ok) return access.message
+
+  // Global admins already have full access by role. Showing a large "All Sindh access"
+  // badge on every module page creates visual clutter, so only restricted district/taluka
+  // access is surfaced in the UI.
+  if (access.isGlobalAdmin || !access.isRestricted) return ''
+
   return access.summary
 }
 

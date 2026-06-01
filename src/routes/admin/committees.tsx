@@ -77,7 +77,7 @@ function AdminCommitteesPage() {
 
       setCommittees(await fetchCommitteesForAdmin())
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to load committees.')
+      setMessage(getErrorMessage(err, 'Failed to load committees. Please confirm the committee/designation migration and RLS grants are applied.'))
     } finally {
       setLoading(false)
     }
@@ -116,7 +116,7 @@ function AdminCommitteesPage() {
       setForm(emptyForm)
       await navigate({ to: '/admin/committees/$id', params: { id } })
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to create committee.')
+      setMessage(getErrorMessage(err, 'Failed to create committee.'))
     } finally {
       setSaving(false)
     }
@@ -342,6 +342,21 @@ function SummaryCard({ label, value, tone = 'slate' }: { label: string; value: n
       <p className="mt-2 text-3xl font-black">{value}</p>
     </div>
   )
+}
+
+
+function getErrorMessage(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message) return err.message
+
+  if (typeof err === 'object' && err !== null) {
+    const maybeError = err as { message?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+    const parts = [maybeError.message, maybeError.details, maybeError.hint, maybeError.code]
+      .filter((part): part is string => typeof part === 'string' && part.trim().length > 0)
+
+    if (parts.length > 0) return parts.join(' — ')
+  }
+
+  return fallback
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {

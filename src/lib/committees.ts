@@ -172,6 +172,15 @@ export async function currentUserCanManageCommittees() {
 
   if (userError || !user) return false
 
+  // Prefer the same SECURITY DEFINER helper that the committee RLS policies use.
+  // This avoids false negatives from direct user_roles reads when role policies are tightened.
+  const { data: rpcAllowed, error: rpcError } = await supabase.rpc(
+    'current_user_can_manage_organization' as never,
+  )
+
+  if (!rpcError) return Boolean(rpcAllowed)
+
+  // Fallback for local/dev databases where the helper function may not exist yet.
   const { data, error } = await supabase
     .from('user_roles')
     .select('role')
@@ -209,7 +218,13 @@ export async function fetchCommitteesForAdmin() {
     .from('organization_committee_members' as never)
     .select('committee_id')
 
-  if (countError) throw countError
+  if (countError) {
+    console.warn('Committee member count query failed:', countError)
+    return committees.map((committee) => ({
+      ...committee,
+      member_count: 0,
+    }))
+  }
 
   const counts = new Map<string, number>()
   ;((members ?? []) as unknown as Array<{ committee_id: string }>).forEach((item) => {

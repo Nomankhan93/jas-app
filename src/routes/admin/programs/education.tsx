@@ -285,12 +285,6 @@ function AdminEducationApplicationsPage() {
                 disabled={loading}
                 className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60"
               >
-      
-          {areaNotice ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-black text-emerald-800">
-              {areaNotice}
-            </div>
-          ) : null}
 
           {loading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -303,6 +297,16 @@ function AdminEducationApplicationsPage() {
           </div>
         </div>
       </section>
+
+      {areaNotice ? (
+        <section className="px-4 pt-6">
+          <div className="mx-auto max-w-7xl">
+            <div className="inline-flex max-w-full items-center rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-black text-amber-900 shadow-sm">
+              {areaNotice}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto max-w-7xl space-y-8">
