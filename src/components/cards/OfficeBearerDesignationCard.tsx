@@ -1,4 +1,3 @@
-import QRCode from 'qrcode'
 import {
   BadgeCheck,
   CalendarDays,
@@ -22,6 +21,7 @@ import {
   type DesignationCardRecord,
 } from '../../lib/committees-public'
 import { exportElementAsPng } from '../../lib/shared/card-export'
+import { generateQrDataUrl } from '../../lib/shared/qrcode'
 
 const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_SIGNATURE_PATH = '/jas/signature.png'
@@ -56,7 +56,7 @@ export function OfficeBearerCardPackage({
 
     async function generateQr() {
       try {
-        const dataUrl = await QRCode.toDataURL(verificationUrl, {
+        const dataUrl = await generateQrDataUrl(verificationUrl, {
           width: 340,
           margin: 1,
           errorCorrectionLevel: 'H',

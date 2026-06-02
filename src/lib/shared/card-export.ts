@@ -1,19 +1,40 @@
-import { toPng } from 'html-to-image'
+type ElementPngOptions = {
+  pixelRatio?: number
+  backgroundColor?: string
+  cacheBust?: boolean
+  fontEmbedCSS?: string
+  width?: number
+  height?: number
+  canvasWidth?: number
+  canvasHeight?: number
+  style?: Partial<CSSStyleDeclaration>
+}
+
+export async function elementToPngDataUrl(
+  element: HTMLElement,
+  options?: ElementPngOptions,
+) {
+  const { toPng } = await import('html-to-image')
+
+  return toPng(element, {
+    cacheBust: options?.cacheBust ?? true,
+    pixelRatio: options?.pixelRatio ?? 2,
+    backgroundColor: options?.backgroundColor ?? '#ffffff',
+    fontEmbedCSS: options?.fontEmbedCSS,
+    width: options?.width,
+    height: options?.height,
+    canvasWidth: options?.canvasWidth,
+    canvasHeight: options?.canvasHeight,
+    style: options?.style,
+  })
+}
 
 export async function exportElementAsPng(
   element: HTMLElement,
   filename: string,
-  options?: {
-    pixelRatio?: number
-    backgroundColor?: string
-  },
+  options?: ElementPngOptions,
 ) {
-  const dataUrl = await toPng(element, {
-    cacheBust: true,
-    pixelRatio: options?.pixelRatio ?? 2,
-    backgroundColor: options?.backgroundColor ?? '#ffffff',
-  })
-
+  const dataUrl = await elementToPngDataUrl(element, options)
   downloadDataUrl(dataUrl, filename)
 }
 

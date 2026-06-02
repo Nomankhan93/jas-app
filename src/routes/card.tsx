@@ -1,7 +1,5 @@
 // src/routes/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { toPng } from 'html-to-image'
-import QRCode from 'qrcode'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import {
@@ -27,6 +25,8 @@ import {
   type MembershipCardMember,
 } from '../components/MembershipCard'
 import { supabase } from '../lib/supabase/client'
+import { downloadDataUrl, elementToPngDataUrl } from '../lib/shared/card-export'
+import { generateQrDataUrl } from '../lib/shared/qrcode'
 
 export const Route = createFileRoute('/card')({
   component: CardPage,
@@ -126,7 +126,7 @@ function CardPage() {
           data.member_no,
         )}`
 
-        const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
+        const generatedQr = await generateQrDataUrl(publicVerifyUrl, {
           width: 320,
           margin: 1,
           errorCorrectionLevel: 'H',
@@ -219,7 +219,7 @@ function CardPage() {
       throw new Error(`Unable to prepare ${side} side for download.`)
     }
 
-    const dataUrl = await toPng(targetRef.current, {
+    const dataUrl = await elementToPngDataUrl(targetRef.current, {
       cacheBust: true,
       pixelRatio: 2,
       backgroundColor: '#ffffff',
@@ -234,10 +234,7 @@ function CardPage() {
       },
     })
 
-    const link = document.createElement('a')
-    link.download = `${member.member_no}-JAS-card-${side}.png`
-    link.href = dataUrl
-    link.click()
+    downloadDataUrl(dataUrl, `${member.member_no}-JAS-card-${side}.png`)
   }
 
   async function handleDownload(side: CardSide) {
