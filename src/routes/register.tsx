@@ -1,15 +1,15 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import { supabase } from '../lib/supabase/client'
-import { talukasByDistrict } from '../lib/register/registration-options'
 import {
+  formatCnicInput,
+  formatMobileInput,
   isPakistaniMobile,
   normalizeMobile,
   optionalText,
   todayDate,
 } from '../lib/shared/formatters'
-import { RegistrationStepFields } from '../components/register/RegistrationStepFields'
 
 export const Route = createFileRoute('/register')({
   component: RegisterPage,
@@ -18,6 +18,149 @@ export const Route = createFileRoute('/register')({
 const MAX_PHOTO_SIZE_BYTES = 2 * 1024 * 1024
 const ALLOWED_PHOTO_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const REGISTER_DRAFT_VERSION = 1
+
+const sindhDistricts = [
+  'Badin',
+  'Dadu',
+  'Ghotki',
+  'Hyderabad',
+  'Jacobabad',
+  'Jamshoro',
+  'Karachi Central',
+  'Karachi East',
+  'Karachi South',
+  'Karachi West',
+  'Kashmore',
+  'Keamari',
+  'Khairpur',
+  'Korangi',
+  'Larkana',
+  'Malir',
+  'Matiari',
+  'Mirpur Khas',
+  'Naushahro Firoze',
+  'Qambar Shahdadkot',
+  'Sanghar',
+  'Shaheed Benazirabad',
+  'Shikarpur',
+  'Sujawal',
+  'Sukkur',
+  'Tando Allahyar',
+  'Tando Muhammad Khan',
+  'Tharparkar',
+  'Thatta',
+  'Umerkot',
+]
+
+const talukasByDistrict: Record<string, string[]> = {
+  Badin: [
+    'Badin',
+    'Matli',
+    'Shaheed Fazil Rahu (Golarchi)',
+    'Talhar',
+    'Tando Bago',
+  ],
+  Sujawal: ['Jati', 'Kharo Chan', 'Mirpur Bathoro', 'Shah Bunder', 'Sujawal'],
+  Thatta: ['Ghorabari', 'Keti Bunder', 'Mirpur Sakro', 'Thatta'],
+  Dadu: ['Dadu', 'Johi', 'Khairpur Nathan Shah', 'Mehar'],
+  Hyderabad: ['Hyderabad City', 'Hyderabad Rural', 'Latifabad', 'Qasimabad'],
+  Jamshoro: ['Kotri', 'Manjhand', 'Sehwan Sharif', 'Thano Bula Khan'],
+  Matiari: ['Hala', 'Matiari', 'Saeedabad'],
+  'Tando Allahyar': ['Chamber', 'Jhando Mari', 'Tando Allahyar'],
+  'Tando Muhammad Khan': [
+    'Bulri Shah Karim',
+    'Tando Ghulam Hyder',
+    'Tando Muhammad Khan',
+  ],
+  'Karachi Central': [
+    'Gulberg',
+    'Liaquatabad',
+    'Nazimabad',
+    'New Karachi',
+    'North Nazimabad',
+  ],
+  'Karachi East': [
+    'Ferozabad',
+    'Gulshan-e-Iqbal',
+    'Gulzar-e-Hijri',
+    'Jamshed Quarters',
+  ],
+  'Karachi South': ['Aram Bagh', 'Civil Line', 'Garden', 'Lyari', 'Saddar'],
+  'Karachi West': ['Mango Pir', 'Mominabad', 'Orangi'],
+  Keamari: ['Baldia', 'Harbour', 'Mauripur', 'SITE'],
+  Korangi: ['Korangi', 'Landhi', 'Model Colony', 'Shah Faisal'],
+  Malir: [
+    'Airport',
+    'Bin Qasim',
+    'Gadap',
+    'Ibrahim Hyderi',
+    'Murad Memon',
+    'Shah Murad',
+  ],
+  Jacobabad: ['Garhi Khairo', 'Jacobabad', 'Thul'],
+  Kashmore: ['Kandhkot', 'Kashmore', 'Tangwani'],
+  Larkana: ['Bakrani', 'Dokri', 'Larkana', 'Ratodero'],
+  'Qambar Shahdadkot': [
+    'Mirokhan',
+    'Nasirabad',
+    'Qambar',
+    'Qubo Saeed Khan',
+    'Shahdadkot',
+    'Sijawal Junejo',
+    'Warah',
+  ],
+  Shikarpur: ['Garhi Yasin', 'Khanpur', 'Lakhi Ghulam Shah', 'Shikarpur'],
+  'Mirpur Khas': [
+    'Digri',
+    'Hussain Bux Mari',
+    'Jhuddo',
+    'Kot Ghulam Muhammad',
+    'Mirpur Khas',
+    'Shujabad',
+    'Sindhri',
+  ],
+  Tharparkar: [
+    'Chachro',
+    'Dahli',
+    'Diplo',
+    'Islamkot',
+    'Kaloi',
+    'Mithi',
+    'Nagarparkar',
+  ],
+  Umerkot: ['Kunri', 'Pithoro', 'Samaro', 'Umerkot'],
+  'Naushahro Firoze': [
+    'Bhiria',
+    'Kandiaro',
+    'Mehrabpur',
+    'Moro',
+    'Naushahro Firoze',
+  ],
+  Sanghar: [
+    'Jam Nawaz Ali',
+    'Khipro',
+    'Sanghar',
+    'Shahdadpur',
+    'Sinjhoro',
+    'Tando Adam',
+  ],
+  'Shaheed Benazirabad': ['Daur', 'Nawabshah', 'Qazi Ahmed', 'Sakrand'],
+  Ghotki: ['Daharki', 'Ghotki', 'Khangarh', 'Mirpur Mathelo', 'Ubauro'],
+  Khairpur: [
+    'Faiz Ganj',
+    'Gambat',
+    'Khairpur',
+    'Kingri',
+    'Kot Diji',
+    'Mirwah',
+    'Nara',
+    'Sobhodero',
+  ],
+  Sukkur: ['New Sukkur', 'Pano Aqil', 'Rohri', 'Salehpat', 'Sukkur City'],
+}
+
+const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say']
+const bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 
@@ -624,25 +767,453 @@ function RegisterPage() {
   }
 
   function renderCurrentStep() {
+    if (currentStep === 0) {
+      return (
+        <FormSection
+          title={currentStepData.title}
+          description={currentStepData.description}
+        >
+          <div className="reg-grid">
+            <Field
+              name="fullName"
+              label="Full Name"
+              required
+              error={fieldErrors.fullName}
+            >
+              <input
+                id="fullName"
+                value={form.fullName}
+                onChange={(event) => updateField('fullName', event.target.value)}
+                disabled={locked}
+                className="reg-input"
+                placeholder="Enter full name"
+                autoComplete="name"
+                aria-invalid={Boolean(fieldErrors.fullName)}
+                aria-describedby={getDescriptionIds('fullName')}
+              />
+            </Field>
+
+            <Field
+              name="fatherName"
+              label="Father's Name"
+              required
+              error={fieldErrors.fatherName}
+            >
+              <input
+                id="fatherName"
+                value={form.fatherName}
+                onChange={(event) => updateField('fatherName', event.target.value)}
+                disabled={locked}
+                className="reg-input"
+                placeholder="Enter father's name"
+                autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.fatherName)}
+                aria-describedby={getDescriptionIds('fatherName')}
+              />
+            </Field>
+
+            <Field
+              name="cnic"
+              label="CNIC"
+              required
+              hint="Format: 12345-1234567-1"
+              error={fieldErrors.cnic}
+            >
+              <input
+                id="cnic"
+                value={form.cnic}
+                onChange={(event) =>
+                  updateField('cnic', formatCnicInput(event.target.value))
+                }
+                disabled={locked}
+                className="reg-input"
+                placeholder="12345-1234567-1"
+                inputMode="numeric"
+                autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.cnic)}
+                aria-describedby={getDescriptionIds('cnic', true)}
+              />
+            </Field>
+
+            <Field
+              name="mobile"
+              label="Mobile Number"
+              required
+              hint="Example: 03001234567 or +923001234567"
+              error={fieldErrors.mobile}
+            >
+              <input
+                id="mobile"
+                value={form.mobile}
+                onChange={(event) =>
+                  updateField('mobile', formatMobileInput(event.target.value))
+                }
+                disabled={locked}
+                className="reg-input"
+                placeholder="03001234567"
+                inputMode="tel"
+                autoComplete="tel"
+                aria-invalid={Boolean(fieldErrors.mobile)}
+                aria-describedby={getDescriptionIds('mobile', true)}
+              />
+            </Field>
+          </div>
+        </FormSection>
+      )
+    }
+
+    if (currentStep === 1) {
+      return (
+        <FormSection
+          title={currentStepData.title}
+          description={currentStepData.description}
+        >
+          <div className="reg-grid">
+            <Field
+              name="district"
+              label="District"
+              required
+              error={fieldErrors.district}
+            >
+              <select
+                id="district"
+                value={form.district}
+                onChange={(event) => handleDistrictChange(event.target.value)}
+                disabled={locked}
+                className="reg-input reg-select"
+                aria-invalid={Boolean(fieldErrors.district)}
+                aria-describedby={getDescriptionIds('district')}
+              >
+                <option value="">Select district</option>
+                {sindhDistricts.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              name="taluka"
+              label="Taluka / Town / Sub-division"
+              required
+              error={fieldErrors.taluka}
+            >
+              <select
+                id="taluka"
+                value={form.taluka}
+                onChange={(event) => updateField('taluka', event.target.value)}
+                disabled={locked || !form.district}
+                className="reg-input reg-select"
+                aria-invalid={Boolean(fieldErrors.taluka)}
+                aria-describedby={getDescriptionIds('taluka')}
+              >
+                <option value="">
+                  {form.district ? 'Select taluka' : 'Select district first'}
+                </option>
+                {talukaOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              name="address"
+              label="Complete Residential Address"
+              required
+              error={fieldErrors.address}
+              className="span-2"
+            >
+              <textarea
+                id="address"
+                value={form.address}
+                onChange={(event) => updateField('address', event.target.value)}
+                disabled={locked}
+                className="reg-input reg-textarea"
+                placeholder="House no., street, area, taluka, district"
+                autoComplete="street-address"
+                aria-invalid={Boolean(fieldErrors.address)}
+                aria-describedby={getDescriptionIds('address')}
+              />
+            </Field>
+          </div>
+        </FormSection>
+      )
+    }
+
+    if (currentStep === 2) {
+      return (
+        <FormSection
+          title={currentStepData.title}
+          description={currentStepData.description}
+        >
+          <div className="reg-grid">
+            <Field name="profession" label="Profession">
+              <input
+                id="profession"
+                value={form.profession}
+                onChange={(event) => updateField('profession', event.target.value)}
+                disabled={locked}
+                className="reg-input"
+                placeholder="e.g. Teacher, Farmer, Business"
+                autoComplete="organization-title"
+              />
+            </Field>
+
+            <Field name="casteBranch" label="Caste Branch">
+              <input
+                id="casteBranch"
+                value={form.casteBranch}
+                onChange={(event) => updateField('casteBranch', event.target.value)}
+                disabled={locked}
+                className="reg-input"
+                placeholder="Optional"
+                autoComplete="off"
+              />
+            </Field>
+
+            <Field
+              name="dateOfBirth"
+              label="Date of Birth"
+              error={fieldErrors.dateOfBirth}
+            >
+              <input
+                id="dateOfBirth"
+                type="date"
+                value={form.dateOfBirth}
+                onChange={(event) => updateField('dateOfBirth', event.target.value)}
+                disabled={locked}
+                className="reg-input"
+                max={todayDate()}
+                aria-invalid={Boolean(fieldErrors.dateOfBirth)}
+                aria-describedby={getDescriptionIds('dateOfBirth')}
+              />
+            </Field>
+
+            <Field name="gender" label="Gender">
+              <select
+                id="gender"
+                value={form.gender}
+                onChange={(event) => updateField('gender', event.target.value)}
+                disabled={locked}
+                className="reg-input reg-select"
+              >
+                <option value="">— Optional —</option>
+                {genderOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field name="education" label="Education / Qualification">
+              <input
+                id="education"
+                value={form.education}
+                onChange={(event) => updateField('education', event.target.value)}
+                disabled={locked}
+                className="reg-input"
+                placeholder="e.g. Matric, BA, MBA"
+                autoComplete="off"
+              />
+            </Field>
+
+            <Field name="bloodGroup" label="Blood Group">
+              <select
+                id="bloodGroup"
+                value={form.bloodGroup}
+                onChange={(event) => updateField('bloodGroup', event.target.value)}
+                disabled={locked}
+                className="reg-input reg-select"
+              >
+                <option value="">— Optional —</option>
+                {bloodGroupOptions.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          </div>
+        </FormSection>
+      )
+    }
+
+    if (currentStep === 3) {
+      return (
+        <FormSection
+          title={currentStepData.title}
+          description={currentStepData.description}
+        >
+          <div className="reg-grid">
+            <Field name="emergencyContactName" label="Contact Name">
+              <input
+                id="emergencyContactName"
+                value={form.emergencyContactName}
+                onChange={(event) =>
+                  updateField('emergencyContactName', event.target.value)
+                }
+                disabled={locked}
+                className="reg-input"
+                placeholder="Full name"
+                autoComplete="off"
+              />
+            </Field>
+
+            <Field name="emergencyContactRelation" label="Relation">
+              <input
+                id="emergencyContactRelation"
+                value={form.emergencyContactRelation}
+                onChange={(event) =>
+                  updateField('emergencyContactRelation', event.target.value)
+                }
+                disabled={locked}
+                className="reg-input"
+                placeholder="e.g. Brother, Father"
+                autoComplete="off"
+              />
+            </Field>
+
+            <Field
+              name="emergencyContactMobile"
+              label="Contact Mobile"
+              hint="Optional, e.g. 03001234567"
+              error={fieldErrors.emergencyContactMobile}
+            >
+              <input
+                id="emergencyContactMobile"
+                value={form.emergencyContactMobile}
+                onChange={(event) =>
+                  updateField(
+                    'emergencyContactMobile',
+                    formatMobileInput(event.target.value),
+                  )
+                }
+                disabled={locked}
+                className="reg-input"
+                placeholder="03001234567"
+                inputMode="tel"
+                autoComplete="tel"
+                aria-invalid={Boolean(fieldErrors.emergencyContactMobile)}
+                aria-describedby={getDescriptionIds('emergencyContactMobile', true)}
+              />
+            </Field>
+          </div>
+        </FormSection>
+      )
+    }
+
     return (
-      <RegistrationStepFields
-        currentStep={currentStep}
+      <FormSection
         title={currentStepData.title}
         description={currentStepData.description}
-        form={form}
-        fieldErrors={fieldErrors}
-        locked={locked}
-        photo={photo}
-        photoSrc={photoSrc}
-        talukaOptions={talukaOptions}
-        updateField={updateField}
-        handleDistrictChange={handleDistrictChange}
-        handlePhotoChange={handlePhotoChange}
-        getDescriptionIds={getDescriptionIds}
-      />
+      >
+        <div className="reg-photo-row">
+          <div className="reg-photo-preview">
+            {photoSrc ? (
+              <img
+                src={photoSrc}
+                alt="Selected member photo preview"
+                className="reg-photo-img"
+              />
+            ) : (
+              <div className="reg-photo-placeholder" aria-hidden="true">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                </svg>
+                <span>No photo</span>
+              </div>
+            )}
+          </div>
+
+          <div className="reg-photo-upload">
+            <label
+              className={`reg-upload-btn ${
+                locked ? 'is-disabled' : 'cursor-pointer'
+              }`}
+              htmlFor="photo"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {photo ? photo.name : 'Choose photo'}
+            </label>
+
+            <input
+              id="photo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={handlePhotoChange}
+              disabled={locked}
+              className="reg-sr-only"
+              aria-invalid={Boolean(fieldErrors.photo)}
+              aria-describedby={getDescriptionIds('photo', true)}
+            />
+
+            <p id="photo-hint" className="reg-upload-hint">
+              PNG, JPG or WebP · Passport style · Clear face visible · Max 2MB
+            </p>
+
+            {fieldErrors.photo ? (
+              <p id="photo-error" className="reg-error-text">
+                {fieldErrors.photo}
+              </p>
+            ) : null}
+          </div>
+        </div>
+
+        <label
+          className={`reg-declaration ${
+            form.declarationAccepted ? 'reg-declaration--checked' : ''
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={form.declarationAccepted}
+            onChange={(event) =>
+              updateField('declarationAccepted', event.target.checked)
+            }
+            disabled={locked}
+            className="reg-checkbox"
+            aria-invalid={Boolean(fieldErrors.declarationAccepted)}
+            aria-describedby={getDescriptionIds('declarationAccepted')}
+          />
+          <span>
+            I confirm that the provided information is true and authorize{' '}
+            <strong>Jatt Alliance Sindh</strong> to review it for membership
+            approval and digital card issuance.
+          </span>
+        </label>
+
+        {fieldErrors.declarationAccepted ? (
+          <p id="declarationAccepted-error" className="reg-error-text">
+            {fieldErrors.declarationAccepted}
+          </p>
+        ) : null}
+      </FormSection>
     )
   }
-
 
   if (loading) {
     return (
@@ -846,6 +1417,75 @@ function RegisterPage() {
         </div>
       </main>
     </>
+  )
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <section className="reg-section">
+      <div className="reg-section-header">
+        <div>
+          <h2 className="reg-section-title">{title}</h2>
+          <p className="reg-section-desc">{description}</p>
+        </div>
+      </div>
+
+      <div className="reg-section-body">{children}</div>
+    </section>
+  )
+}
+
+function Field({
+  name,
+  label,
+  children,
+  required,
+  hint,
+  error,
+  className = '',
+}: {
+  name: FormField
+  label: string
+  children: ReactNode
+  required?: boolean
+  hint?: string
+  error?: string
+  className?: string
+}) {
+  return (
+    <div className={`reg-field ${className}`}>
+      <label htmlFor={name} className="reg-label">
+        {label}
+        {required ? (
+          <span className="reg-required" aria-hidden="true">
+            {' '}
+            *
+          </span>
+        ) : null}
+      </label>
+
+      {hint ? (
+        <span id={`${name}-hint`} className="reg-hint">
+          {hint}
+        </span>
+      ) : null}
+
+      {children}
+
+      {error ? (
+        <p id={`${name}-error`} className="reg-error-text">
+          {error}
+        </p>
+      ) : null}
+    </div>
   )
 }
 
@@ -1538,7 +2178,30 @@ const styles = `
     }
 
     .reg-step-tabs {
-      grid-template-columns: repeat(2, 1fr);
+      display: flex;
+      grid-template-columns: none;
+      gap: 0.65rem;
+      margin-inline: -1.25rem;
+      padding: 0 1.25rem 0.35rem;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .reg-step-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .reg-step-tab {
+      min-width: 8.75rem;
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+      padding-inline: 0.85rem;
+    }
+
+    .reg-input {
+      min-height: 3rem;
+      font-size: 16px;
     }
 
     .reg-section-body {
@@ -1555,6 +2218,13 @@ const styles = `
 
     .reg-photo-row {
       flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+    }
+
+    .reg-photo-preview {
+      width: 92px;
+      height: 112px;
     }
 
     .reg-photo-upload,

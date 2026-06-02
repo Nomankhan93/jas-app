@@ -1,5 +1,7 @@
 // src/routes/admin/members/$id/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { toPng } from 'html-to-image'
+import QRCode from 'qrcode'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
@@ -26,8 +28,6 @@ import {
   type MembershipCardMember,
 } from '../../../../components/MembershipCard'
 import { supabase } from '../../../../lib/supabase/client'
-import { downloadDataUrl, elementToPngDataUrl } from '../../../../lib/shared/card-export'
-import { generateQrDataUrl } from '../../../../lib/shared/qrcode'
 
 export const Route = createFileRoute('/admin/members/$id/card')({
   component: AdminMemberCardPage,
@@ -130,7 +130,7 @@ function AdminMemberCardPage() {
           data.member_no,
         )}`
 
-        const generatedQr = await generateQrDataUrl(publicVerifyUrl, {
+        const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
           width: 320,
           margin: 1,
           errorCorrectionLevel: 'H',
@@ -178,15 +178,8 @@ function AdminMemberCardPage() {
   useEffect(() => {
     const updateScale = () => {
       const stageWidth = visibleStageRef.current?.clientWidth || CARD_WIDTH
-      const viewportWidth =
-        typeof window !== 'undefined' ? window.innerWidth : stageWidth
-
-      const minReadableScale = viewportWidth < 420 ? 0.38 : viewportWidth < 640 ? 0.44 : 0.58
-
-      const nextScale = Math.min(
-        1,
-        Math.max(minReadableScale, stageWidth / CARD_WIDTH),
-      )
+      const availableWidth = Math.max(220, stageWidth)
+      const nextScale = Math.min(1, Math.max(0.22, availableWidth / CARD_WIDTH))
 
       setCardScale(Number(nextScale.toFixed(4)))
     }
@@ -222,7 +215,7 @@ function AdminMemberCardPage() {
       throw new Error(`Unable to prepare ${side} side for download.`)
     }
 
-    const dataUrl = await elementToPngDataUrl(targetRef.current, {
+    const dataUrl = await toPng(targetRef.current, {
       cacheBust: true,
       pixelRatio: 2,
       backgroundColor: '#ffffff',
@@ -237,7 +230,10 @@ function AdminMemberCardPage() {
       },
     })
 
-    downloadDataUrl(dataUrl, `${member.member_no}-JAS-card-${side}.png`)
+    const link = document.createElement('a')
+    link.download = `${member.member_no}-JAS-card-${side}.png`
+    link.href = dataUrl
+    link.click()
   }
 
   async function handleDownload(side: CardSide) {
@@ -409,10 +405,10 @@ function AdminMemberCardPage() {
             <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
               <div className="rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
                 <p className="mb-3 text-center text-xs font-semibold text-slate-500 sm:hidden">
-                  Swipe sideways to preview the full card.
+                  Card preview auto-fits your screen. Use the buttons to switch sides.
                 </p>
 
-                <div ref={visibleStageRef} className="w-full overflow-x-auto pb-2">
+                <div ref={visibleStageRef} className="w-full overflow-hidden pb-2">
                   <ScaledCardShell scale={cardScale}>
                     <MembershipCard
                       side={selectedSide}

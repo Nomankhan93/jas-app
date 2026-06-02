@@ -10,6 +10,7 @@ import {
   BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
+  CreditCard,
   Eye,
   EyeOff,
   FileHeart,
@@ -24,8 +25,9 @@ import {
   Users,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
-import { formatDonationMoney } from '../lib/donations'
+import { formatDonationMoney, getDonationPurposeLabel } from '../lib/donations'
 import {
+  getNotificationTone,
   getProgramApplyPath,
   getProgramLabel,
   getProgramPath,
@@ -35,11 +37,6 @@ import {
   type UserNotification,
 } from '../lib/notifications'
 import { supabase } from '../lib/supabase/client'
-import {
-  DonationPanel,
-  NotificationsPreview,
-  QuickActions,
-} from '../components/dashboard/DashboardSidebarPanels'
 import {
   formatDisplayDate as formatDate,
   maskCnic,
@@ -327,7 +324,7 @@ function DashboardPage() {
                   ek hi dashboard par track karen.
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="mt-5 flex min-w-0 flex-wrap gap-2">
                   <InfoChip icon={<IdCard className="h-4 w-4" />}>
                     {member.member_no || 'Member ID pending'}
                   </InfoChip>
@@ -512,9 +509,9 @@ function LayoutIcon() {
 
 function InfoChip({ children, icon }: { children: ReactNode; icon: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85">
       {icon}
-      {children}
+      <span className="min-w-0 truncate">{children}</span>
     </span>
   )
 }
@@ -633,6 +630,147 @@ function ProgramSummaryCard({
         </div>
       )}
     </article>
+  )
+}
+
+function QuickActions({ member }: { member: Member }) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+        Quick Actions
+      </p>
+      <h2 className="mt-2 text-xl font-black text-slate-950">Next steps</h2>
+      <div className="mt-5 grid gap-3">
+        {member.status === 'approved' ? (
+          <>
+            <Link to="/card" className="primary-btn w-full">
+              <CreditCard className="h-4 w-4" />
+              Open Digital Card
+            </Link>
+
+            <Link
+              to="/designation-card"
+              className="inline-flex min-h-[2.75rem] w-full items-center justify-center gap-2 rounded-[var(--r-lg)] bg-slate-950 px-5 py-3 text-sm font-black !text-white no-underline shadow-sm transition hover:bg-emerald-950 hover:!text-white"
+              style={{ color: '#ffffff' }}
+            >
+              <BadgeCheck className="h-4 w-4" />
+              Office Bearer Card
+            </Link>
+          </>
+        ) : (
+          <Link to="/register" className="primary-btn w-full">
+            <IdCard className="h-4 w-4" />
+            Open Membership Form
+          </Link>
+        )}
+        <Link to="/donate" className="secondary-btn w-full">
+          <BadgeIndianRupee className="h-4 w-4" />
+          Submit Donation
+        </Link>
+        <Link to="/donors" className="secondary-btn w-full">
+          <Trophy className="h-4 w-4" />
+          View Donors
+        </Link>
+      </div>
+    </section>
+  )
+}
+
+function DonationPanel({
+  totalDonated,
+  donationCount,
+  donorRank,
+  latestDonation,
+}: {
+  totalDonated: number
+  donationCount: number
+  donorRank: number | null
+  latestDonation?: FinanceDonation
+}) {
+  return (
+    <section className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+        My Donations
+      </p>
+      <p className="mt-2 text-3xl font-black text-slate-950">
+        {formatDonationMoney(totalDonated)}
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl bg-white p-3 shadow-sm">
+          <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-400">
+            Approved
+          </p>
+          <p className="mt-1 text-xl font-black text-slate-950">
+            {donationCount}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-white p-3 shadow-sm">
+          <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-400">
+            Rank
+          </p>
+          <p className="mt-1 text-xl font-black text-slate-950">
+            {donorRank ? `#${donorRank}` : '-'}
+          </p>
+        </div>
+      </div>
+      {latestDonation ? (
+        <p className="mt-4 text-sm font-semibold leading-6 text-slate-600">
+          Latest: {latestDonation.donation_no || 'Donation'} ·{' '}
+          {getDonationPurposeLabel(latestDonation.purpose)} ·{' '}
+          {getProgramStatusLabel(latestDonation.status)}
+        </p>
+      ) : (
+        <p className="mt-4 text-sm font-semibold leading-6 text-slate-600">
+          Approved donation ke baad leaderboard rank yahan show hoga.
+        </p>
+      )}
+    </section>
+  )
+}
+
+function NotificationsPreview({
+  notifications,
+}: {
+  notifications: UserNotification[]
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+            Recent Updates
+          </p>
+          <h2 className="mt-2 text-xl font-black text-slate-950">
+            Notifications
+          </h2>
+        </div>
+        <Link to="/notifications" className="text-sm font-black text-emerald-800">
+          View all
+        </Link>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {notifications.slice(0, 4).map((item) => (
+          <article
+            key={item.id}
+            className={`rounded-2xl border p-3 ${getNotificationTone(
+              item.category,
+            )}`}
+          >
+            <p className="text-sm font-black">{item.title}</p>
+            <p className="mt-1 text-xs font-semibold leading-5 opacity-80">
+              {item.message}
+            </p>
+          </article>
+        ))}
+        {!notifications.length ? (
+          <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+            Abhi koi notification nahi hai. Status change hone par updates yahan
+            show honge.
+          </p>
+        ) : null}
+      </div>
+    </section>
   )
 }
 

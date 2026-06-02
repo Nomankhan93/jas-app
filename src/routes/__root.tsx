@@ -496,7 +496,7 @@ function Header({ compact }: { compact: boolean }) {
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-4 lg:gap-5 md:flex" aria-label="Main navigation">
+        <nav className="hidden items-center gap-4 lg:flex lg:gap-5" aria-label="Main navigation">
           <NavLink to="/" label="Home" active={isActive('/')} delayClass="delay-1" />
 
           <div className="relative">
@@ -562,7 +562,7 @@ function Header({ compact }: { compact: boolean }) {
           </div>
         </nav>
 
-        <div className="ml-auto hidden items-center gap-3 md:flex">
+        <div className="ml-auto hidden items-center gap-3 lg:flex">
           {authLoading ? (
             <div className="h-11 w-28 animate-pulse rounded-[var(--r-lg)] bg-white/25" />
           ) : isLoggedIn ? (
@@ -611,7 +611,7 @@ function Header({ compact }: { compact: boolean }) {
 
         <button
           type="button"
-          className="site-mobile-menu-button animate-fade-up pressable md:hidden"
+          className="site-mobile-menu-button animate-fade-up pressable lg:hidden"
           onClick={() => {
             setOpenMenu(null)
             setMobileOpen((open) => !open)
@@ -625,7 +625,7 @@ function Header({ compact }: { compact: boolean }) {
       </div>
 
       {mobileOpen ? (
-        <div id="mobile-navigation" className="mobile-navigation-panel border-t border-[var(--line)] bg-[#fbf8f2] px-3 pt-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] md:hidden">
+        <div id="mobile-navigation" className="mobile-navigation-panel border-t border-[var(--line)] bg-[#fbf8f2] px-3 pt-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] lg:hidden">
           <div className="mobile-navigation-card soft-panel animate-slide-down page-wrap max-w-7xl rounded-[1.5rem] bg-white/90 p-2 backdrop-blur">
             <nav className="grid gap-1" aria-label="Mobile navigation">
               <MobileNavLink to="/" label="Home" icon={<Home size={16} />} active={isActive('/')} delayClass="delay-1" />
