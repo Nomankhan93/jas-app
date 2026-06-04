@@ -18,12 +18,211 @@ import {
   XCircle,
 } from 'lucide-react'
 import { verifyMemberAction } from '../../lib/verify/actions'
+import { useI18n, type AppLanguage } from '../../lib/i18n'
 
 export const Route = createFileRoute('/verify/$memberNo')({
   component: VerifyMemberPage,
 })
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
+
+
+
+type VerifyPageText = {
+  loading: string
+  title: string
+  description: string
+  refresh: string
+  copyLink: string
+  searchedMemberNo: string
+  recordStatus: string
+  verificationResult: string
+  verified: string
+  notFound: string
+  approvedMember: string
+  noRecord: string
+  notApproved: string
+  notFoundTitle: string
+  notFoundMessage: string
+  verifiedTitle: string
+  verifiedMessage: string
+  verifiedName: string
+  memberNo: string
+  status: string
+  district: string
+  taluka: string
+  approvedAt: string
+  verifiedBy: string
+  approvedVerified: string
+  notProvided: string
+  copyMemberNo: string
+  goHome: string
+  notVerifiedTitle: string
+  notVerifiedMessage: string
+  currentStatus: string
+  failedTitle: string
+  failedMessage: string
+  guidanceTitle: string
+  guidanceMessage: string
+  jasHome: string
+  successCopyLink: string
+  successCopyMemberNo: string
+  errorCopyLink: string
+  errorCopyMemberNo: string
+  errorLoad: string
+  statusApproved: string
+  statusPending: string
+  statusRejected: string
+  statusUnknown: string
+  notAvailable: string
+}
+
+const verifyPageText: Record<AppLanguage, VerifyPageText> = {
+  en: {
+    loading: 'Verifying membership...',
+    title: 'Membership Verification',
+    description: 'Public QR verification page for JAS digital membership cards. Always confirm that the status below is approved and verified.',
+    refresh: 'Refresh Status',
+    copyLink: 'Copy Link',
+    searchedMemberNo: 'Searched Member No',
+    recordStatus: 'Record Status',
+    verificationResult: 'Verification Result',
+    verified: 'Verified',
+    notFound: 'Not found',
+    approvedMember: 'Approved member',
+    noRecord: 'No record',
+    notApproved: 'Not approved',
+    notFoundTitle: 'Member Not Found',
+    notFoundMessage: 'No JAS member record was found for this membership number. Please check the number printed on the card or scan the QR code again.',
+    verifiedTitle: 'Verified Member',
+    verifiedMessage: 'This membership is active and verified by Jatt Alliance Sindh.',
+    verifiedName: 'Verified Name',
+    memberNo: 'Member No',
+    status: 'Status',
+    district: 'District',
+    taluka: 'Taluka',
+    approvedAt: 'Approved At',
+    verifiedBy: 'Verified By',
+    approvedVerified: 'Approved / Verified',
+    notProvided: 'Not provided',
+    copyMemberNo: 'Copy Member No',
+    goHome: 'Go to JAS Home',
+    notVerifiedTitle: 'Not a Verified Member',
+    notVerifiedMessage: 'This record exists, but the membership is not currently approved. Do not accept this card as active membership proof.',
+    currentStatus: 'Current Status',
+    failedTitle: 'Verification Failed',
+    failedMessage: 'The membership record could not be verified at this time.',
+    guidanceTitle: 'Verification guidance',
+    guidanceMessage: 'A valid JAS card must show an approved status on this page. If the page says not found, pending, or rejected, the card should not be treated as verified.',
+    jasHome: 'JAS Home',
+    successCopyLink: 'Verification link copied.',
+    successCopyMemberNo: 'Member number copied.',
+    errorCopyLink: 'Could not copy verification link.',
+    errorCopyMemberNo: 'Could not copy member number.',
+    errorLoad: 'Failed to verify membership.',
+    statusApproved: 'Approved',
+    statusPending: 'Pending',
+    statusRejected: 'Rejected',
+    statusUnknown: 'Unknown',
+    notAvailable: 'N/A',
+  },
+  ur: {
+    loading: 'ممبرشپ تصدیق ہو رہی ہے...',
+    title: 'ممبرشپ تصدیق',
+    description: 'JAS ڈیجیٹل ممبرشپ کارڈز کے لیے عوامی QR تصدیقی صفحہ۔ ہمیشہ نیچے منظور شدہ اور تصدیق شدہ اسٹیٹس چیک کریں۔',
+    refresh: 'اسٹیٹس تازہ کریں',
+    copyLink: 'لنک کاپی کریں',
+    searchedMemberNo: 'تلاش کیا گیا ممبر نمبر',
+    recordStatus: 'ریکارڈ اسٹیٹس',
+    verificationResult: 'تصدیقی نتیجہ',
+    verified: 'تصدیق شدہ',
+    notFound: 'نہیں ملا',
+    approvedMember: 'منظور شدہ ممبر',
+    noRecord: 'کوئی ریکارڈ نہیں',
+    notApproved: 'منظور نہیں',
+    notFoundTitle: 'ممبر نہیں ملا',
+    notFoundMessage: 'اس ممبرشپ نمبر کے لیے کوئی JAS ممبر ریکارڈ نہیں ملا۔ کارڈ پر موجود نمبر چیک کریں یا QR کوڈ دوبارہ اسکین کریں۔',
+    verifiedTitle: 'تصدیق شدہ ممبر',
+    verifiedMessage: 'یہ ممبرشپ فعال ہے اور جٹ الائنس سندھ کی طرف سے تصدیق شدہ ہے۔',
+    verifiedName: 'تصدیق شدہ نام',
+    memberNo: 'ممبر نمبر',
+    status: 'اسٹیٹس',
+    district: 'ضلع',
+    taluka: 'تعلقہ',
+    approvedAt: 'منظوری کی تاریخ',
+    verifiedBy: 'تصدیق کنندہ',
+    approvedVerified: 'منظور شدہ / تصدیق شدہ',
+    notProvided: 'فراہم نہیں کیا گیا',
+    copyMemberNo: 'ممبر نمبر کاپی کریں',
+    goHome: 'JAS ہوم پر جائیں',
+    notVerifiedTitle: 'تصدیق شدہ ممبر نہیں',
+    notVerifiedMessage: 'یہ ریکارڈ موجود ہے، لیکن ممبرشپ فی الحال منظور شدہ نہیں۔ اس کارڈ کو فعال ممبرشپ ثبوت نہ سمجھیں۔',
+    currentStatus: 'موجودہ اسٹیٹس',
+    failedTitle: 'تصدیق ناکام',
+    failedMessage: 'اس وقت ممبرشپ ریکارڈ کی تصدیق نہیں ہو سکی۔',
+    guidanceTitle: 'تصدیقی رہنمائی',
+    guidanceMessage: 'درست JAS کارڈ پر اس صفحہ میں منظور شدہ اسٹیٹس لازمی نظر آنا چاہیے۔ اگر صفحہ not found، pending یا rejected دکھائے تو کارڈ کو تصدیق شدہ نہ سمجھیں۔',
+    jasHome: 'JAS ہوم',
+    successCopyLink: 'تصدیقی لنک کاپی ہو گیا۔',
+    successCopyMemberNo: 'ممبر نمبر کاپی ہو گیا۔',
+    errorCopyLink: 'تصدیقی لنک کاپی نہیں ہو سکا۔',
+    errorCopyMemberNo: 'ممبر نمبر کاپی نہیں ہو سکا۔',
+    errorLoad: 'ممبرشپ تصدیق نہیں ہو سکی۔',
+    statusApproved: 'منظور شدہ',
+    statusPending: 'زیرِ جائزہ',
+    statusRejected: 'رد شدہ',
+    statusUnknown: 'نامعلوم',
+    notAvailable: 'دستیاب نہیں',
+  },
+  sd: {
+    loading: 'ميمبرشپ تصديق ٿي رهي آهي...',
+    title: 'ميمبرشپ تصديق',
+    description: 'JAS ڊجيٽل ميمبرشپ ڪارڊن لاءِ عوامي QR تصديقي صفحو. هميشه هيٺ منظور ٿيل ۽ تصديق ٿيل اسٽيٽس چيڪ ڪريو.',
+    refresh: 'اسٽيٽس تازو ڪريو',
+    copyLink: 'لنڪ ڪاپي ڪريو',
+    searchedMemberNo: 'تلاش ڪيل ميمبر نمبر',
+    recordStatus: 'ريڪارڊ اسٽيٽس',
+    verificationResult: 'تصديقي نتيجو',
+    verified: 'تصديق ٿيل',
+    notFound: 'نه مليو',
+    approvedMember: 'منظور ٿيل ميمبر',
+    noRecord: 'ڪو ريڪارڊ ناهي',
+    notApproved: 'منظور ناهي',
+    notFoundTitle: 'ميمبر نه مليو',
+    notFoundMessage: 'هن ميمبرشپ نمبر لاءِ ڪو JAS ميمبر ريڪارڊ نه مليو. ڪارڊ تي ڇپيل نمبر چيڪ ڪريو يا QR ڪوڊ ٻيهر اسڪين ڪريو.',
+    verifiedTitle: 'تصديق ٿيل ميمبر',
+    verifiedMessage: 'هي ميمبرشپ فعال آهي ۽ جٽ الائنس سنڌ طرفان تصديق ٿيل آهي.',
+    verifiedName: 'تصديق ٿيل نالو',
+    memberNo: 'ميمبر نمبر',
+    status: 'اسٽيٽس',
+    district: 'ضلعو',
+    taluka: 'تعلقو',
+    approvedAt: 'منظوري تاريخ',
+    verifiedBy: 'تصديق ڪندڙ',
+    approvedVerified: 'منظور ٿيل / تصديق ٿيل',
+    notProvided: 'فراهم ناهي ڪيو ويو',
+    copyMemberNo: 'ميمبر نمبر ڪاپي ڪريو',
+    goHome: 'JAS هوم ڏانهن وڃو',
+    notVerifiedTitle: 'تصديق ٿيل ميمبر ناهي',
+    notVerifiedMessage: 'هي ريڪارڊ موجود آهي، پر ميمبرشپ هن وقت منظور ٿيل ناهي. هن ڪارڊ کي فعال ميمبرشپ ثبوت طور قبول نه ڪريو.',
+    currentStatus: 'موجوده اسٽيٽس',
+    failedTitle: 'تصديق ناڪام',
+    failedMessage: 'هن وقت ميمبرشپ ريڪارڊ جي تصديق نه ٿي سگهي.',
+    guidanceTitle: 'تصديقي رهنمائي',
+    guidanceMessage: 'صحيح JAS ڪارڊ تي هن صفحي ۾ منظور ٿيل اسٽيٽس لازمي ظاهر ٿيڻ گهرجي. جيڪڏهن صفحو not found، pending يا rejected ڏيکاري ته ڪارڊ کي تصديق ٿيل نه سمجھو.',
+    jasHome: 'JAS هوم',
+    successCopyLink: 'تصديقي لنڪ ڪاپي ٿي وئي.',
+    successCopyMemberNo: 'ميمبر نمبر ڪاپي ٿي ويو.',
+    errorCopyLink: 'تصديقي لنڪ ڪاپي نه ٿي سگهي.',
+    errorCopyMemberNo: 'ميمبر نمبر ڪاپي نه ٿي سگهيو.',
+    errorLoad: 'ميمبرشپ تصديق نه ٿي سگهي.',
+    statusApproved: 'منظور ٿيل',
+    statusPending: 'زيرِ جائزو',
+    statusRejected: 'رد ٿيل',
+    statusUnknown: 'نامعلوم',
+    notAvailable: 'دستياب ناهي',
+  },
+}
 
 type VerifyResult = {
   found: boolean
@@ -42,6 +241,8 @@ type VerifyResult = {
 
 function VerifyMemberPage() {
   const { memberNo } = Route.useParams()
+  const { language } = useI18n()
+  const text = verifyPageText[language] ?? verifyPageText.en
 
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -79,7 +280,7 @@ function VerifyMemberPage() {
         if (!cancelledRef?.current) {
           setResult(null)
           setError(
-            err instanceof Error ? err.message : 'Failed to verify membership.',
+            err instanceof Error ? err.message : text.errorLoad,
           )
         }
       } finally {
@@ -89,7 +290,7 @@ function VerifyMemberPage() {
         }
       }
     },
-    [memberNo],
+    [memberNo, text.errorLoad],
   )
 
   useEffect(() => {
@@ -105,20 +306,20 @@ function VerifyMemberPage() {
   async function copyVerificationLink() {
     try {
       await navigator.clipboard.writeText(window.location.href)
-      setSuccess('Verification link copied.')
+      setSuccess(text.successCopyLink)
       setError('')
     } catch {
-      setError('Could not copy verification link.')
+      setError(text.errorCopyLink)
     }
   }
 
   async function copyMemberNo() {
     try {
       await navigator.clipboard.writeText(memberNo)
-      setSuccess('Member number copied.')
+      setSuccess(text.successCopyMemberNo)
       setError('')
     } catch {
-      setError('Could not copy member number.')
+      setError(text.errorCopyMemberNo)
     }
   }
 
@@ -128,7 +329,7 @@ function VerifyMemberPage() {
         <div className="page-wrap rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-            Verifying membership...
+            {text.loading}
           </div>
         </div>
       </main>
@@ -149,12 +350,11 @@ function VerifyMemberPage() {
             </p>
 
             <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-4xl">
-              Membership Verification
+              {text.title}
             </h1>
 
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Public QR verification page for JAS digital membership cards.
-              Always confirm that the status below is approved and verified.
+              {text.description}
             </p>
 
             <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
@@ -167,7 +367,7 @@ function VerifyMemberPage() {
                 <RefreshCw
                   className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
                 />
-                Refresh Status
+                {text.refresh}
               </button>
 
               <button
@@ -176,36 +376,36 @@ function VerifyMemberPage() {
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
               >
                 <Copy className="h-4 w-4" />
-                Copy Link
+                {text.copyLink}
               </button>
             </div>
           </div>
 
           <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
             <SummaryItem
-              label="Searched Member No"
+              label={text.searchedMemberNo}
               value={memberNo}
               icon={<IdCard className="h-4 w-4" />}
             />
             <SummaryItem
-              label="Record Status"
+              label={text.recordStatus}
               value={
                 verified
-                  ? 'Verified'
+                  ? text.verified
                   : notFound
-                    ? 'Not found'
-                    : getStatusLabel(result?.member?.status)
+                    ? text.notFound
+                    : getStatusLabel(result?.member?.status, text)
               }
               icon={<ShieldCheck className="h-4 w-4" />}
             />
             <SummaryItem
-              label="Verification Result"
+              label={text.verificationResult}
               value={
                 verified
-                  ? 'Approved member'
+                  ? text.approvedMember
                   : notFound
-                    ? 'No record'
-                    : 'Not approved'
+                    ? text.noRecord
+                    : text.notApproved
               }
               icon={<BadgeCheck className="h-4 w-4" />}
             />
@@ -228,11 +428,11 @@ function VerifyMemberPage() {
           <VerificationState
             tone="danger"
             icon={<XCircle className="h-10 w-10" />}
-            title="Member Not Found"
-            message="No JAS member record was found for this membership number. Please check the number printed on the card or scan the QR code again."
+            title={text.notFoundTitle}
+            message={text.notFoundMessage}
           >
             <div className="mx-auto mt-5 max-w-md rounded-2xl bg-slate-50 p-4 text-left ring-1 ring-slate-100">
-              <Info label="Searched Member No" value={memberNo} />
+              <Info label={text.searchedMemberNo} value={memberNo} />
             </div>
           </VerificationState>
         ) : verified && result?.member ? (
@@ -243,11 +443,11 @@ function VerifyMemberPage() {
               </div>
 
               <h2 className="mt-5 text-2xl font-black sm:text-4xl">
-                Verified Member
+                {text.verifiedTitle}
               </h2>
 
               <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-emerald-50">
-                This membership is active and verified by Jatt Alliance Sindh.
+                {text.verifiedMessage}
               </p>
             </div>
 
@@ -267,7 +467,7 @@ function VerifyMemberPage() {
 
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-                    Verified Name
+                    {text.verifiedName}
                   </p>
                   <h3 className="mt-2 text-2xl font-black text-slate-950 sm:text-3xl">
                     {result.member.full_name}
@@ -276,20 +476,20 @@ function VerifyMemberPage() {
 
                 <div className="grid w-full max-w-3xl gap-4 rounded-3xl bg-slate-50 p-5 text-left ring-1 ring-slate-100 md:grid-cols-2">
                   <Info
-                    label="Member No"
-                    value={result.member.member_no ?? 'N/A'}
+                    label={text.memberNo}
+                    value={result.member.member_no ?? text.notAvailable}
                   />
-                  <Info label="Status" value="Approved / Verified" />
-                  <Info label="District" value={result.member.district} />
+                  <Info label={text.status} value={text.approvedVerified} />
+                  <Info label={text.district} value={result.member.district} />
                   <Info
-                    label="Taluka"
-                    value={result.member.taluka || 'Not provided'}
+                    label={text.taluka}
+                    value={result.member.taluka || text.notProvided}
                   />
                   <Info
-                    label="Approved At"
+                    label={text.approvedAt}
                     value={formatDate(result.member.approved_at)}
                   />
-                  <Info label="Verified By" value="Jatt Alliance Sindh" />
+                  <Info label={text.verifiedBy} value="Jatt Alliance Sindh" />
                 </div>
 
                 <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2">
@@ -299,7 +499,7 @@ function VerifyMemberPage() {
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
                   >
                     <Copy className="h-4 w-4" />
-                    Copy Member No
+                    {text.copyMemberNo}
                   </button>
 
                   <Link
@@ -308,7 +508,7 @@ function VerifyMemberPage() {
                     style={{ color: '#ffffff' }}
                   >
                     <Home className="h-4 w-4" />
-                    Go to JAS Home
+                    {text.goHome}
                   </Link>
                 </div>
               </div>
@@ -318,14 +518,14 @@ function VerifyMemberPage() {
           <VerificationState
             tone="warning"
             icon={<ShieldAlert className="h-10 w-10" />}
-            title="Not a Verified Member"
-            message="This record exists, but the membership is not currently approved. Do not accept this card as active membership proof."
+            title={text.notVerifiedTitle}
+            message={text.notVerifiedMessage}
           >
             <div className="mx-auto mt-5 max-w-md rounded-2xl bg-slate-50 p-4 text-left ring-1 ring-slate-100">
-              <Info label="Member No" value={memberNo} />
+              <Info label={text.memberNo} value={memberNo} />
               <Info
-                label="Current Status"
-                value={getStatusLabel(result?.member?.status)}
+                label={text.currentStatus}
+                value={getStatusLabel(result?.member?.status, text)}
               />
             </div>
           </VerificationState>
@@ -333,8 +533,8 @@ function VerifyMemberPage() {
           <VerificationState
             tone="danger"
             icon={<XCircle className="h-10 w-10" />}
-            title="Verification Failed"
-            message="The membership record could not be verified at this time."
+            title={text.failedTitle}
+            message={text.failedMessage}
           />
         )}
 
@@ -346,12 +546,10 @@ function VerifyMemberPage() {
 
             <div>
               <h2 className="text-base font-black text-slate-950">
-                Verification guidance
+                {text.guidanceTitle}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-500">
-                A valid JAS card must show an approved status on this page. If
-                the page says not found, pending, or rejected, the card should
-                not be treated as verified.
+                {text.guidanceMessage}
               </p>
             </div>
 
@@ -360,7 +558,7 @@ function VerifyMemberPage() {
               className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 no-underline shadow-sm transition hover:bg-slate-50"
             >
               <Home className="h-4 w-4" />
-              JAS Home
+              {text.jasHome}
             </Link>
           </div>
         </section>
@@ -503,15 +701,15 @@ function formatDate(value: string | null) {
   })
 }
 
-function getStatusLabel(status: MemberStatus | undefined) {
+function getStatusLabel(status: MemberStatus | undefined, text: VerifyPageText) {
   switch (status) {
     case 'approved':
-      return 'Approved'
+      return text.statusApproved
     case 'pending':
-      return 'Pending'
+      return text.statusPending
     case 'rejected':
-      return 'Rejected'
+      return text.statusRejected
     default:
-      return 'Unknown'
+      return text.statusUnknown
   }
 }
