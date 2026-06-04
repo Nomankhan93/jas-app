@@ -583,6 +583,68 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_payments: {
+        Row: {
+          admin_note: string | null
+          base_amount: number
+          created_at: string
+          currency: string
+          gateway_provider: string | null
+          gateway_reference: string | null
+          id: string
+          member_id: string
+          paid_at: string | null
+          payment_method: Database["public"]["Enums"]["membership_payment_method"]
+          status: Database["public"]["Enums"]["membership_payment_status"]
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          base_amount?: number
+          created_at?: string
+          currency?: string
+          gateway_provider?: string | null
+          gateway_reference?: string | null
+          id?: string
+          member_id: string
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["membership_payment_method"]
+          status?: Database["public"]["Enums"]["membership_payment_status"]
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          base_amount?: number
+          created_at?: string
+          currency?: string
+          gateway_provider?: string | null
+          gateway_reference?: string | null
+          id?: string
+          member_id?: string
+          paid_at?: string | null
+          payment_method?: Database["public"]["Enums"]["membership_payment_method"]
+          status?: Database["public"]["Enums"]["membership_payment_status"]
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       news_posts: {
         Row: {
           category: string
@@ -1498,6 +1560,19 @@ export type Database = {
         | "guardian"
         | "other"
       member_status: "pending" | "approved" | "rejected"
+      membership_payment_method:
+        | "manual"
+        | "jazzcash"
+        | "easypaisa"
+        | "bank"
+        | "gateway"
+      membership_payment_status:
+        | "pending"
+        | "paid"
+        | "failed"
+        | "cancelled"
+        | "refunded"
+        | "waived"
       program_application_status:
         | "submitted"
         | "under_review"
@@ -1665,6 +1740,21 @@ export const Constants = {
         "other",
       ],
       member_status: ["pending", "approved", "rejected"],
+      membership_payment_method: [
+        "manual",
+        "jazzcash",
+        "easypaisa",
+        "bank",
+        "gateway",
+      ],
+      membership_payment_status: [
+        "pending",
+        "paid",
+        "failed",
+        "cancelled",
+        "refunded",
+        "waived",
+      ],
       program_application_status: [
         "submitted",
         "under_review",

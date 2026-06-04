@@ -3,6 +3,14 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import { supabase } from '../lib/supabase/client'
 import {
+  MEMBERSHIP_BASE_FEE,
+  MEMBERSHIP_PROCESSING_LABEL,
+  createPendingMembershipPaymentPayload,
+  formatMembershipMoney,
+  getMembershipFeeNotice,
+  getMembershipFeeSubtext,
+} from '../lib/membership-fee'
+import {
   formatCnicInput,
   formatMobileInput,
   isPakistaniMobile,
@@ -646,6 +654,8 @@ function RegisterPage() {
       photo_url: photoPath,
     }
 
+    let savedMemberId = existingMember?.id ?? ''
+
     if (existingMember) {
       const updatePayload =
         existingMember.status === 'rejected'
@@ -667,14 +677,35 @@ function RegisterPage() {
         return
       }
     } else {
-      const { error: insertError } = await supabase.from('members').insert({
-        user_id: userId,
-        ...payload,
-        status: 'pending',
-      })
+      const { data: insertedMember, error: insertError } = await supabase
+        .from('members')
+        .insert({
+          user_id: userId,
+          ...payload,
+          status: 'pending',
+        })
+        .select('id, user_id')
+        .single()
 
       if (insertError) {
         setError(insertError.message)
+        setSubmitting(false)
+        return
+      }
+
+      savedMemberId = insertedMember.id
+    }
+
+    if (savedMemberId) {
+      const { error: paymentError } = await supabase
+        .from('membership_payments')
+        .upsert(createPendingMembershipPaymentPayload(savedMemberId, userId), {
+          onConflict: 'member_id',
+          ignoreDuplicates: true,
+        })
+
+      if (paymentError) {
+        setError(paymentError.message)
         setSubmitting(false)
         return
       }
@@ -1183,6 +1214,13 @@ function RegisterPage() {
           </div>
         </div>
 
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          <p className="font-black">{getMembershipFeeNotice()}</p>
+          <p className="mt-1 text-amber-800">
+            {getMembershipFeeSubtext()} Payment gateway is not connected in this phase.
+          </p>
+        </div>
+
         <label
           className={`reg-declaration ${
             form.declarationAccepted ? 'reg-declaration--checked' : ''
@@ -1263,6 +1301,8 @@ function RegisterPage() {
               Complete your application step by step. Your details will be sent
               for admin review.
             </p>
+
+            <MembershipFeeSummary />
 
             <div className="reg-title-line" />
           </div>
@@ -1417,6 +1457,23 @@ function RegisterPage() {
         </div>
       </main>
     </>
+  )
+}
+
+
+function MembershipFeeSummary() {
+  return (
+    <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-left text-sm text-amber-950 shadow-sm">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
+        Membership Fee
+      </p>
+      <p className="mt-2 text-base font-black text-amber-950">
+        {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {MEMBERSHIP_PROCESSING_LABEL}
+      </p>
+      <p className="mt-1 leading-6 text-amber-800">
+        {getMembershipFeeSubtext()} A pending fee record will be created after application submission.
+      </p>
+    </div>
   )
 }
 
@@ -2178,30 +2235,7 @@ const styles = `
     }
 
     .reg-step-tabs {
-      display: flex;
-      grid-template-columns: none;
-      gap: 0.65rem;
-      margin-inline: -1.25rem;
-      padding: 0 1.25rem 0.35rem;
-      overflow-x: auto;
-      scroll-snap-type: x proximity;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    .reg-step-tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .reg-step-tab {
-      min-width: 8.75rem;
-      flex: 0 0 auto;
-      scroll-snap-align: start;
-      padding-inline: 0.85rem;
-    }
-
-    .reg-input {
-      min-height: 3rem;
-      font-size: 16px;
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .reg-section-body {
@@ -2218,13 +2252,6 @@ const styles = `
 
     .reg-photo-row {
       flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-    }
-
-    .reg-photo-preview {
-      width: 92px;
-      height: 112px;
     }
 
     .reg-photo-upload,

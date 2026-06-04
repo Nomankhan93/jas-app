@@ -27,6 +27,16 @@ import {
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatDonationMoney, getDonationPurposeLabel } from '../lib/donations'
 import {
+  MEMBERSHIP_BASE_FEE,
+  MEMBERSHIP_PAYMENT_COMING_SOON_TEXT,
+  type MembershipPayment,
+  formatMembershipMoney,
+  getMembershipFeeSubtext,
+  getMembershipPaymentDisplayStatus,
+  getMembershipPaymentStatusClass,
+  getMembershipPaymentStatusLabel,
+} from '../lib/membership-fee'
+import {
   getNotificationTone,
   getProgramApplyPath,
   getProgramLabel,
@@ -117,6 +127,7 @@ type DashboardData = {
   donations: FinanceDonation[]
   donorRank: number | null
   notifications: UserNotification[]
+  membershipPayment: MembershipPayment | null
 }
 
 const programOrder = ['education', 'health', 'welfare', 'employment']
@@ -134,6 +145,7 @@ function DashboardPage() {
     donations: [],
     donorRank: null,
     notifications: [],
+    membershipPayment: null,
   })
 
   useEffect(() => {
@@ -200,11 +212,12 @@ function DashboardPage() {
       return
     }
 
-    const [applications, donations, notifications, photoSignedUrl, donorRank] =
+    const [applications, donations, notifications, membershipPayment, photoSignedUrl, donorRank] =
       await Promise.all([
         loadProgramApplications(user.id),
         loadDonations(user.id),
         loadNotifications(user.id),
+        loadMembershipPayment(memberData?.id),
         loadMemberPhoto(memberData?.photo_url),
         loadDonorRank(memberData?.id),
       ])
@@ -216,6 +229,7 @@ function DashboardPage() {
       donations,
       donorRank,
       notifications,
+      membershipPayment,
     })
 
     setLoading(false)
@@ -223,6 +237,9 @@ function DashboardPage() {
   }
 
   const member = data.member
+  const membershipPaymentStatus = getMembershipPaymentDisplayStatus(
+    data.membershipPayment,
+  )
 
   const summaries = useMemo(() => {
     const byProgram = programOrder.map((programKey) => {
@@ -288,6 +305,12 @@ function DashboardPage() {
             Dashboard details tab show honge jab aap membership form submit kar
             denge. Pehle registration complete karen.
           </p>
+          <div className="mt-5 max-w-2xl rounded-2xl border border-amber-200 bg-white/70 p-4 text-sm leading-6 text-amber-900">
+            <p className="font-black">
+              Membership Application Fee: {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + applicable tax/processing charges.
+            </p>
+            <p className="mt-1 text-amber-800">{getMembershipFeeSubtext()}</p>
+          </div>
           <Link to="/register" className="primary-btn mt-6">
             Submit Membership Form
           </Link>
@@ -324,7 +347,7 @@ function DashboardPage() {
                   ek hi dashboard par track karen.
                 </p>
 
-                <div className="mt-5 flex min-w-0 flex-wrap gap-2">
+                <div className="mt-5 flex flex-wrap gap-2">
                   <InfoChip icon={<IdCard className="h-4 w-4" />}>
                     {member.member_no || 'Member ID pending'}
                   </InfoChip>
@@ -375,12 +398,18 @@ function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:p-6">
+          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5 lg:p-6">
             <OverviewCard
               label="Membership"
               value={getMemberStatusLabel(member.status)}
               icon={<ShieldCheck className="h-5 w-5" />}
               tone="emerald"
+            />
+            <OverviewCard
+              label="Fee Status"
+              value={getMembershipPaymentStatusLabel(membershipPaymentStatus)}
+              icon={<CreditCard className="h-5 w-5" />}
+              tone="amber"
             />
             <OverviewCard
               label="Programs Submitted"
@@ -489,6 +518,7 @@ function DashboardPage() {
 
           <aside className="space-y-5">
             <QuickActions member={member} />
+            <MembershipFeePanel payment={data.membershipPayment} />
             <DonationPanel
               totalDonated={summaries.totalDonated}
               donationCount={summaries.donationCount}
@@ -509,9 +539,9 @@ function LayoutIcon() {
 
 function InfoChip({ children, icon }: { children: ReactNode; icon: ReactNode }) {
   return (
-    <span className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85">
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-bold text-white/85">
       {icon}
-      <span className="min-w-0 truncate">{children}</span>
+      {children}
     </span>
   )
 }
@@ -630,6 +660,52 @@ function ProgramSummaryCard({
         </div>
       )}
     </article>
+  )
+}
+
+
+function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) {
+  const status = getMembershipPaymentDisplayStatus(payment)
+
+  return (
+    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+            Membership Fee
+          </p>
+          <h2 className="mt-2 text-xl font-black text-slate-950">
+            {formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
+          </h2>
+        </div>
+        <span
+          className={`rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
+            status,
+          )}`}
+        >
+          {getMembershipPaymentStatusLabel(status)}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 text-sm">
+        <InfoBox
+          label="Base Fee"
+          value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
+        />
+        <InfoBox
+          label="Tax/Charges"
+          value={payment ? formatMembershipMoney(payment.tax_amount) : 'Applicable at payment step'}
+        />
+        <InfoBox
+          label="Payment"
+          value={payment?.gateway_reference || MEMBERSHIP_PAYMENT_COMING_SOON_TEXT}
+        />
+      </div>
+
+      <p className="mt-4 text-xs leading-5 text-amber-800">
+        Final payable amount will be shown before payment. Membership fee is separate from voluntary donations.
+      </p>
+    </section>
   )
 }
 
@@ -866,6 +942,25 @@ async function loadNotifications(userId: string) {
 
   if (error) return []
   return data || []
+}
+
+
+async function loadMembershipPayment(memberId?: string | null) {
+  if (!memberId) return null
+
+  const { data, error } = await supabase
+    .from('membership_payments')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
+    .returns<MembershipPayment | null>()
+
+  if (error) {
+    console.warn('Membership payment status could not be loaded:', error.message)
+    return null
+  }
+
+  return data
 }
 
 async function loadMemberPhoto(photoUrl?: string | null) {

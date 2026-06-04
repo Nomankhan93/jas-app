@@ -16,6 +16,12 @@ import {
   UserRound,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase/client'
+import {
+  MEMBERSHIP_BASE_FEE,
+  MEMBERSHIP_PROCESSING_LABEL,
+  formatMembershipMoney,
+  getMembershipFeeSubtext,
+} from '../lib/membership-fee'
 
 export const Route = createFileRoute('/signup')({
   component: SignupPage,
@@ -297,6 +303,18 @@ function SignupPage() {
                   Create your account to submit the JAS membership application,
                   track review status, and access your digital card after approval.
                 </p>
+
+                <div className="mt-8 rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-4 shadow-sm animate-fade-up delay-4">
+                  <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-amber-700">
+                    Membership Fee
+                  </p>
+                  <p className="mt-2 text-lg font-black text-stone-950">
+                    {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {MEMBERSHIP_PROCESSING_LABEL}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-amber-800">
+                    {getMembershipFeeSubtext()}
+                  </p>
+                </div>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
                   <FeaturePill

@@ -32,6 +32,16 @@ import {
   rejectMemberAction,
 } from '../../../lib/admin/actions'
 import { supabase } from '../../../lib/supabase/client'
+import {
+  MEMBERSHIP_BASE_FEE,
+  type MembershipPayment,
+  type MembershipPaymentStatus,
+  formatMembershipMoney,
+  getMembershipFeeSubtext,
+  getMembershipPaymentDisplayStatus,
+  getMembershipPaymentStatusClass,
+  getMembershipPaymentStatusLabel,
+} from '../../../lib/membership-fee'
 
 export const Route = createFileRoute('/admin/members/$id')({
   component: AdminMemberDetailPage,
@@ -131,11 +141,14 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const navigate = useNavigate()
 
   const [member, setMember] = useState<Member | null>(null)
+  const [membershipPayment, setMembershipPayment] = useState<MembershipPayment | null>(null)
+  const [paymentAdminNote, setPaymentAdminNote] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  const [paymentActionLoading, setPaymentActionLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -181,16 +194,23 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           throw new Error('Member not found.')
         }
 
-        const signedPhotoUrl = await createSignedPhotoUrl(safeMember.photo_url)
+        const [safeMembershipPayment, signedPhotoUrl] = await Promise.all([
+          fetchMembershipPaymentByMemberId(safeMember.id),
+          createSignedPhotoUrl(safeMember.photo_url),
+        ])
 
         if (cancelledRef?.current) return
 
         setMember(safeMember)
+        setMembershipPayment(safeMembershipPayment)
+        setPaymentAdminNote(safeMembershipPayment?.admin_note ?? '')
         setPhotoUrl(signedPhotoUrl)
       } catch (err) {
         if (!cancelledRef?.current) {
           setError(err instanceof Error ? err.message : 'Failed to load member.')
           setMember(null)
+          setMembershipPayment(null)
+          setPaymentAdminNote('')
           setPhotoUrl(null)
         }
       } finally {
@@ -282,6 +302,62 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       setError(err instanceof Error ? err.message : 'Failed to reject member.')
     } finally {
       setActionLoading(false)
+    }
+  }
+
+
+  async function handlePaymentStatusUpdate(status: MembershipPaymentStatus) {
+    if (!member || paymentActionLoading) return
+
+    const confirmed = window.confirm(
+      `Update membership fee status to ${getMembershipPaymentStatusLabel(status)}?`,
+    )
+
+    if (!confirmed) return
+
+    setPaymentActionLoading(true)
+    setError('')
+    setSuccess('')
+
+    const taxAmount = Number(membershipPayment?.tax_amount ?? 0)
+    const baseAmount = Number(membershipPayment?.base_amount ?? MEMBERSHIP_BASE_FEE)
+
+    try {
+      const { error: paymentError } = await supabase
+        .from('membership_payments')
+        .upsert(
+          {
+            member_id: member.id,
+            user_id: member.user_id,
+            base_amount: baseAmount,
+            tax_amount: taxAmount,
+            total_amount: baseAmount + taxAmount,
+            currency: membershipPayment?.currency ?? 'PKR',
+            status,
+            payment_method: membershipPayment?.payment_method ?? 'manual',
+            admin_note: paymentAdminNote.trim() || null,
+            paid_at:
+              status === 'paid'
+                ? new Date().toISOString()
+                : status === 'pending'
+                  ? null
+                  : membershipPayment?.paid_at ?? null,
+          },
+          { onConflict: 'member_id' },
+        )
+
+      if (paymentError) throw paymentError
+
+      setSuccess(`Membership fee marked as ${getMembershipPaymentStatusLabel(status)}.`)
+      await loadMember(undefined, { silent: true })
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to update membership fee status.',
+      )
+    } finally {
+      setPaymentActionLoading(false)
     }
   }
 
@@ -410,11 +486,18 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             </div>
           </div>
 
-          <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
+          <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
             <SummaryItem
               label="Status"
               value={getStatusLabel(member.status)}
               icon={<ShieldCheck className="h-4 w-4" />}
+            />
+            <SummaryItem
+              label="Fee Status"
+              value={getMembershipPaymentStatusLabel(
+                getMembershipPaymentDisplayStatus(membershipPayment),
+              )}
+              icon={<CreditCard className="h-4 w-4" />}
             />
             <SummaryItem
               label="Member No"
@@ -448,6 +531,14 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             {success}
           </AlertBox>
         ) : null}
+
+        <MembershipFeeAdminPanel
+          payment={membershipPayment}
+          adminNote={paymentAdminNote}
+          onAdminNoteChange={setPaymentAdminNote}
+          onStatusUpdate={handlePaymentStatusUpdate}
+          loading={paymentActionLoading}
+        />
 
         <StatusPanel member={member} />
 
@@ -747,6 +838,110 @@ function MemberPhoto({ src, alt }: { src: string | null; alt: string }) {
   )
 }
 
+
+function MembershipFeeAdminPanel({
+  payment,
+  adminNote,
+  onAdminNoteChange,
+  onStatusUpdate,
+  loading,
+}: {
+  payment: MembershipPayment | null
+  adminNote: string
+  onAdminNoteChange: (value: string) => void
+  onStatusUpdate: (status: MembershipPaymentStatus) => void
+  loading: boolean
+}) {
+  const status = getMembershipPaymentDisplayStatus(payment)
+
+  return (
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200/80 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+            Membership Fee
+          </p>
+          <h2 className="mt-2 text-xl font-black text-slate-950">
+            Application fee status
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+            Membership fee is separate from voluntary donations. Gateway is not connected in Phase 1.
+          </p>
+        </div>
+        <span
+          className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
+            status,
+          )}`}
+        >
+          {getMembershipPaymentStatusLabel(status)}
+        </span>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-3">
+        <InfoItem
+          label="Base Fee"
+          value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
+        />
+        <InfoItem
+          label="Tax/Charges"
+          value={payment ? formatMembershipMoney(payment.tax_amount) : 'Rs. 0'}
+        />
+        <InfoItem
+          label="Total"
+          value={formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
+        />
+        <InfoItem label="Method" value={payment?.payment_method ?? 'manual'} />
+        <InfoItem label="Gateway Provider" value={payment?.gateway_provider} />
+        <InfoItem label="Gateway Reference" value={payment?.gateway_reference} />
+        <InfoItem label="Paid At" value={formatDate(payment?.paid_at, true)} />
+        <InfoItem label="Updated At" value={formatDate(payment?.updated_at, true)} />
+        <InfoItem label="Charges Note" value={getMembershipFeeSubtext()} />
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+        <label className="block">
+          <span className="mb-1 block text-sm font-bold text-slate-800">
+            Admin Note
+          </span>
+          <textarea
+            value={adminNote}
+            onChange={(event) => onAdminNoteChange(event.target.value)}
+            className="min-h-24 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 sm:text-sm"
+            placeholder="Optional note for manual payment, waiver, or pending follow-up."
+          />
+        </label>
+
+        <div className="grid gap-2 sm:grid-cols-3 lg:w-[360px]">
+          <button
+            type="button"
+            onClick={() => onStatusUpdate('paid')}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 text-sm font-black text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Mark Paid
+          </button>
+          <button
+            type="button"
+            onClick={() => onStatusUpdate('waived')}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-sky-700 px-4 text-sm font-black text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Waive
+          </button>
+          <button
+            type="button"
+            onClick={() => onStatusUpdate('pending')}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-black text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Pending
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function StatusPanel({ member }: { member: Member }) {
   const config: Record<
     MemberStatus,
@@ -978,6 +1173,23 @@ async function createSignedPhotoUrl(photoPath: string | null) {
   if (error || !data?.signedUrl) return null
 
   return data.signedUrl
+}
+
+
+async function fetchMembershipPaymentByMemberId(memberId: string) {
+  const { data, error } = await supabase
+    .from('membership_payments')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
+    .returns<MembershipPayment | null>()
+
+  if (error) {
+    console.warn('Membership payment status could not be loaded:', error.message)
+    return null
+  }
+
+  return data
 }
 
 async function fetchMemberById(id: string) {
