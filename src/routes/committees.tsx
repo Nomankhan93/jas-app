@@ -15,7 +15,7 @@ export const Route = createFileRoute('/committees')({
   component: PublicCommitteesPage,
 })
 
-type CommitteeFilter = 'all' | 'central' | 'district' | 'taluka'
+type CommitteeFilter = 'all' | 'central' | 'divisional' | 'district' | 'taluka'
 
 function PublicCommitteesPage() {
   const [committees, setCommittees] = useState<PublicCommitteeRecord[]>([])
@@ -59,6 +59,7 @@ function PublicCommitteesPage() {
         query.length === 0 ||
         [
           committee.name,
+          committee.division ?? '',
           committee.district ?? '',
           committee.taluka ?? '',
           committee.notes ?? '',
@@ -80,7 +81,7 @@ function PublicCommitteesPage() {
         acc.members += committee.member_count ?? 0
         return acc
       },
-      { total: 0, central: 0, district: 0, taluka: 0, members: 0 },
+      { total: 0, central: 0, divisional: 0, district: 0, taluka: 0, members: 0 },
     )
   }, [committees])
 
@@ -95,7 +96,7 @@ function PublicCommitteesPage() {
                 Public Committees
               </h1>
               <p className="mt-5 max-w-3xl text-base font-medium leading-8 text-slate-600 sm:text-lg">
-                Publicly displayed Central, District and Taluka committees of Jatt Alliance Sindh with official office bearers and tenure details.
+                Publicly displayed Central, Divisional, District and Taluka committees of Jatt Alliance Sindh with official office bearers and tenure details.
               </p>
 
               <div className="mt-7 flex flex-wrap gap-3">
@@ -113,7 +114,7 @@ function PublicCommitteesPage() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
                 <Network size={25} />
               </div>
-              <h2 className="mt-5 text-xl font-black text-slate-950">Central → District → Taluka</h2>
+              <h2 className="mt-5 text-xl font-black text-slate-950">Central → Divisional → District → Taluka</h2>
               <p className="mt-2 text-sm leading-7 text-slate-600">
                 Only committees marked for public display are shown here. Internal or draft committee records remain restricted to administrators.
               </p>
@@ -121,9 +122,10 @@ function PublicCommitteesPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <StatCard label="Public Committees" value={stats.total} />
           <StatCard label="Central" value={stats.central} />
+          <StatCard label="Divisional" value={stats.divisional} />
           <StatCard label="District" value={stats.district} />
           <StatCard label="Taluka" value={stats.taluka} />
           <StatCard label="Office Bearers" value={stats.members} />
@@ -148,6 +150,7 @@ function PublicCommitteesPage() {
             >
               <option value="all">All committees</option>
               <option value="central">Central</option>
+              <option value="divisional">Divisional</option>
               <option value="district">District</option>
               <option value="taluka">Taluka</option>
             </select>

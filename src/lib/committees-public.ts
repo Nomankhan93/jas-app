@@ -11,6 +11,7 @@ export type PublicCommitteeRecord = {
   id: string
   committee_type: CommitteeType
   name: string
+  division: string | null
   district: string | null
   taluka: string | null
   tenure_start: string | null
@@ -67,6 +68,7 @@ const committeePublicSelect = [
   'id',
   'committee_type',
   'name',
+  'division',
   'district',
   'taluka',
   'tenure_start',
@@ -128,9 +130,15 @@ export function formatTenure(start: string | null | undefined, end: string | nul
   return `Until ${formatOrganizationDate(end)}`
 }
 
-export function getCommitteeLocation(committee: Pick<PublicCommitteeRecord, 'committee_type' | 'district' | 'taluka'>) {
+export function getCommitteeLocation(
+  committee: Pick<PublicCommitteeRecord, 'committee_type' | 'division' | 'district' | 'taluka'>,
+) {
   if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'divisional') {
+    return committee.division || 'Division not set'
+  }
   if (committee.committee_type === 'district') return committee.district || 'District not set'
+
   return [committee.taluka, committee.district].filter(Boolean).join(', ') || 'Taluka not set'
 }
 

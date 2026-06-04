@@ -23,6 +23,7 @@ import {
   getCommitteeStatusClass,
   getCommitteeStatusLabel,
   getCommitteeTypeLabel,
+  getCommitteeLocationLabel,
   removeCommitteeMember,
   searchApprovedMembers,
   updateCommittee,
@@ -43,6 +44,7 @@ export const Route = createFileRoute('/admin/committees/$id')({
 type CommitteeForm = {
   committeeType: CommitteeType
   name: string
+  division: string
   district: string
   taluka: string
   tenureStart: string
@@ -82,6 +84,7 @@ function AdminCommitteeDetailPage() {
   const [committeeForm, setCommitteeForm] = useState<CommitteeForm>({
     committeeType: 'central',
     name: '',
+    division: '',
     district: '',
     taluka: '',
     tenureStart: '',
@@ -135,7 +138,10 @@ function AdminCommitteeDetailPage() {
       return { requireMemberNo: true }
     }
 
-    if (committeeForm.committeeType === 'central') {
+    if (
+      committeeForm.committeeType === 'central' ||
+      committeeForm.committeeType === 'divisional'
+    ) {
       return { requireMemberNo: true }
     }
 
@@ -151,11 +157,17 @@ function AdminCommitteeDetailPage() {
       taluka: committeeForm.taluka.trim() || null,
       requireMemberNo: true,
     }
-  }, [committeeForm.committeeType, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
+  }, [committeeForm.committeeType, committeeForm.division, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
 
   const searchScopeLabel = useMemo(() => {
     if (!limitSearchToCommitteeArea || committeeForm.committeeType === 'central') {
       return 'Searching all approved JAS members with issued member numbers.'
+    }
+
+    if (committeeForm.committeeType === 'divisional') {
+      return committeeForm.division.trim()
+        ? `Searching all approved members for ${committeeForm.division.trim()} committee assignment.`
+        : 'Add committee division first or turn off area filter.'
     }
 
     if (committeeForm.committeeType === 'district') {
@@ -168,7 +180,7 @@ function AdminCommitteeDetailPage() {
     return parts.length
       ? `Searching approved members in ${parts.join(', ')}.`
       : 'Add committee district/taluka first or turn off area filter.'
-  }, [committeeForm.committeeType, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
+  }, [committeeForm.committeeType, committeeForm.division, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
 
   useEffect(() => {
     void loadDetails()
@@ -259,6 +271,7 @@ function AdminCommitteeDetailPage() {
       setCommitteeForm({
         committeeType: details.committee_type,
         name: details.name,
+        division: details.division ?? '',
         district: details.district ?? '',
         taluka: details.taluka ?? '',
         tenureStart: details.tenure_start ?? '',
@@ -285,7 +298,13 @@ function AdminCommitteeDetailPage() {
 
     try {
       if (!committeeForm.name.trim()) throw new Error('Committee name is required.')
-      if (committeeForm.committeeType !== 'central' && !committeeForm.district.trim()) {
+      if (committeeForm.committeeType === 'divisional' && !committeeForm.division.trim()) {
+        throw new Error('Division is required for divisional committees.')
+      }
+      if (
+        (committeeForm.committeeType === 'district' || committeeForm.committeeType === 'taluka') &&
+        !committeeForm.district.trim()
+      ) {
         throw new Error('District is required for district/taluka committees.')
       }
       if (committeeForm.committeeType === 'taluka' && !committeeForm.taluka.trim()) {
@@ -295,7 +314,11 @@ function AdminCommitteeDetailPage() {
       await updateCommittee(id, {
         committee_type: committeeForm.committeeType,
         name: committeeForm.name.trim(),
-        district: committeeForm.committeeType === 'central' ? null : committeeForm.district.trim(),
+        division: committeeForm.committeeType === 'divisional' ? committeeForm.division.trim() : null,
+        district:
+          committeeForm.committeeType === 'district' || committeeForm.committeeType === 'taluka'
+            ? committeeForm.district.trim()
+            : null,
         taluka: committeeForm.committeeType === 'taluka' ? committeeForm.taluka.trim() : null,
         tenure_start: committeeForm.tenureStart || null,
         tenure_end: committeeForm.tenureEnd || null,
@@ -337,7 +360,8 @@ function AdminCommitteeDetailPage() {
     setCommitteeForm((current) => ({
       ...current,
       committeeType: value,
-      district: value === 'central' ? '' : current.district,
+      division: value === 'divisional' ? current.division : '',
+      district: value === 'district' || value === 'taluka' ? current.district : '',
       taluka: value === 'taluka' ? current.taluka : '',
     }))
     resetMemberForm({ keepSearch: true })
@@ -488,7 +512,7 @@ function AdminCommitteeDetailPage() {
                 {committee.name}
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                {committee.district || 'Central'} {committee.taluka ? `· ${committee.taluka}` : ''} · Tenure{' '}
+                {getCommitteeLocationLabel(committee)} · Tenure{' '}
                 {formatCommitteeDate(committee.tenure_start)} to {formatCommitteeDate(committee.tenure_end)}
               </p>
             </div>
@@ -542,7 +566,18 @@ function AdminCommitteeDetailPage() {
                   />
                 </Field>
 
-                {committeeForm.committeeType !== 'central' ? (
+                {committeeForm.committeeType === 'divisional' ? (
+                  <Field label="Division">
+                    <input
+                      value={committeeForm.division}
+                      onChange={(event) => setCommitteeForm((current) => ({ ...current, division: event.target.value }))}
+                      className={inputClass}
+                      placeholder="Mirpur Khas Division"
+                    />
+                  </Field>
+                ) : null}
+
+                {committeeForm.committeeType === 'district' || committeeForm.committeeType === 'taluka' ? (
                   <Field label="District">
                     <input
                       value={committeeForm.district}

@@ -2,6 +2,7 @@ import { supabase } from './supabase/client'
 
 export const committeeTypeOptions = [
   { value: 'central', label: 'Central / Markaz' },
+  { value: 'divisional', label: 'Divisional Committee' },
   { value: 'district', label: 'District Committee' },
   { value: 'taluka', label: 'Taluka Committee' },
 ] as const
@@ -15,6 +16,7 @@ export const committeeStatusOptions = [
 
 export const designationScopeOptions = [
   { value: 'central', label: 'Central' },
+  { value: 'divisional', label: 'Divisional' },
   { value: 'district', label: 'District' },
   { value: 'taluka', label: 'Taluka' },
 ] as const
@@ -27,6 +29,7 @@ export type CommitteeRecord = {
   id: string
   committee_type: CommitteeType
   name: string
+  division: string | null
   district: string | null
   taluka: string | null
   tenure_start: string | null
@@ -96,6 +99,7 @@ const committeeSelect = [
   'id',
   'committee_type',
   'name',
+  'division',
   'district',
   'taluka',
   'tenure_start',
@@ -150,6 +154,18 @@ export function getCommitteeStatusClass(value: string | null | undefined) {
     default:
       return 'bg-slate-100 text-slate-700 ring-slate-200'
   }
+}
+
+export function getCommitteeLocationLabel(
+  committee: Pick<CommitteeRecord, 'committee_type' | 'division' | 'district' | 'taluka'>,
+) {
+  if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'divisional') {
+    return committee.division || 'Division not set'
+  }
+  if (committee.committee_type === 'district') return committee.district || 'District not set'
+
+  return [committee.taluka, committee.district].filter(Boolean).join(', ') || 'Taluka not set'
 }
 
 export function formatCommitteeDate(value: string | null | undefined) {
@@ -240,6 +256,7 @@ export async function fetchCommitteesForAdmin() {
 export async function createCommittee(input: {
   committee_type: CommitteeType
   name: string
+  division: string | null
   district: string | null
   taluka: string | null
   tenure_start: string | null
@@ -270,6 +287,7 @@ export async function updateCommittee(
   input: {
     committee_type: CommitteeType
     name: string
+    division: string | null
     district: string | null
     taluka: string | null
     tenure_start: string | null

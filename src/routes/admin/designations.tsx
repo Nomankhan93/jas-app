@@ -124,7 +124,7 @@ function AdminDesignationsPage() {
               <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Committee Setup</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Designation Management</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Manage official designation titles for Central, District and Taluka committees.
+                Manage official designation titles for Central, Divisional, District and Taluka committees.
               </p>
             </div>
             <button type="button" onClick={() => void loadDesignations()} className="secondary-btn"><RefreshCw size={16} /> Refresh</button>
