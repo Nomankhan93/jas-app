@@ -18,7 +18,6 @@ import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as EventsRouteImport } from './routes/events'
-import { Route as ElectionsRouteImport } from './routes/elections'
 import { Route as DonorsRouteImport } from './routes/donors'
 import { Route as DonateRouteImport } from './routes/donate'
 import { Route as DesignationCardRouteImport } from './routes/designation-card'
@@ -37,7 +36,6 @@ import { Route as ProgramsHealthRouteImport } from './routes/programs/health'
 import { Route as ProgramsEmploymentRouteImport } from './routes/programs/employment'
 import { Route as ProgramsEducationRouteImport } from './routes/programs/education'
 import { Route as NewsSlugRouteImport } from './routes/news/$slug'
-import { Route as ElectionsIdRouteImport } from './routes/elections/$id'
 import { Route as CommitteesIdRouteImport } from './routes/committees/$id'
 import { Route as AdminRolesRouteImport } from './routes/admin/roles'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
@@ -45,7 +43,6 @@ import { Route as AdminNewsRouteImport } from './routes/admin/news'
 import { Route as AdminGalleryRouteImport } from './routes/admin/gallery'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
 import { Route as AdminEventsRouteImport } from './routes/admin/events'
-import { Route as AdminElectionsRouteImport } from './routes/admin/elections'
 import { Route as AdminDesignationsRouteImport } from './routes/admin/designations'
 import { Route as AdminCommitteesRouteImport } from './routes/admin/committees'
 import { Route as AdminCmsRouteImport } from './routes/admin/cms'
@@ -64,15 +61,12 @@ import { Route as ProgramsEmploymentIdRouteImport } from './routes/programs/empl
 import { Route as ProgramsEducationMyApplicationsRouteImport } from './routes/programs/education/my-applications'
 import { Route as ProgramsEducationApplyRouteImport } from './routes/programs/education/apply'
 import { Route as ProgramsEducationIdRouteImport } from './routes/programs/education/$id'
-import { Route as ElectionsIdResultsRouteImport } from './routes/elections/$id/results'
 import { Route as AdminProgramsWelfareRouteImport } from './routes/admin/programs/welfare'
 import { Route as AdminProgramsHealthRouteImport } from './routes/admin/programs/health'
 import { Route as AdminProgramsEmploymentRouteImport } from './routes/admin/programs/employment'
 import { Route as AdminProgramsEducationRouteImport } from './routes/admin/programs/education'
 import { Route as AdminNewsIdRouteImport } from './routes/admin/news/$id'
 import { Route as AdminMembersIdRouteImport } from './routes/admin/members/$id'
-import { Route as AdminElectionsNewRouteImport } from './routes/admin/elections/new'
-import { Route as AdminElectionsIdRouteImport } from './routes/admin/elections/$id'
 import { Route as AdminCommitteesIdRouteImport } from './routes/admin/committees/$id'
 import { Route as AdminCmsSlugRouteImport } from './routes/admin/cms/$slug'
 import { Route as AdminProgramsWelfareIdRouteImport } from './routes/admin/programs/welfare/$id'
@@ -125,11 +119,6 @@ const GalleryRoute = GalleryRouteImport.update({
 const EventsRoute = EventsRouteImport.update({
   id: '/events',
   path: '/events',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ElectionsRoute = ElectionsRouteImport.update({
-  id: '/elections',
-  path: '/elections',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DonorsRoute = DonorsRouteImport.update({
@@ -222,11 +211,6 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => NewsRoute,
 } as any)
-const ElectionsIdRoute = ElectionsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ElectionsRoute,
-} as any)
 const CommitteesIdRoute = CommitteesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -260,11 +244,6 @@ const AdminFinanceRoute = AdminFinanceRouteImport.update({
 const AdminEventsRoute = AdminEventsRouteImport.update({
   id: '/events',
   path: '/events',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminElectionsRoute = AdminElectionsRouteImport.update({
-  id: '/elections',
-  path: '/elections',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminDesignationsRoute = AdminDesignationsRouteImport.update({
@@ -362,11 +341,6 @@ const ProgramsEducationIdRoute = ProgramsEducationIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ProgramsEducationRoute,
 } as any)
-const ElectionsIdResultsRoute = ElectionsIdResultsRouteImport.update({
-  id: '/results',
-  path: '/results',
-  getParentRoute: () => ElectionsIdRoute,
-} as any)
 const AdminProgramsWelfareRoute = AdminProgramsWelfareRouteImport.update({
   id: '/programs/welfare',
   path: '/programs/welfare',
@@ -396,16 +370,6 @@ const AdminMembersIdRoute = AdminMembersIdRouteImport.update({
   id: '/members/$id',
   path: '/members/$id',
   getParentRoute: () => AdminRoute,
-} as any)
-const AdminElectionsNewRoute = AdminElectionsNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => AdminElectionsRoute,
-} as any)
-const AdminElectionsIdRoute = AdminElectionsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AdminElectionsRoute,
 } as any)
 const AdminCommitteesIdRoute = AdminCommitteesIdRouteImport.update({
   id: '/$id',
@@ -464,7 +428,6 @@ export interface FileRoutesByFullPath {
   '/designation-card': typeof DesignationCardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
-  '/elections': typeof ElectionsRouteWithChildren
   '/events': typeof EventsRoute
   '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
@@ -479,7 +442,6 @@ export interface FileRoutesByFullPath {
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
-  '/admin/elections': typeof AdminElectionsRouteWithChildren
   '/admin/events': typeof AdminEventsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
@@ -487,7 +449,6 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/committees/$id': typeof CommitteesIdRoute
-  '/elections/$id': typeof ElectionsIdRouteWithChildren
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -496,15 +457,12 @@ export interface FileRoutesByFullPath {
   '/verify/$memberNo': typeof VerifyMemberNoRoute
   '/admin/cms/$slug': typeof AdminCmsSlugRoute
   '/admin/committees/$id': typeof AdminCommitteesIdRoute
-  '/admin/elections/$id': typeof AdminElectionsIdRoute
-  '/admin/elections/new': typeof AdminElectionsNewRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/news/$id': typeof AdminNewsIdRoute
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/employment': typeof AdminProgramsEmploymentRouteWithChildren
   '/admin/programs/health': typeof AdminProgramsHealthRouteWithChildren
   '/admin/programs/welfare': typeof AdminProgramsWelfareRouteWithChildren
-  '/elections/$id/results': typeof ElectionsIdResultsRoute
   '/programs/education/$id': typeof ProgramsEducationIdRoute
   '/programs/education/apply': typeof ProgramsEducationApplyRoute
   '/programs/education/my-applications': typeof ProgramsEducationMyApplicationsRoute
@@ -538,7 +496,6 @@ export interface FileRoutesByTo {
   '/designation-card': typeof DesignationCardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
-  '/elections': typeof ElectionsRouteWithChildren
   '/events': typeof EventsRoute
   '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
@@ -553,7 +510,6 @@ export interface FileRoutesByTo {
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
-  '/admin/elections': typeof AdminElectionsRouteWithChildren
   '/admin/events': typeof AdminEventsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
@@ -561,7 +517,6 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/committees/$id': typeof CommitteesIdRoute
-  '/elections/$id': typeof ElectionsIdRouteWithChildren
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -570,15 +525,12 @@ export interface FileRoutesByTo {
   '/verify/$memberNo': typeof VerifyMemberNoRoute
   '/admin/cms/$slug': typeof AdminCmsSlugRoute
   '/admin/committees/$id': typeof AdminCommitteesIdRoute
-  '/admin/elections/$id': typeof AdminElectionsIdRoute
-  '/admin/elections/new': typeof AdminElectionsNewRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/news/$id': typeof AdminNewsIdRoute
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/employment': typeof AdminProgramsEmploymentRouteWithChildren
   '/admin/programs/health': typeof AdminProgramsHealthRouteWithChildren
   '/admin/programs/welfare': typeof AdminProgramsWelfareRouteWithChildren
-  '/elections/$id/results': typeof ElectionsIdResultsRoute
   '/programs/education/$id': typeof ProgramsEducationIdRoute
   '/programs/education/apply': typeof ProgramsEducationApplyRoute
   '/programs/education/my-applications': typeof ProgramsEducationMyApplicationsRoute
@@ -613,7 +565,6 @@ export interface FileRoutesById {
   '/designation-card': typeof DesignationCardRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
-  '/elections': typeof ElectionsRouteWithChildren
   '/events': typeof EventsRoute
   '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
@@ -628,7 +579,6 @@ export interface FileRoutesById {
   '/admin/cms': typeof AdminCmsRouteWithChildren
   '/admin/committees': typeof AdminCommitteesRouteWithChildren
   '/admin/designations': typeof AdminDesignationsRoute
-  '/admin/elections': typeof AdminElectionsRouteWithChildren
   '/admin/events': typeof AdminEventsRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
@@ -636,7 +586,6 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/committees/$id': typeof CommitteesIdRoute
-  '/elections/$id': typeof ElectionsIdRouteWithChildren
   '/news/$slug': typeof NewsSlugRoute
   '/programs/education': typeof ProgramsEducationRouteWithChildren
   '/programs/employment': typeof ProgramsEmploymentRouteWithChildren
@@ -645,15 +594,12 @@ export interface FileRoutesById {
   '/verify/$memberNo': typeof VerifyMemberNoRoute
   '/admin/cms/$slug': typeof AdminCmsSlugRoute
   '/admin/committees/$id': typeof AdminCommitteesIdRoute
-  '/admin/elections/$id': typeof AdminElectionsIdRoute
-  '/admin/elections/new': typeof AdminElectionsNewRoute
   '/admin/members/$id': typeof AdminMembersIdRouteWithChildren
   '/admin/news/$id': typeof AdminNewsIdRoute
   '/admin/programs/education': typeof AdminProgramsEducationRouteWithChildren
   '/admin/programs/employment': typeof AdminProgramsEmploymentRouteWithChildren
   '/admin/programs/health': typeof AdminProgramsHealthRouteWithChildren
   '/admin/programs/welfare': typeof AdminProgramsWelfareRouteWithChildren
-  '/elections/$id/results': typeof ElectionsIdResultsRoute
   '/programs/education/$id': typeof ProgramsEducationIdRoute
   '/programs/education/apply': typeof ProgramsEducationApplyRoute
   '/programs/education/my-applications': typeof ProgramsEducationMyApplicationsRoute
@@ -689,7 +635,6 @@ export interface FileRouteTypes {
     | '/designation-card'
     | '/donate'
     | '/donors'
-    | '/elections'
     | '/events'
     | '/gallery'
     | '/login'
@@ -704,7 +649,6 @@ export interface FileRouteTypes {
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
-    | '/admin/elections'
     | '/admin/events'
     | '/admin/finance'
     | '/admin/gallery'
@@ -712,7 +656,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/roles'
     | '/committees/$id'
-    | '/elections/$id'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -721,15 +664,12 @@ export interface FileRouteTypes {
     | '/verify/$memberNo'
     | '/admin/cms/$slug'
     | '/admin/committees/$id'
-    | '/admin/elections/$id'
-    | '/admin/elections/new'
     | '/admin/members/$id'
     | '/admin/news/$id'
     | '/admin/programs/education'
     | '/admin/programs/employment'
     | '/admin/programs/health'
     | '/admin/programs/welfare'
-    | '/elections/$id/results'
     | '/programs/education/$id'
     | '/programs/education/apply'
     | '/programs/education/my-applications'
@@ -763,7 +703,6 @@ export interface FileRouteTypes {
     | '/designation-card'
     | '/donate'
     | '/donors'
-    | '/elections'
     | '/events'
     | '/gallery'
     | '/login'
@@ -778,7 +717,6 @@ export interface FileRouteTypes {
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
-    | '/admin/elections'
     | '/admin/events'
     | '/admin/finance'
     | '/admin/gallery'
@@ -786,7 +724,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/roles'
     | '/committees/$id'
-    | '/elections/$id'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -795,15 +732,12 @@ export interface FileRouteTypes {
     | '/verify/$memberNo'
     | '/admin/cms/$slug'
     | '/admin/committees/$id'
-    | '/admin/elections/$id'
-    | '/admin/elections/new'
     | '/admin/members/$id'
     | '/admin/news/$id'
     | '/admin/programs/education'
     | '/admin/programs/employment'
     | '/admin/programs/health'
     | '/admin/programs/welfare'
-    | '/elections/$id/results'
     | '/programs/education/$id'
     | '/programs/education/apply'
     | '/programs/education/my-applications'
@@ -837,7 +771,6 @@ export interface FileRouteTypes {
     | '/designation-card'
     | '/donate'
     | '/donors'
-    | '/elections'
     | '/events'
     | '/gallery'
     | '/login'
@@ -852,7 +785,6 @@ export interface FileRouteTypes {
     | '/admin/cms'
     | '/admin/committees'
     | '/admin/designations'
-    | '/admin/elections'
     | '/admin/events'
     | '/admin/finance'
     | '/admin/gallery'
@@ -860,7 +792,6 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/roles'
     | '/committees/$id'
-    | '/elections/$id'
     | '/news/$slug'
     | '/programs/education'
     | '/programs/employment'
@@ -869,15 +800,12 @@ export interface FileRouteTypes {
     | '/verify/$memberNo'
     | '/admin/cms/$slug'
     | '/admin/committees/$id'
-    | '/admin/elections/$id'
-    | '/admin/elections/new'
     | '/admin/members/$id'
     | '/admin/news/$id'
     | '/admin/programs/education'
     | '/admin/programs/employment'
     | '/admin/programs/health'
     | '/admin/programs/welfare'
-    | '/elections/$id/results'
     | '/programs/education/$id'
     | '/programs/education/apply'
     | '/programs/education/my-applications'
@@ -912,7 +840,6 @@ export interface RootRouteChildren {
   DesignationCardRoute: typeof DesignationCardRoute
   DonateRoute: typeof DonateRoute
   DonorsRoute: typeof DonorsRoute
-  ElectionsRoute: typeof ElectionsRouteWithChildren
   EventsRoute: typeof EventsRoute
   GalleryRoute: typeof GalleryRoute
   LoginRoute: typeof LoginRoute
@@ -993,13 +920,6 @@ declare module '@tanstack/react-router' {
       path: '/events'
       fullPath: '/events'
       preLoaderRoute: typeof EventsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/elections': {
-      id: '/elections'
-      path: '/elections'
-      fullPath: '/elections'
-      preLoaderRoute: typeof ElectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/donors': {
@@ -1128,13 +1048,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NewsSlugRouteImport
       parentRoute: typeof NewsRoute
     }
-    '/elections/$id': {
-      id: '/elections/$id'
-      path: '/$id'
-      fullPath: '/elections/$id'
-      preLoaderRoute: typeof ElectionsIdRouteImport
-      parentRoute: typeof ElectionsRoute
-    }
     '/committees/$id': {
       id: '/committees/$id'
       path: '/$id'
@@ -1182,13 +1095,6 @@ declare module '@tanstack/react-router' {
       path: '/events'
       fullPath: '/admin/events'
       preLoaderRoute: typeof AdminEventsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/elections': {
-      id: '/admin/elections'
-      path: '/elections'
-      fullPath: '/admin/elections'
-      preLoaderRoute: typeof AdminElectionsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/designations': {
@@ -1317,13 +1223,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProgramsEducationIdRouteImport
       parentRoute: typeof ProgramsEducationRoute
     }
-    '/elections/$id/results': {
-      id: '/elections/$id/results'
-      path: '/results'
-      fullPath: '/elections/$id/results'
-      preLoaderRoute: typeof ElectionsIdResultsRouteImport
-      parentRoute: typeof ElectionsIdRoute
-    }
     '/admin/programs/welfare': {
       id: '/admin/programs/welfare'
       path: '/programs/welfare'
@@ -1365,20 +1264,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/members/$id'
       preLoaderRoute: typeof AdminMembersIdRouteImport
       parentRoute: typeof AdminRoute
-    }
-    '/admin/elections/new': {
-      id: '/admin/elections/new'
-      path: '/new'
-      fullPath: '/admin/elections/new'
-      preLoaderRoute: typeof AdminElectionsNewRouteImport
-      parentRoute: typeof AdminElectionsRoute
-    }
-    '/admin/elections/$id': {
-      id: '/admin/elections/$id'
-      path: '/$id'
-      fullPath: '/admin/elections/$id'
-      preLoaderRoute: typeof AdminElectionsIdRouteImport
-      parentRoute: typeof AdminElectionsRoute
     }
     '/admin/committees/$id': {
       id: '/admin/committees/$id'
@@ -1463,20 +1348,6 @@ const AdminCommitteesRouteWithChildren = AdminCommitteesRoute._addFileChildren(
   AdminCommitteesRouteChildren,
 )
 
-interface AdminElectionsRouteChildren {
-  AdminElectionsIdRoute: typeof AdminElectionsIdRoute
-  AdminElectionsNewRoute: typeof AdminElectionsNewRoute
-}
-
-const AdminElectionsRouteChildren: AdminElectionsRouteChildren = {
-  AdminElectionsIdRoute: AdminElectionsIdRoute,
-  AdminElectionsNewRoute: AdminElectionsNewRoute,
-}
-
-const AdminElectionsRouteWithChildren = AdminElectionsRoute._addFileChildren(
-  AdminElectionsRouteChildren,
-)
-
 interface AdminNewsRouteChildren {
   AdminNewsIdRoute: typeof AdminNewsIdRoute
 }
@@ -1559,7 +1430,6 @@ interface AdminRouteChildren {
   AdminCmsRoute: typeof AdminCmsRouteWithChildren
   AdminCommitteesRoute: typeof AdminCommitteesRouteWithChildren
   AdminDesignationsRoute: typeof AdminDesignationsRoute
-  AdminElectionsRoute: typeof AdminElectionsRouteWithChildren
   AdminEventsRoute: typeof AdminEventsRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
@@ -1579,7 +1449,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCmsRoute: AdminCmsRouteWithChildren,
   AdminCommitteesRoute: AdminCommitteesRouteWithChildren,
   AdminDesignationsRoute: AdminDesignationsRoute,
-  AdminElectionsRoute: AdminElectionsRouteWithChildren,
   AdminEventsRoute: AdminEventsRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminGalleryRoute: AdminGalleryRoute,
@@ -1605,30 +1474,6 @@ const CommitteesRouteChildren: CommitteesRouteChildren = {
 
 const CommitteesRouteWithChildren = CommitteesRoute._addFileChildren(
   CommitteesRouteChildren,
-)
-
-interface ElectionsIdRouteChildren {
-  ElectionsIdResultsRoute: typeof ElectionsIdResultsRoute
-}
-
-const ElectionsIdRouteChildren: ElectionsIdRouteChildren = {
-  ElectionsIdResultsRoute: ElectionsIdResultsRoute,
-}
-
-const ElectionsIdRouteWithChildren = ElectionsIdRoute._addFileChildren(
-  ElectionsIdRouteChildren,
-)
-
-interface ElectionsRouteChildren {
-  ElectionsIdRoute: typeof ElectionsIdRouteWithChildren
-}
-
-const ElectionsRouteChildren: ElectionsRouteChildren = {
-  ElectionsIdRoute: ElectionsIdRouteWithChildren,
-}
-
-const ElectionsRouteWithChildren = ElectionsRoute._addFileChildren(
-  ElectionsRouteChildren,
 )
 
 interface NewsRouteChildren {
@@ -1716,7 +1561,6 @@ const rootRouteChildren: RootRouteChildren = {
   DesignationCardRoute: DesignationCardRoute,
   DonateRoute: DonateRoute,
   DonorsRoute: DonorsRoute,
-  ElectionsRoute: ElectionsRouteWithChildren,
   EventsRoute: EventsRoute,
   GalleryRoute: GalleryRoute,
   LoginRoute: LoginRoute,
