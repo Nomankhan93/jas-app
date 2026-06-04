@@ -164,6 +164,11 @@ const cmsFallbacks: Record<AppLanguage, Record<CmsPageSlug, CmsFallbackCopy>> = 
   },
 }
 
+
+export function getPublicCmsFallback(slug: CmsPageSlug, language: AppLanguage) {
+  return cmsFallbacks[language]?.[slug] ?? cmsFallbacks.en[slug]
+}
+
 const sharedCopy = {
   en: {
     becomeMember: 'Become a Member',

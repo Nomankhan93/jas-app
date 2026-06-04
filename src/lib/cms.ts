@@ -2,7 +2,7 @@
 import { supabase } from './supabase/client'
 
 export type CmsPageStatus = 'draft' | 'published' | 'archived'
-export type CmsPageLanguage = 'en' | 'ur' | 'roman_ur'
+export type CmsPageLanguage = 'en' | 'ur' | 'sd'
 
 export type CmsPageSlug =
   | 'about'
@@ -41,6 +41,23 @@ export type CmsPublicConfig = {
   fallbackTitle: string
   fallbackSubtitle: string
   fallbackContent: string
+}
+
+export const cmsLanguageOptions = [
+  { value: 'en', label: 'English', nativeLabel: 'English', shortLabel: 'EN' },
+  { value: 'ur', label: 'Urdu', nativeLabel: 'اردو', shortLabel: 'UR' },
+  { value: 'sd', label: 'Sindhi', nativeLabel: 'سنڌي', shortLabel: 'SD' },
+] as const
+
+export function normalizeCmsLanguage(value: string | null | undefined): CmsPageLanguage {
+  if (value === 'ur' || value === 'roman_ur') return 'ur'
+  if (value === 'sd') return 'sd'
+  return 'en'
+}
+
+export function getCmsLanguageLabel(value: string | null | undefined) {
+  const normalized = normalizeCmsLanguage(value)
+  return cmsLanguageOptions.find((item) => item.value === normalized)?.label ?? 'English'
 }
 
 const supabaseAny = supabase as unknown as {
@@ -105,31 +122,47 @@ export const cmsPublicPages: CmsPublicConfig[] = [
   },
 ]
 
+
 export function getCmsConfig(slug: CmsPageSlug) {
   return cmsPublicPages.find((page) => page.slug === slug) ?? cmsPublicPages[0]
 }
 
-export async function fetchPublishedCmsPage(slug: CmsPageSlug) {
+export async function fetchPublishedCmsPage(
+  slug: CmsPageSlug,
+  language: CmsPageLanguage = 'en',
+) {
+  const selectedLanguage = normalizeCmsLanguage(language)
+
   const { data, error } = await supabaseAny
     .from('cms_pages')
     .select('*')
     .eq('slug', slug)
+    .eq('language', selectedLanguage)
     .eq('status', 'published')
     .maybeSingle()
 
   if (error) {
-    console.warn(`CMS page load failed for ${slug}:`, error.message)
+    console.warn(
+      `CMS page load failed for ${slug} (${selectedLanguage}):`,
+      error.message,
+    )
     return null
   }
 
   return (data ?? null) as CmsPage | null
 }
 
-export async function fetchCmsPageForAdmin(slug: string) {
+export async function fetchCmsPageForAdmin(
+  slug: string,
+  language: CmsPageLanguage = 'en',
+) {
+  const selectedLanguage = normalizeCmsLanguage(language)
+
   const { data, error } = await supabaseAny
     .from('cms_pages')
     .select('*')
     .eq('slug', slug)
+    .eq('language', selectedLanguage)
     .maybeSingle()
 
   if (error) throw error
@@ -141,6 +174,7 @@ export async function fetchAllCmsPagesForAdmin() {
     .from('cms_pages')
     .select('*')
     .order('slug', { ascending: true })
+    .order('language', { ascending: true })
 
   if (error) throw error
   return (data ?? []) as CmsPage[]
@@ -157,20 +191,21 @@ export async function saveCmsPage(input: CmsPageInput) {
   }
 
   const now = new Date().toISOString()
+  const language = normalizeCmsLanguage(input.language)
 
   const { error } = await supabaseAny.from('cms_pages').upsert(
     {
       slug: input.slug,
+      language,
       title: input.title.trim(),
       subtitle: input.subtitle?.trim() || null,
       content: input.content.trim(),
-      language: input.language ?? 'en',
       status: input.status,
       published_at: input.status === 'published' ? now : null,
       updated_by: user.id,
       updated_at: now,
     },
-    { onConflict: 'slug' },
+    { onConflict: 'slug,language' },
   )
 
   if (error) throw error

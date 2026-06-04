@@ -1,5 +1,5 @@
 // src/routes/admin/cms.tsx
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowRight,
   Edit3,
@@ -11,10 +11,14 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  cmsLanguageOptions,
+  cmsPublicPages,
   currentUserCanManageCms,
   fetchAllCmsPagesForAdmin,
+  getCmsLanguageLabel,
   getCmsStatusClass,
   type CmsPage,
+  type CmsPageSlug,
 } from '../../lib/cms'
 
 export const Route = createFileRoute('/admin/cms')({
@@ -54,6 +58,16 @@ function AdminCmsPage() {
     void loadPages()
   }, [loadPages])
 
+  const pagesBySlugLanguage = useMemo(() => {
+    const map = new Map<string, CmsPage>()
+
+    pages.forEach((page) => {
+      map.set(`${page.slug}:${page.language}`, page)
+    })
+
+    return map
+  }, [pages])
+
   const stats = useMemo(() => {
     return pages.reduce(
       (acc, page) => {
@@ -91,11 +105,11 @@ function AdminCmsPage() {
                   Admin CMS
                 </p>
                 <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-                  Public Website Content
+                  Multilingual Public Website Content
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                  Update public organization pages like About, Vision & Mission,
-                  Manifesto, Constitution, CWC and Contact without editing code.
+                  Manage English, Urdu and Sindhi versions for About, Vision &
+                  Mission, Manifesto, Constitution, CWC and Contact pages.
                 </p>
               </div>
 
@@ -112,7 +126,7 @@ function AdminCmsPage() {
           </div>
 
           <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label="Total Pages" value={stats.total} />
+            <Stat label="Total Language Pages" value={stats.total} />
             <Stat label="Published" value={stats.published} />
             <Stat label="Drafts" value={stats.draft} />
             <Stat label="Archived" value={stats.archived} />
@@ -129,70 +143,119 @@ function AdminCmsPage() {
           <div className="mb-5 flex items-start gap-3 rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900 ring-1 ring-emerald-100">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
             <p className="m-0 font-semibold leading-6">
-              Only published pages are visible to public visitors. Draft and
-              archived content stays hidden from the public site.
+              Each public CMS page can now have separate English, Urdu and
+              Sindhi records. Only published language records are visible to
+              public visitors. Missing or draft translations use localized
+              fallback content on the public site.
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {pages.map((page) => (
-              <article
-                key={page.slug}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-black uppercase ring-1 ${getCmsStatusClass(page.status)}`}>
-                    {page.status}
-                  </span>
-                </div>
-
-                <h2 className="mt-5 text-xl font-black text-slate-950">
-                  {page.title}
-                </h2>
-                <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
-                  {page.subtitle || page.content}
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <Link
-                    to="/admin/cms/$slug"
-                    params={{ slug: page.slug }}
-                    className="jas-dark-action-link inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition"
-                  >
-                    <Edit3 className="h-4 w-4" />
-                    Edit
-                  </Link>
-                  {page.status === 'published' ? (
-                    <Link
-                      to={`/${page.slug}` as never}
-                      className="secondary-btn px-4 py-3 text-sm"
-                    >
-                      View
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  ) : null}
-                </div>
-              </article>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {cmsPublicPages.map((config) => (
+              <CmsPageCard
+                key={config.slug}
+                slug={config.slug}
+                title={config.fallbackTitle}
+                subtitle={config.fallbackSubtitle}
+                pagesBySlugLanguage={pagesBySlugLanguage}
+              />
             ))}
           </div>
 
           {pages.length === 0 ? (
-            <div className="rounded-2xl bg-slate-50 p-8 text-center ring-1 ring-slate-100">
+            <div className="mt-5 rounded-2xl bg-slate-50 p-8 text-center ring-1 ring-slate-100">
               <LockKeyhole className="mx-auto h-8 w-8 text-slate-400" />
               <h2 className="mt-3 text-lg font-black text-slate-950">
-                No CMS pages found
+                No saved CMS records found
               </h2>
               <p className="mt-2 text-sm text-slate-500">
-                Run the CMS migration to seed default pages.
+                Open any page/language and save it to create the first record.
               </p>
             </div>
           ) : null}
         </section>
       </div>
     </main>
+  )
+}
+
+function CmsPageCard({
+  slug,
+  title,
+  subtitle,
+  pagesBySlugLanguage,
+}: {
+  slug: CmsPageSlug
+  title: string
+  subtitle: string
+  pagesBySlugLanguage: Map<string, CmsPage>
+}) {
+  return (
+    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+          <FileText className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-xl font-black text-slate-950">{title}</h2>
+          <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3">
+        {cmsLanguageOptions.map((language) => {
+          const page = pagesBySlugLanguage.get(`${slug}:${language.value}`)
+          const status = page?.status ?? 'missing'
+
+          return (
+            <div
+              key={language.value}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100"
+            >
+              <div>
+                <p className="text-sm font-black text-slate-950">
+                  {language.nativeLabel}
+                  <span className="ml-2 text-xs font-bold text-slate-500">
+                    {getCmsLanguageLabel(language.value)}
+                  </span>
+                </p>
+                <span
+                  className={`mt-2 inline-flex rounded-full px-3 py-1 text-[0.65rem] font-black uppercase ring-1 ${
+                    page
+                      ? getCmsStatusClass(page.status)
+                      : 'bg-slate-100 text-slate-600 ring-slate-200'
+                  }`}
+                >
+                  {status}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href={`/admin/cms/${encodeURIComponent(slug)}?language=${language.value}`}
+                  className="jas-dark-action-link inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition"
+                >
+                  <Edit3 className="h-4 w-4" />
+                  Edit
+                </a>
+
+                {page?.status === 'published' ? (
+                  <a
+                    href={`/${slug}`}
+                    className="secondary-btn px-4 py-3 text-sm no-underline"
+                  >
+                    View
+                    <ArrowRight className="h-4 w-4" />
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </article>
   )
 }
 

@@ -28,7 +28,7 @@ export function CmsPublicPage({ slug }: CmsPublicPageProps) {
 
     async function loadPage() {
       setLoading(true)
-      const data = await fetchPublishedCmsPage(slug)
+      const data = await fetchPublishedCmsPage(slug, publicCopy.language)
       if (!cancelled) {
         setPage(data)
         setLoading(false)
@@ -40,7 +40,7 @@ export function CmsPublicPage({ slug }: CmsPublicPageProps) {
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [publicCopy.language, slug])
 
   const title = page?.title || fallback.title || config.fallbackTitle
   const subtitle = page?.subtitle || fallback.subtitle || config.fallbackSubtitle
