@@ -1,3 +1,5 @@
+import { localizedProgramLabel, type ProgramLabelMap } from '../program-status-i18n'
+
 export type HealthStatus =
   | 'submitted'
   | 'under_review'
@@ -261,8 +263,67 @@ export const healthDocumentStatusLabels: Record<
   needs_reupload: 'Needs Re-upload',
 }
 
+const healthStatusLabelTranslations: Record<HealthStatus, ProgramLabelMap> = {
+  submitted: { en: 'Submitted', ur: 'جمع شدہ', sd: 'جمع ٿيل' },
+  under_review: { en: 'Under Medical Review', ur: 'طبی جائزہ جاری', sd: 'طبي جائزو جاري' },
+  need_more_info: { en: 'Need More Info', ur: 'مزید معلومات درکار', sd: 'وڌيڪ معلومات گهربل' },
+  approved: { en: 'Approved', ur: 'منظور شدہ', sd: 'منظور ٿيل' },
+  rejected: { en: 'Rejected', ur: 'مسترد', sd: 'رد ٿيل' },
+  paid_completed: { en: 'Payment Released', ur: 'ادائیگی جاری', sd: 'ادائيگي جاري' },
+  completed: { en: 'Closed', ur: 'بند', sd: 'بند' },
+}
+
+const healthDocumentStatusLabelTranslations: Record<
+  HealthDocumentVerificationStatus,
+  ProgramLabelMap
+> = {
+  pending: { en: 'Pending Verification', ur: 'تصدیق باقی', sd: 'تصديق باقي' },
+  verified: { en: 'Verified', ur: 'تصدیق شدہ', sd: 'تصديق ٿيل' },
+  rejected: { en: 'Rejected', ur: 'مسترد', sd: 'رد ٿيل' },
+  needs_reupload: { en: 'Needs Re-upload', ur: 'دوبارہ اپلوڈ درکار', sd: 'ٻيهر اپلوڊ گهربل' },
+}
+
+const healthPaymentStatusLabelTranslations: Record<HealthPaymentStatus, ProgramLabelMap> = {
+  not_started: { en: 'Not Started', ur: 'شروع نہیں ہوا', sd: 'شروع نه ٿيو' },
+  pending: { en: 'Payment Pending', ur: 'ادائیگی باقی', sd: 'ادائيگي باقي' },
+  approved: { en: 'Payment Approved', ur: 'ادائیگی منظور', sd: 'ادائيگي منظور' },
+  partially_released: { en: 'Partially Released', ur: 'جزوی جاری', sd: 'جزوي جاري' },
+  released: { en: 'Payment Released', ur: 'ادائیگی جاری', sd: 'ادائيگي جاري' },
+  completed: { en: 'Completed', ur: 'مکمل', sd: 'مڪمل' },
+}
+
+const healthCommitteeDecisionLabelTranslations: Record<HealthCommitteeDecision, ProgramLabelMap> = {
+  pending: { en: 'Pending Committee Review', ur: 'کمیٹی جائزہ باقی', sd: 'ڪميٽي جائزو باقي' },
+  recommended: { en: 'Recommended', ur: 'سفارش شدہ', sd: 'سفارش ٿيل' },
+  not_recommended: { en: 'Not Recommended', ur: 'سفارش نہیں ہوئی', sd: 'سفارش نه ٿيل' },
+  approved: { en: 'Committee Approved', ur: 'کمیٹی سے منظور', sd: 'ڪميٽي منظور ٿيل' },
+  rejected: { en: 'Committee Rejected', ur: 'کمیٹی سے مسترد', sd: 'ڪميٽي رد ٿيل' },
+  deferred: { en: 'Deferred / More Info Needed', ur: 'موخر / مزید معلومات درکار', sd: 'ملتوي / وڌيڪ معلومات گهربل' },
+}
+
+const healthCasePriorityLabelTranslations: Record<string, ProgramLabelMap> = {
+  emergency: { en: 'Emergency', ur: 'ایمرجنسی', sd: 'ايمرجنسي' },
+  urgent: { en: 'Urgent', ur: 'فوری', sd: 'تڪڙو' },
+  normal: { en: 'Normal', ur: 'نارمل', sd: 'نارمل' },
+}
+
+const healthDocumentLabelTranslations: Record<HealthDocumentType, ProgramLabelMap> = {
+  patient_cnic_bform: { en: 'Patient CNIC / B-form', ur: 'مریض CNIC / ب فارم', sd: 'مريض CNIC / ب فارم' },
+  member_cnic: { en: 'Member CNIC', ur: 'ممبر CNIC', sd: 'ميمبر CNIC' },
+  medical_reports: { en: 'Medical Reports', ur: 'میڈیکل رپورٹس', sd: 'ميڊيڪل رپورٽون' },
+  doctor_prescription: { en: 'Doctor Prescription', ur: 'ڈاکٹر نسخہ', sd: 'ڊاڪٽر نسخو' },
+  hospital_estimate: { en: 'Hospital Estimate', ur: 'ہسپتال تخمینہ', sd: 'اسپتال تخمينو' },
+  lab_reports: { en: 'Lab Reports', ur: 'لیب رپورٹس', sd: 'ليب رپورٽون' },
+  other: { en: 'Other Supporting Document', ur: 'دیگر معاون دستاویز', sd: 'ٻيو مددگار دستاويز' },
+}
+
 export function getHealthStatusLabel(status: string) {
-  return healthStatusLabels[status as HealthStatus] ?? status
+  const typedStatus = status as HealthStatus
+
+  return localizedProgramLabel(
+    healthStatusLabelTranslations[typedStatus],
+    healthStatusLabels[typedStatus] ?? status,
+  )
 }
 
 export function getHealthStatusClass(status: string) {
@@ -287,14 +348,18 @@ export function getHealthDocumentConfig(type: string) {
 }
 
 export function getHealthDocumentLabel(type: string) {
-  return getHealthDocumentConfig(type)?.label ?? type
+  const typedType = type as HealthDocumentType
+  const fallback = getHealthDocumentConfig(type)?.label ?? type
+
+  return localizedProgramLabel(healthDocumentLabelTranslations[typedType], fallback)
 }
 
 export function getHealthDocumentStatusLabel(status: string) {
-  return (
-    healthDocumentStatusLabels[
-      status as HealthDocumentVerificationStatus
-    ] ?? status
+  const typedStatus = status as HealthDocumentVerificationStatus
+
+  return localizedProgramLabel(
+    healthDocumentStatusLabelTranslations[typedStatus],
+    healthDocumentStatusLabels[typedStatus] ?? status,
   )
 }
 
@@ -312,11 +377,21 @@ export function getHealthDocumentStatusClass(status: string) {
 }
 
 export function getHealthPaymentStatusLabel(status?: string | null) {
-  if (!status) return 'Not Started'
+  if (!status) {
+    return localizedProgramLabel(
+      healthPaymentStatusLabelTranslations.not_started,
+      'Not Started',
+    )
+  }
 
-  return (
+  const typedStatus = status as HealthPaymentStatus
+  const fallback =
     healthPaymentStatusOptions.find((item) => item.value === status)?.label ??
     status
+
+  return localizedProgramLabel(
+    healthPaymentStatusLabelTranslations[typedStatus],
+    fallback,
   )
 }
 
@@ -375,11 +450,21 @@ export function isHealthEmergency(details?: HealthApplicationDetails | null) {
 
 
 export function getHealthCommitteeDecisionLabel(status?: string | null) {
-  if (!status) return 'Pending Committee Review'
+  if (!status) {
+    return localizedProgramLabel(
+      healthCommitteeDecisionLabelTranslations.pending,
+      'Pending Committee Review',
+    )
+  }
 
-  return (
+  const typedStatus = status as HealthCommitteeDecision
+  const fallback =
     healthCommitteeDecisionOptions.find((item) => item.value === status)?.label ??
     status
+
+  return localizedProgramLabel(
+    healthCommitteeDecisionLabelTranslations[typedStatus],
+    fallback,
   )
 }
 
@@ -406,9 +491,14 @@ export function getHealthCasePriority(details?: HealthApplicationDetails | null)
 export function getHealthCasePriorityLabel(details?: HealthApplicationDetails | null) {
   const priority = getHealthCasePriority(details)
 
-  if (priority === 'emergency') return 'Emergency'
-  if (priority === 'urgent') return 'Urgent'
-  return 'Normal'
+  return localizedProgramLabel(
+    healthCasePriorityLabelTranslations[priority],
+    priority === 'emergency'
+      ? 'Emergency'
+      : priority === 'urgent'
+        ? 'Urgent'
+        : 'Normal',
+  )
 }
 
 export function getHealthCasePriorityClass(details?: HealthApplicationDetails | null) {

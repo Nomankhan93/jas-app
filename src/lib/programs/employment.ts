@@ -1,4 +1,5 @@
 import type { Json } from '../supabase/database.types'
+import { localizedProgramLabel, type ProgramLabelMap } from '../program-status-i18n'
 
 export const EMPLOYMENT_DOCUMENT_BUCKET = 'employment-documents'
 export const EMPLOYMENT_MAX_DOCUMENT_SIZE_MB = 5
@@ -229,18 +230,83 @@ export const employmentRequiredDocumentTypes = employmentDocumentOptions
   .filter((item) => item.required)
   .map((item) => item.type)
 
-export function getEmploymentStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    submitted: 'Registered',
-    under_review: 'Under Review',
-    need_more_info: 'Need More Info',
-    approved: 'Shortlisted',
-    rejected: 'Rejected',
-    paid_completed: 'Placed / Employed',
-    completed: 'Closed',
-  }
+const employmentStatusLabelTranslations: Record<EmploymentStatus, ProgramLabelMap> = {
+  submitted: { en: 'Registered', ur: 'رجسٹرڈ', sd: 'رجسٽرڊ' },
+  under_review: { en: 'Under Review', ur: 'زیر جائزہ', sd: 'جائزي هيٺ' },
+  need_more_info: { en: 'Need More Info', ur: 'مزید معلومات درکار', sd: 'وڌيڪ معلومات گهربل' },
+  approved: { en: 'Shortlisted', ur: 'شارٹ لسٹ', sd: 'شارٽ لسٽ' },
+  rejected: { en: 'Rejected', ur: 'مسترد', sd: 'رد ٿيل' },
+  paid_completed: { en: 'Placed / Employed', ur: 'پلیسڈ / ملازم', sd: 'پليسڊ / ملازم' },
+  completed: { en: 'Closed', ur: 'بند', sd: 'بند' },
+}
 
-  return labels[status] || status
+const employmentDocumentStatusLabelTranslations: Record<string, ProgramLabelMap> = {
+  pending: { en: 'Pending Review', ur: 'جائزہ باقی', sd: 'جائزو باقي' },
+  verified: { en: 'Verified', ur: 'تصدیق شدہ', sd: 'تصديق ٿيل' },
+  rejected: { en: 'Rejected', ur: 'مسترد', sd: 'رد ٿيل' },
+  need_more_info: { en: 'Need More Info', ur: 'مزید معلومات درکار', sd: 'وڌيڪ معلومات گهربل' },
+  needs_reupload: { en: 'Needs Re-upload', ur: 'دوبارہ اپلوڈ درکار', sd: 'ٻيهر اپلوڊ گهربل' },
+}
+
+const employmentDocumentLabelTranslations: Record<EmploymentDocumentType, ProgramLabelMap> = {
+  cv_resume: { en: 'CV / Resume', ur: 'CV / ریزیومے', sd: 'CV / ريزومي' },
+  cnic_copy: { en: 'CNIC Copy', ur: 'CNIC کاپی', sd: 'CNIC ڪاپي' },
+  education_certificate: { en: 'Education Certificate', ur: 'تعلیمی سرٹیفکیٹ', sd: 'تعليمي سرٽيفڪيٽ' },
+  experience_certificate: { en: 'Experience Certificate', ur: 'تجربہ سرٹیفکیٹ', sd: 'تجربي جو سرٽيفڪيٽ' },
+  skills_certificate: { en: 'Skills Certificate', ur: 'اسکلز سرٹیفکیٹ', sd: 'مهارتن جو سرٽيفڪيٽ' },
+  other_document: { en: 'Other Supporting Document', ur: 'دیگر معاون دستاویز', sd: 'ٻيو مددگار دستاويز' },
+}
+
+const shortlistStatusLabelTranslations: Record<CandidateShortlistStatus, ProgramLabelMap> = {
+  not_shortlisted: { en: 'Not Shortlisted', ur: 'شارٹ لسٹ نہیں', sd: 'شارٽ لسٽ نه ٿيل' },
+  shortlisted: { en: 'Shortlisted', ur: 'شارٹ لسٹ', sd: 'شارٽ لسٽ' },
+  interview_scheduled: { en: 'Interview Scheduled', ur: 'انٹرویو شیڈول', sd: 'انٽرويو شيڊول' },
+  recommended: { en: 'Recommended', ur: 'سفارش شدہ', sd: 'سفارش ٿيل' },
+  placed: { en: 'Placed / Employed', ur: 'پلیسڈ / ملازم', sd: 'پليسڊ / ملازم' },
+  not_selected: { en: 'Not Selected', ur: 'منتخب نہیں', sd: 'منتخب نه ٿيل' },
+}
+
+const employmentTypeLabelTranslations: Record<EmploymentType, ProgramLabelMap> = {
+  full_time: { en: 'Full Time', ur: 'فل ٹائم', sd: 'فل ٽائيم' },
+  part_time: { en: 'Part Time', ur: 'پارٹ ٹائم', sd: 'پارٽ ٽائيم' },
+  contract: { en: 'Contract', ur: 'کنٹریکٹ', sd: 'ڪنٽريڪٽ' },
+  internship: { en: 'Internship', ur: 'انٹرن شپ', sd: 'انٽرن شپ' },
+  temporary: { en: 'Temporary', ur: 'عارضی', sd: 'عارضي' },
+  remote: { en: 'Remote', ur: 'ریموٹ', sd: 'ريموٽ' },
+  any: { en: 'Any suitable opportunity', ur: 'کوئی بھی مناسب موقع', sd: 'ڪو به مناسب موقعو' },
+}
+
+const currentEmploymentStatusLabelTranslations: Record<
+  EmploymentCurrentStatus,
+  ProgramLabelMap
+> = {
+  unemployed: { en: 'Unemployed', ur: 'بے روزگار', sd: 'بيروزگار' },
+  employed: { en: 'Currently Employed', ur: 'ملازمت میں', sd: 'ملازمت ۾' },
+  self_employed: { en: 'Self Employed', ur: 'خود روزگار', sd: 'خود روزگار' },
+  student: { en: 'Student', ur: 'طالب علم', sd: 'شاگرد' },
+  fresh_graduate: { en: 'Fresh Graduate', ur: 'فریش گریجویٹ', sd: 'فريش گريجوئيٽ' },
+  seeking_better_opportunity: { en: 'Seeking Better Opportunity', ur: 'بہتر موقع کی تلاش', sd: 'بهتر موقعي جي ڳولا' },
+}
+
+const trainingInterestLabelTranslations: Record<TrainingInterest, ProgramLabelMap> = {
+  computer_skills: { en: 'Computer Skills', ur: 'کمپیوٹر اسکلز', sd: 'ڪمپيوٽر مهارتون' },
+  english_language: { en: 'English Language', ur: 'انگریزی زبان', sd: 'انگريزي ٻولي' },
+  office_management: { en: 'Office Management', ur: 'آفس مینجمنٹ', sd: 'آفيس مينيجمينٽ' },
+  technical_skill: { en: 'Technical Skill', ur: 'ٹیکنیکل اسکل', sd: 'ٽيڪنيڪل مهارت' },
+  business_skill: { en: 'Business Skill', ur: 'بزنس اسکل', sd: 'بزنس مهارت' },
+  driving: { en: 'Driving', ur: 'ڈرائیونگ', sd: 'ڊرائيونگ' },
+  tailoring: { en: 'Tailoring', ur: 'سلائی', sd: 'سلائي' },
+  other: { en: 'Other Training', ur: 'دیگر ٹریننگ', sd: 'ٻي ٽريننگ' },
+  not_interested: { en: 'Not Interested', ur: 'دلچسپی نہیں', sd: 'دلچسپي نه آهي' },
+}
+
+export function getEmploymentStatusLabel(status: string) {
+  const typedStatus = status as EmploymentStatus
+
+  return localizedProgramLabel(
+    employmentStatusLabelTranslations[typedStatus],
+    status,
+  )
 }
 
 export function getEmploymentStatusClass(status: string) {
@@ -258,43 +324,59 @@ export function getEmploymentStatusClass(status: string) {
 }
 
 export function getEmploymentDocumentLabel(type: string) {
-  return employmentDocumentOptions.find((item) => item.type === type)?.label || type
+  const typedType = type as EmploymentDocumentType
+  const fallback =
+    employmentDocumentOptions.find((item) => item.type === type)?.label || type
+
+  return localizedProgramLabel(employmentDocumentLabelTranslations[typedType], fallback)
 }
 
 export function getShortlistStatusLabel(value?: string | null) {
-  return (
+  const typedValue = value as CandidateShortlistStatus
+  const fallback =
     shortlistStatusOptions.find((item) => item.value === value)?.label ||
     'Not Shortlisted'
-  )
+
+  return localizedProgramLabel(shortlistStatusLabelTranslations[typedValue], fallback)
 }
 
 export function getEmploymentTypeLabel(value?: string | null) {
-  return employmentTypeOptions.find((item) => item.value === value)?.label || 'Any'
+  const typedValue = value as EmploymentType
+  const fallback =
+    employmentTypeOptions.find((item) => item.value === value)?.label || 'Any'
+
+  return localizedProgramLabel(employmentTypeLabelTranslations[typedValue], fallback)
 }
 
 export function getCurrentEmploymentStatusLabel(value?: string | null) {
-  return (
+  const typedValue = value as EmploymentCurrentStatus
+  const fallback =
     currentEmploymentStatusOptions.find((item) => item.value === value)?.label ||
     'Not provided'
+
+  return localizedProgramLabel(
+    currentEmploymentStatusLabelTranslations[typedValue],
+    fallback,
   )
 }
 
 export function getTrainingInterestLabel(value?: string | null) {
-  return (
+  const typedValue = value as TrainingInterest
+  const fallback =
     trainingInterestOptions.find((item) => item.value === value)?.label ||
     'Not provided'
+
+  return localizedProgramLabel(
+    trainingInterestLabelTranslations[typedValue],
+    fallback,
   )
 }
 
 export function getEmploymentDocumentStatusLabel(status: string) {
-  const labels: Record<string, string> = {
-    pending: 'Pending Review',
-    verified: 'Verified',
-    rejected: 'Rejected',
-    need_more_info: 'Need More Info',
-  }
-
-  return labels[status] || status
+  return localizedProgramLabel(
+    employmentDocumentStatusLabelTranslations[status],
+    status,
+  )
 }
 
 export function getEmploymentDocumentStatusClass(status: string) {

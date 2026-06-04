@@ -1,3 +1,5 @@
+import { localizedProgramLabel, type ProgramLabelMap } from '../program-status-i18n'
+
 export type WelfareStatus =
   | 'submitted'
   | 'under_review'
@@ -249,8 +251,67 @@ export const welfareDocumentStatusLabels: Record<
   needs_reupload: 'Needs Re-upload',
 }
 
+const welfareStatusLabelTranslations: Record<WelfareStatus, ProgramLabelMap> = {
+  submitted: { en: 'New', ur: 'نیا', sd: 'نئون' },
+  under_review: { en: 'Under Verification', ur: 'تصدیق جاری', sd: 'تصديق جاري' },
+  need_more_info: { en: 'Need More Info', ur: 'مزید معلومات درکار', sd: 'وڌيڪ معلومات گهربل' },
+  approved: { en: 'Approved', ur: 'منظور شدہ', sd: 'منظور ٿيل' },
+  rejected: { en: 'Rejected', ur: 'مسترد', sd: 'رد ٿيل' },
+  paid_completed: { en: 'Fund Released', ur: 'فنڈ جاری', sd: 'فنڊ جاري' },
+  completed: { en: 'Closed', ur: 'بند', sd: 'بند' },
+}
+
+const welfareDocumentStatusLabelTranslations: Record<
+  WelfareDocumentVerificationStatus,
+  ProgramLabelMap
+> = {
+  pending: { en: 'Pending Verification', ur: 'تصدیق باقی', sd: 'تصديق باقي' },
+  verified: { en: 'Verified', ur: 'تصدیق شدہ', sd: 'تصديق ٿيل' },
+  rejected: { en: 'Rejected', ur: 'مسترد', sd: 'رد ٿيل' },
+  needs_reupload: { en: 'Needs Re-upload', ur: 'دوبارہ اپلوڈ درکار', sd: 'ٻيهر اپلوڊ گهربل' },
+}
+
+const welfarePaymentStatusLabelTranslations: Record<WelfarePaymentStatus, ProgramLabelMap> = {
+  not_started: { en: 'Not Started', ur: 'شروع نہیں ہوا', sd: 'شروع نه ٿيو' },
+  pending: { en: 'Fund Pending', ur: 'فنڈ باقی', sd: 'فنڊ باقي' },
+  approved: { en: 'Fund Approved', ur: 'فنڈ منظور', sd: 'فنڊ منظور' },
+  partially_released: { en: 'Partially Released', ur: 'جزوی جاری', sd: 'جزوي جاري' },
+  released: { en: 'Fund Released', ur: 'فنڈ جاری', sd: 'فنڊ جاري' },
+  completed: { en: 'Completed', ur: 'مکمل', sd: 'مڪمل' },
+}
+
+const welfareCommitteeDecisionLabelTranslations: Record<WelfareCommitteeDecision, ProgramLabelMap> = {
+  pending: { en: 'Pending Welfare Committee', ur: 'ویلفیئر کمیٹی جائزہ باقی', sd: 'ويلفيئر ڪميٽي جائزو باقي' },
+  recommended: { en: 'Recommended', ur: 'سفارش شدہ', sd: 'سفارش ٿيل' },
+  not_recommended: { en: 'Not Recommended', ur: 'سفارش نہیں ہوئی', sd: 'سفارش نه ٿيل' },
+  approved: { en: 'Committee Approved', ur: 'کمیٹی سے منظور', sd: 'ڪميٽي منظور ٿيل' },
+  rejected: { en: 'Committee Rejected', ur: 'کمیٹی سے مسترد', sd: 'ڪميٽي رد ٿيل' },
+  deferred: { en: 'Deferred / More Info Needed', ur: 'موخر / مزید معلومات درکار', sd: 'ملتوي / وڌيڪ معلومات گهربل' },
+}
+
+const welfareCasePriorityLabelTranslations: Record<string, ProgramLabelMap> = {
+  emergency: { en: 'Emergency', ur: 'ایمرجنسی', sd: 'ايمرجنسي' },
+  urgent: { en: 'Urgent', ur: 'فوری', sd: 'تڪڙو' },
+  normal: { en: 'Normal', ur: 'نارمل', sd: 'نارمل' },
+}
+
+const welfareDocumentLabelTranslations: Record<WelfareDocumentType, ProgramLabelMap> = {
+  applicant_cnic: { en: 'Applicant CNIC / B-form', ur: 'درخواست گزار CNIC / ب فارم', sd: 'درخواست ڏيندڙ CNIC / ب فارم' },
+  member_cnic: { en: 'Member CNIC', ur: 'ممبر CNIC', sd: 'ميمبر CNIC' },
+  income_proof: { en: 'Income / Need Proof', ur: 'آمدنی / ضرورت کا ثبوت', sd: 'آمدني / ضرورت جو ثبوت' },
+  case_proof: { en: 'Case Proof', ur: 'کیس ثبوت', sd: 'ڪيس ثبوت' },
+  family_document: { en: 'Family / Dependency Document', ur: 'خاندان / زیر کفالت دستاویز', sd: 'خاندان / زير ڪفالت دستاويز' },
+  expense_estimate: { en: 'Expense Estimate / Challan', ur: 'خرچ تخمینہ / چالان', sd: 'خرچ تخمينو / چالان' },
+  other: { en: 'Other Supporting Document', ur: 'دیگر معاون دستاویز', sd: 'ٻيو مددگار دستاويز' },
+}
+
 export function getWelfareStatusLabel(status: string) {
-  return welfareStatusLabels[status as WelfareStatus] ?? status
+  const typedStatus = status as WelfareStatus
+
+  return localizedProgramLabel(
+    welfareStatusLabelTranslations[typedStatus],
+    welfareStatusLabels[typedStatus] ?? status,
+  )
 }
 
 export function getWelfareStatusClass(status: string) {
@@ -275,11 +336,19 @@ export function getWelfareDocumentConfig(type: string) {
 }
 
 export function getWelfareDocumentLabel(type: string) {
-  return getWelfareDocumentConfig(type)?.label ?? type
+  const typedType = type as WelfareDocumentType
+  const fallback = getWelfareDocumentConfig(type)?.label ?? type
+
+  return localizedProgramLabel(welfareDocumentLabelTranslations[typedType], fallback)
 }
 
 export function getWelfareDocumentStatusLabel(status: string) {
-  return welfareDocumentStatusLabels[status as WelfareDocumentVerificationStatus] ?? status
+  const typedStatus = status as WelfareDocumentVerificationStatus
+
+  return localizedProgramLabel(
+    welfareDocumentStatusLabelTranslations[typedStatus],
+    welfareDocumentStatusLabels[typedStatus] ?? status,
+  )
 }
 
 export function getWelfareDocumentStatusClass(status: string) {
@@ -296,8 +365,22 @@ export function getWelfareDocumentStatusClass(status: string) {
 }
 
 export function getWelfarePaymentStatusLabel(status?: string | null) {
-  if (!status) return 'Not Started'
-  return welfarePaymentStatusOptions.find((item) => item.value === status)?.label ?? status
+  if (!status) {
+    return localizedProgramLabel(
+      welfarePaymentStatusLabelTranslations.not_started,
+      'Not Started',
+    )
+  }
+
+  const typedStatus = status as WelfarePaymentStatus
+  const fallback =
+    welfarePaymentStatusOptions.find((item) => item.value === status)?.label ??
+    status
+
+  return localizedProgramLabel(
+    welfarePaymentStatusLabelTranslations[typedStatus],
+    fallback,
+  )
 }
 
 export function validateWelfareDocumentFile(file: File) {
@@ -345,8 +428,22 @@ export function isWelfareEmergency(details?: WelfareApplicationDetails | null) {
 }
 
 export function getWelfareCommitteeDecisionLabel(status?: string | null) {
-  if (!status) return 'Pending Welfare Committee'
-  return welfareCommitteeDecisionOptions.find((item) => item.value === status)?.label ?? status
+  if (!status) {
+    return localizedProgramLabel(
+      welfareCommitteeDecisionLabelTranslations.pending,
+      'Pending Welfare Committee',
+    )
+  }
+
+  const typedStatus = status as WelfareCommitteeDecision
+  const fallback =
+    welfareCommitteeDecisionOptions.find((item) => item.value === status)?.label ??
+    status
+
+  return localizedProgramLabel(
+    welfareCommitteeDecisionLabelTranslations[typedStatus],
+    fallback,
+  )
 }
 
 export function getWelfareCommitteeDecisionClass(status?: string | null) {
@@ -371,9 +468,15 @@ export function getWelfareCasePriority(details?: WelfareApplicationDetails | nul
 
 export function getWelfareCasePriorityLabel(details?: WelfareApplicationDetails | null) {
   const priority = getWelfareCasePriority(details)
-  if (priority === 'emergency') return 'Emergency'
-  if (priority === 'urgent') return 'Urgent'
-  return 'Normal'
+
+  return localizedProgramLabel(
+    welfareCasePriorityLabelTranslations[priority],
+    priority === 'emergency'
+      ? 'Emergency'
+      : priority === 'urgent'
+        ? 'Urgent'
+        : 'Normal',
+  )
 }
 
 export function getWelfareCasePriorityClass(details?: WelfareApplicationDetails | null) {

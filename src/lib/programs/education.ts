@@ -1,3 +1,5 @@
+import { localizedProgramLabel, type ProgramLabelMap } from "../program-status-i18n";
+
 export type EducationStatus =
   | "submitted"
   | "under_review"
@@ -212,8 +214,44 @@ export const educationDocumentStatusLabels: Record<
   needs_reupload: "Needs Re-upload",
 };
 
+const educationStatusLabelTranslations: Record<EducationStatus, ProgramLabelMap> = {
+  submitted: { en: "Submitted", ur: "جمع شدہ", sd: "جمع ٿيل" },
+  under_review: { en: "Under Review", ur: "زیر جائزہ", sd: "جائزي هيٺ" },
+  need_more_info: { en: "Need More Info", ur: "مزید معلومات درکار", sd: "وڌيڪ معلومات گهربل" },
+  approved: { en: "Approved", ur: "منظور شدہ", sd: "منظور ٿيل" },
+  rejected: { en: "Rejected", ur: "مسترد", sd: "رد ٿيل" },
+  paid_completed: { en: "Paid / Completed", ur: "ادائیگی مکمل", sd: "ادائيگي مڪمل" },
+  completed: { en: "Completed", ur: "مکمل", sd: "مڪمل" },
+};
+
+const educationDocumentStatusLabelTranslations: Record<
+  EducationDocumentVerificationStatus,
+  ProgramLabelMap
+> = {
+  pending: { en: "Pending Verification", ur: "تصدیق باقی", sd: "تصديق باقي" },
+  verified: { en: "Verified", ur: "تصدیق شدہ", sd: "تصديق ٿيل" },
+  rejected: { en: "Rejected", ur: "مسترد", sd: "رد ٿيل" },
+  needs_reupload: { en: "Needs Re-upload", ur: "دوبارہ اپلوڈ درکار", sd: "ٻيهر اپلوڊ گهربل" },
+};
+
+const educationDocumentLabelTranslations: Record<EducationDocumentType, ProgramLabelMap> = {
+  student_cnic_bform: { en: "Student CNIC / B-form", ur: "طالب علم CNIC / ب فارم", sd: "شاگرد جو CNIC / ب فارم" },
+  guardian_cnic: { en: "Guardian CNIC", ur: "سرپرست CNIC", sd: "سرپرست CNIC" },
+  marksheet: { en: "Marksheet", ur: "مارک شیٹ", sd: "مارڪ شيٽ" },
+  admission_proof: { en: "Admission Proof", ur: "داخلہ ثبوت", sd: "داخلا ثبوت" },
+  fee_challan: { en: "Fee Challan", ur: "فیس چالان", sd: "في چالان" },
+  institute_card: { en: "Institute Card", ur: "ادارہ کارڈ", sd: "اداري جو ڪارڊ" },
+  other: { en: "Other Supporting Document", ur: "دیگر معاون دستاویز", sd: "ٻيو مددگار دستاويز" },
+};
+
+
 export function getEducationStatusLabel(status: string) {
-  return educationStatusLabels[status as EducationStatus] ?? status;
+  const typedStatus = status as EducationStatus
+
+  return localizedProgramLabel(
+    educationStatusLabelTranslations[typedStatus],
+    educationStatusLabels[typedStatus] ?? status,
+  )
 }
 
 export function getEducationStatusClass(status: string) {
@@ -238,15 +276,19 @@ export function getEducationDocumentConfig(type: string) {
 }
 
 export function getEducationDocumentLabel(type: string) {
-  return getEducationDocumentConfig(type)?.label ?? type;
+  const typedType = type as EducationDocumentType
+  const fallback = getEducationDocumentConfig(type)?.label ?? type
+
+  return localizedProgramLabel(educationDocumentLabelTranslations[typedType], fallback)
 }
 
 export function getEducationDocumentStatusLabel(status: string) {
-  return (
-    educationDocumentStatusLabels[
-      status as EducationDocumentVerificationStatus
-    ] ?? status
-  );
+  const typedStatus = status as EducationDocumentVerificationStatus
+
+  return localizedProgramLabel(
+    educationDocumentStatusLabelTranslations[typedStatus],
+    educationDocumentStatusLabels[typedStatus] ?? status,
+  )
 }
 
 export function getEducationDocumentStatusClass(status: string) {
