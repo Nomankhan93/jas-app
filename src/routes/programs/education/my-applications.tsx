@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { useProgramTrackingCopy } from "../../../lib/program-tracking-i18n";
 import {
   getEducationStatusClass,
   getEducationStatusLabel,
@@ -52,6 +53,7 @@ const emptyDocumentSummary: DocumentSummary = {
 };
 
 function MyEducationApplicationsPage() {
+  const { copy, arrowClass } = useProgramTrackingCopy("education");;
   const [items, setItems] = useState<EducationApplication[]>([]);
   const [documentSummary, setDocumentSummary] = useState<DocumentSummaryMap>({});
   const [loading, setLoading] = useState(true);
@@ -189,13 +191,13 @@ function MyEducationApplicationsPage() {
   }, [items, searchTerm]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
             <div>
               <h1 className="text-4xl font-black md:text-6xl">
-                My Education Applications
+                {copy.program.listTitle}
               </h1>
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-white/75">
@@ -215,7 +217,7 @@ function MyEducationApplicationsPage() {
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
               )}
-              Refresh
+              {refreshing ? copy.common.refreshing : copy.common.refresh}
             </button>
           </div>
         </div>
@@ -257,7 +259,7 @@ function MyEducationApplicationsPage() {
                 className="mt-6 inline-flex items-center justify-center rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950 no-underline"
               >
                 Apply Now
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
               </Link>
             </div>
           ) : (
@@ -265,7 +267,7 @@ function MyEducationApplicationsPage() {
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
                   <h2 className="text-3xl font-black text-slate-950">
-                    Submitted Applications
+                    {copy.common.submitted} Applications
                   </h2>
                   <p className="mt-1 text-sm text-slate-600">
                     Showing {filteredItems.length} of {items.length} records.
@@ -276,8 +278,8 @@ function MyEducationApplicationsPage() {
                   to="/programs/education/apply"
                   className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-black text-slate-950 no-underline"
                 >
-                  New Application
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  {copy.program.newApplication}
+                  <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
                 </Link>
               </div>
 
@@ -308,6 +310,8 @@ function MyEducationApplicationsPage() {
                     summary={
                       documentSummary[item.id] || { ...emptyDocumentSummary }
                     }
+                    viewDetailsLabel={copy.common.viewDetails}
+                    arrowClass={arrowClass}
                   />
                 ))
               )}
@@ -322,9 +326,13 @@ function MyEducationApplicationsPage() {
 function ApplicationCard({
   item,
   summary,
+  viewDetailsLabel,
+  arrowClass,
 }: {
   item: EducationApplication;
   summary: DocumentSummary;
+  viewDetailsLabel: string;
+  arrowClass: string;
 }) {
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -422,8 +430,8 @@ function ApplicationCard({
   className="inline-flex items-center justify-center rounded-xl bg-emerald-900 px-5 py-3 text-sm font-black !text-white no-underline transition hover:bg-emerald-800 hover:!text-white"
   style={{ color: "#ffffff" }}
 >
-            View Details
-            <ArrowRight className="ml-2 h-4 w-4" />
+            {viewDetailsLabel}
+            <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
           </Link>
         </div>
       </div>

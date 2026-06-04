@@ -3,6 +3,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { ArrowLeft, Download, FileCheck2, HandHeart, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramTrackingCopy } from '../../../lib/program-tracking-i18n'
 import {
   WELFARE_DOCUMENT_BUCKET,
   formatWelfareFileSize,
@@ -45,6 +46,7 @@ type WelfareApplicationDetail = {
 }
 
 function WelfareApplicationDetailPage() {
+  const { copy, textDir, textAlignClass, iconBeforeClass } = useProgramTrackingCopy('welfare')
   const { id } = Route.useParams()
   const [application, setApplication] = useState<WelfareApplicationDetail | null>(null)
   const [documents, setDocuments] = useState<WelfareDocumentRecord[]>([])
@@ -121,11 +123,11 @@ function WelfareApplicationDetailPage() {
 
   if (message || !application) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-12">
+      <main className="min-h-screen bg-slate-50 px-4 py-12" dir="ltr">
         <div className="mx-auto max-w-3xl rounded-3xl border border-amber-200 bg-amber-50 p-8 text-center text-amber-900">
-          <h1 className="text-2xl font-black">Unable to load welfare case</h1>
-          <p className="mt-3 font-semibold">{message || 'Case not found.'}</p>
-          <Link to="/programs/welfare/my-applications" className="mt-5 inline-flex rounded-xl bg-slate-950 px-5 py-3 font-black text-white no-underline">Back</Link>
+          <h1 className="text-2xl font-black">{copy.common.unableToLoad}</h1>
+          <p className="mt-3 font-semibold">{message || copy.common.caseNotFound}</p>
+          <Link to="/programs/welfare/my-applications" className="mt-5 inline-flex rounded-xl bg-slate-950 px-5 py-3 font-black text-white no-underline">{copy.common.back}</Link>
         </div>
       </main>
     )
@@ -134,19 +136,19 @@ function WelfareApplicationDetailPage() {
   const details = application.details || {}
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-6xl">
           <Link to="/programs/welfare/my-applications" className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to My Cases
+            <ArrowLeft className={`${iconBeforeClass} h-4 w-4`} /> {copy.program.detailBack}
           </Link>
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
+            <div className={textAlignClass} dir={textDir}>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
-                <HandHeart className="h-4 w-4 text-amber-300" /> {application.application_no || 'Welfare Case'}
+                <HandHeart className="h-4 w-4 text-amber-300" /> {application.application_no || copy.program.detailBadge}
               </div>
               <h1 className="mt-5 text-4xl font-black md:text-6xl">{application.applicant_name}</h1>
-              <p className="mt-3 text-white/70">Membership No: {application.membership_no}</p>
+              <p className="mt-3 text-white/70">{copy.common.membershipNo}: {application.membership_no}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span className={`rounded-full border px-4 py-2 text-sm font-black ${getWelfareStatusClass(application.status)}`}>{getWelfareStatusLabel(application.status)}</span>
@@ -159,54 +161,54 @@ function WelfareApplicationDetailPage() {
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_380px]">
           <div className="space-y-6">
-            <InfoCard title="Case Details">
+            <InfoCard title={copy.program.caseDetails}>
               <InfoGrid rows={[
-                ['Case Type', details.case_type || '-'],
-                ['Required Amount', formatWelfareMoney(details.required_amount)],
-                ['Approved Amount', application.approved_amount ? formatWelfareMoney(application.approved_amount) : '-'],
-                ['Fund Status', getWelfarePaymentStatusLabel(details.payment_status)],
-                ['Committee Decision', getWelfareCommitteeDecisionLabel(details.welfare_committee_decision)],
-                ['District/Taluka', `${application.district || '-'} / ${application.taluka || '-'}`],
+                [copy.program.caseType, details.case_type || '-'],
+                [copy.common.requiredAmount, formatWelfareMoney(details.required_amount)],
+                [copy.common.approvedAmount, application.approved_amount ? formatWelfareMoney(application.approved_amount) : '-'],
+                [copy.program.fundStatus, getWelfarePaymentStatusLabel(details.payment_status)],
+                [copy.program.committeeDecision, getWelfareCommitteeDecisionLabel(details.welfare_committee_decision)],
+                [copy.common.districtTaluka, `${application.district || '-'} / ${application.taluka || '-'}`],
               ]} />
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700"><strong>Reason:</strong> {details.reason || '-'}</div>
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700"><strong>{copy.common.reason}:</strong> {details.reason || '-'}</div>
             </InfoCard>
 
-            <InfoCard title="Committee / Admin Updates">
+            <InfoCard title={copy.program.committeeUpdates}>
               <div className="grid gap-4">
-                <Note label="Admin Remarks" value={application.admin_remarks} />
-                <Note label="Verifier Remarks" value={details.verifier_remarks} />
-                <Note label="Committee Remarks" value={details.welfare_committee_remarks} />
-                <Note label="Follow-up Notes" value={details.follow_up_notes} />
-                <Note label="Case Close Report" value={details.case_close_report} />
+                <Note label={copy.common.adminRemarks} value={application.admin_remarks} />
+                <Note label={copy.program.verifierRemarks} value={details.verifier_remarks} />
+                <Note label={copy.program.committeeRemarks} value={details.welfare_committee_remarks} />
+                <Note label={copy.program.followUpNotes} value={details.follow_up_notes} />
+                <Note label={copy.program.caseCloseReport} value={details.case_close_report} />
               </div>
             </InfoCard>
           </div>
 
           <aside className="space-y-6">
-            <InfoCard title="Applicant Info">
+            <InfoCard title={copy.program.applicantInfo}>
               <InfoGrid rows={[
-                ['Phone', application.phone],
-                ['CNIC', application.applicant_cnic || '-'],
-                ['Relation', application.relationship_to_member],
-                ['Address', application.address || '-'],
-                ['Submitted', new Date(application.submitted_at).toLocaleString()],
+                [copy.common.phone, application.phone],
+                [copy.common.cnic, application.applicant_cnic || '-'],
+                [copy.common.relation, application.relationship_to_member],
+                [copy.common.address, application.address || '-'],
+                [copy.common.submitted, new Date(application.submitted_at).toLocaleString()],
               ]} />
             </InfoCard>
 
-            <InfoCard title="Documents">
+            <InfoCard title={copy.common.documents}>
               <div className="grid gap-3">
-                {documents.length === 0 ? <p className="text-sm text-slate-600">No documents uploaded.</p> : null}
+                {documents.length === 0 ? <p className="text-sm text-slate-600">{copy.common.noDocuments}</p> : null}
                 {documents.map((document) => (
                   <button key={document.id} type="button" onClick={() => openDocument(document)} className="text-left rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-amber-300">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-black text-slate-950">{getWelfareDocumentLabel(document.document_type)}</p>
-                        <p className="mt-1 text-xs font-semibold text-slate-500">{document.file_name || 'Document'} • {formatWelfareFileSize(document.file_size)}</p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">{document.file_name || copy.common.document} • {formatWelfareFileSize(document.file_size)}</p>
                       </div>
                       <Download className="h-4 w-4 text-slate-500" />
                     </div>
                     <span className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black ${getWelfareDocumentStatusClass(document.verification_status)}`}>{getWelfareDocumentStatusLabel(document.verification_status)}</span>
-                    {document.admin_note ? <p className="mt-3 text-xs font-semibold text-slate-600">Note: {document.admin_note}</p> : null}
+                    {document.admin_note ? <p className="mt-3 text-xs font-semibold text-slate-600">{copy.common.note}: {document.admin_note}</p> : null}
                   </button>
                 ))}
               </div>

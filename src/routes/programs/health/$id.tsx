@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramTrackingCopy } from '../../../lib/program-tracking-i18n'
 import {
   HEALTH_DOCUMENT_BUCKET,
   formatHealthFileSize,
@@ -64,6 +65,7 @@ type HealthApplicationDetail = {
 }
 
 function HealthApplicationDetailPage() {
+  const { copy } = useProgramTrackingCopy('health')
   const { id } = Route.useParams()
   const navigate = useNavigate()
 
@@ -113,7 +115,7 @@ function HealthApplicationDetailPage() {
     }
 
     if (!data) {
-      setMessage('Health application not found.')
+      setMessage(copy.common.caseNotFound)
       setApplication(null)
       setDocuments([])
       setLoading(false)
@@ -172,7 +174,7 @@ function HealthApplicationDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-10 text-white md:py-14">
         <div className="mx-auto max-w-7xl">
           <button
@@ -246,13 +248,13 @@ function HealthApplicationDetailPage() {
                     ['Age', details.patient_age || '-'],
                     ['Gender', details.patient_gender || '-'],
                     ['Guardian Name', details.guardian_name || '-'],
-                    ['Phone', application.phone],
+                    [copy.common.phone, application.phone],
                     ['Email', application.email || '-'],
                     ['Relationship', application.relationship_to_member],
                     ['Membership No', application.membership_no],
                     ['District', application.district || '-'],
                     ['Taluka', application.taluka || '-'],
-                    ['Address', application.address || '-'],
+                    [copy.common.address, application.address || '-'],
                   ]}
                 />
 
@@ -272,7 +274,7 @@ function HealthApplicationDetailPage() {
                   ]}
                 />
 
-                <DocumentsSection documents={documents} signedUrls={signedUrls} />
+                <DocumentsSection documents={documents} signedUrls={signedUrls} noDocumentsLabel={copy.common.noDocuments} />
               </div>
 
               <aside className="space-y-6">
@@ -443,9 +445,11 @@ function InfoSection({
 function DocumentsSection({
   documents,
   signedUrls,
+  noDocumentsLabel,
 }: {
   documents: HealthDocumentRecord[]
   signedUrls: Record<string, string>
+  noDocumentsLabel: string
 }) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -460,7 +464,7 @@ function DocumentsSection({
 
       {documents.length === 0 ? (
         <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
-          No documents uploaded.
+          {noDocumentsLabel}
         </p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

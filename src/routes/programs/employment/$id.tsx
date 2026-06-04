@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { BriefcaseBusiness, ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramTrackingCopy } from '../../../lib/program-tracking-i18n'
 import {
   EMPLOYMENT_DOCUMENT_BUCKET,
   formatEmploymentFileSize,
@@ -39,6 +40,7 @@ type EmploymentApplicationDetail = {
 }
 
 function EmploymentApplicationDetailPage() {
+  const { copy, textDir, textAlignClass } = useProgramTrackingCopy('employment')
   const { id } = Route.useParams()
   const [application, setApplication] = useState<EmploymentApplicationDetail | null>(null)
   const [documents, setDocuments] = useState<EmploymentDocumentRecord[]>([])
@@ -107,24 +109,24 @@ function EmploymentApplicationDetailPage() {
   }
 
   if (message || !application) {
-    return <main className="min-h-screen bg-slate-50 px-4 py-10"><div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 text-center shadow-sm">{message || 'Not found'}</div></main>
+    return <main className="min-h-screen bg-slate-50 px-4 py-10" dir="ltr"><div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 text-center shadow-sm">{message || 'Not found'}</div></main>
   }
 
   const details = application.details || {}
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <main className="min-h-screen bg-slate-50 px-4 py-10" dir="ltr">
       <div className="mx-auto max-w-5xl space-y-6">
-        <Link to="/programs/employment/my-applications" className="text-sm font-black text-emerald-700 no-underline">← My Employment Profiles</Link>
+        <Link to="/programs/employment/my-applications" className="text-sm font-black text-emerald-700 no-underline">← {copy.program.detailBack}</Link>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className={`flex flex-wrap items-start justify-between gap-4 ${textAlignClass}`} dir={textDir}>
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm font-black text-emerald-700">
-                <BriefcaseBusiness className="h-4 w-4" /> Employment Profile
+                <BriefcaseBusiness className="h-4 w-4" /> {copy.program.detailBadge}
               </div>
               <h1 className="mt-4 text-3xl font-black text-slate-950">{application.applicant_name}</h1>
-              <p className="mt-1 text-sm font-semibold text-slate-500">Member ID: {application.membership_no}</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{copy.common.memberId}: {application.membership_no}</p>
             </div>
             <span className={`rounded-full border px-4 py-2 text-sm font-black ${getEmploymentStatusClass(application.status)}`}>
               {getEmploymentStatusLabel(application.status)}
@@ -132,43 +134,43 @@ function EmploymentApplicationDetailPage() {
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <Info label="Education" value={details.education_level || '-'} />
-            <Info label="Field" value={details.field_of_study || '-'} />
-            <Info label="Skills" value={formatSkills(details.skills)} />
-            <Info label="Experience" value={details.experience_years || '-'} />
-            <Info label="Preferred Location" value={details.preferred_job_location || '-'} />
-            <Info label="Expected Salary" value={details.expected_salary || '-'} />
-            <Info label="Employment Type" value={getEmploymentTypeLabel(details.employment_type)} />
-            <Info label="Current Status" value={getCurrentEmploymentStatusLabel(details.current_employment_status)} />
-            <Info label="Training Interest" value={getTrainingInterestLabel(details.training_interest)} />
-            <Info label="Shortlist Status" value={getShortlistStatusLabel(details.shortlist_status)} />
-            <Info label="Placement" value={details.placement_status || 'Not placed'} />
-            <Info label="Submitted" value={new Date(application.created_at).toLocaleDateString()} />
+            <Info label={copy.program.education} value={details.education_level || '-'} />
+            <Info label={copy.program.field} value={details.field_of_study || '-'} />
+            <Info label={copy.program.skills} value={formatSkills(details.skills)} />
+            <Info label={copy.program.experience} value={details.experience_years || '-'} />
+            <Info label={copy.program.preferredLocation} value={details.preferred_job_location || '-'} />
+            <Info label={copy.program.expectedSalary} value={details.expected_salary || '-'} />
+            <Info label={copy.program.employmentType} value={getEmploymentTypeLabel(details.employment_type)} />
+            <Info label={copy.program.currentStatus} value={getCurrentEmploymentStatusLabel(details.current_employment_status)} />
+            <Info label={copy.program.trainingInterest} value={getTrainingInterestLabel(details.training_interest)} />
+            <Info label={copy.program.shortlistStatus} value={getShortlistStatusLabel(details.shortlist_status)} />
+            <Info label={copy.program.placement} value={details.placement_status || copy.program.notPlaced} />
+            <Info label={copy.common.submitted} value={new Date(application.created_at).toLocaleDateString()} />
           </div>
 
-          {details.experience_summary ? <TextBlock title="Experience Summary" text={details.experience_summary} /> : null}
-          {details.skill_development_request ? <TextBlock title="Skill Development Request" text={details.skill_development_request} /> : null}
-          {details.placement_notes ? <TextBlock title="Placement Notes" text={details.placement_notes} /> : null}
-          {application.admin_remarks ? <TextBlock title="Admin Remarks" text={application.admin_remarks} /> : null}
+          {details.experience_summary ? <TextBlock title={copy.program.experienceSummary} text={details.experience_summary} /> : null}
+          {details.skill_development_request ? <TextBlock title={copy.program.skillDevelopmentRequest} text={details.skill_development_request} /> : null}
+          {details.placement_notes ? <TextBlock title={copy.program.placementNotes} text={details.placement_notes} /> : null}
+          {application.admin_remarks ? <TextBlock title={copy.common.adminRemarks} text={application.admin_remarks} /> : null}
         </section>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-slate-950">Documents</h2>
+          <h2 className="text-2xl font-black text-slate-950">{copy.common.documents}</h2>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {documents.map((doc) => (
               <div key={doc.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-black text-slate-950">{getEmploymentDocumentLabel(doc.document_type)}</p>
-                    <p className="mt-1 text-xs text-slate-500">{doc.file_name || 'Document'} · {formatEmploymentFileSize(doc.file_size)}</p>
+                    <p className="mt-1 text-xs text-slate-500">{doc.file_name || copy.common.document} · {formatEmploymentFileSize(doc.file_size)}</p>
                   </div>
                   <FileText className="h-5 w-5 text-emerald-700" />
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <span className={`rounded-full px-3 py-1 text-xs font-black ${getEmploymentDocumentStatusClass(doc.verification_status)}`}>{getEmploymentDocumentStatusLabel(doc.verification_status)}</span>
-                  {documentUrls[doc.id] ? <a href={documentUrls[doc.id]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-black text-emerald-700">Open <ExternalLink className="h-3.5 w-3.5" /></a> : null}
+                  {documentUrls[doc.id] ? <a href={documentUrls[doc.id]} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm font-black text-emerald-700">{copy.common.open} <ExternalLink className="h-3.5 w-3.5" /></a> : null}
                 </div>
-                {doc.admin_note ? <p className="mt-3 text-sm text-slate-600"><strong>Note:</strong> {doc.admin_note}</p> : null}
+                {doc.admin_note ? <p className="mt-3 text-sm text-slate-600"><strong>{copy.common.note}:</strong> {doc.admin_note}</p> : null}
               </div>
             ))}
           </div>

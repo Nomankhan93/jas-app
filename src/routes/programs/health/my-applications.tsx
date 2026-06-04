@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramTrackingCopy } from '../../../lib/program-tracking-i18n'
 import {
   getHealthPaymentStatusLabel,
   getHealthStatusClass,
@@ -40,6 +41,7 @@ type HealthApplicationListItem = {
 }
 
 function MyHealthApplicationsPage() {
+  const { copy, arrowClass } = useProgramTrackingCopy('health')
   const [applications, setApplications] = useState<HealthApplicationListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -102,14 +104,14 @@ function MyHealthApplicationsPage() {
   }, [applications])
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-3xl space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
                 <HeartPulse className="h-4 w-4 text-red-300" />
-                My Health Applications
+                {copy.program.listTitle}
               </div>
 
               <h1 className="text-4xl font-black md:text-6xl">
@@ -142,7 +144,7 @@ function MyHealthApplicationsPage() {
       <section className="px-4 py-10 md:py-16">
         <div className="mx-auto max-w-6xl space-y-6">
           <div className="grid gap-4 md:grid-cols-4">
-            <StatCard label="Total" value={stats.total} icon={<ShieldCheck className="h-5 w-5" />} />
+            <StatCard label={copy.common.total} value={stats.total} icon={<ShieldCheck className="h-5 w-5" />} />
             <StatCard label="Emergency" value={stats.emergency} icon={<AlertTriangle className="h-5 w-5" />} />
             <StatCard label="Approved" value={stats.approved} icon={<CalendarDays className="h-5 w-5" />} />
             <StatCard label="Completed" value={stats.completed} icon={<BadgeIndianRupee className="h-5 w-5" />} />
@@ -183,7 +185,15 @@ function MyHealthApplicationsPage() {
           ) : (
             <div className="grid gap-5">
               {applications.map((item) => (
-                <HealthApplicationCard key={item.id} item={item} />
+                <HealthApplicationCard
+                    key={item.id}
+                    item={item}
+                    labels={{
+                      payment: copy.program.caseDetails,
+                      viewDetails: copy.common.viewDetails,
+                    }}
+                    arrowClass={arrowClass}
+                  />
               ))}
             </div>
           )}
@@ -215,7 +225,18 @@ function StatCard({
   )
 }
 
-function HealthApplicationCard({ item }: { item: HealthApplicationListItem }) {
+function HealthApplicationCard({
+  item,
+  labels,
+  arrowClass,
+}: {
+  item: HealthApplicationListItem
+  labels: {
+    payment: string
+    viewDetails: string
+  }
+  arrowClass: string
+}) {
   const details = item.details || {}
 
   return (
@@ -255,7 +276,7 @@ function HealthApplicationCard({ item }: { item: HealthApplicationListItem }) {
             <p><strong>Treatment:</strong> {details.treatment_type || '-'}</p>
             <p><strong>Hospital:</strong> {details.hospital_name || '-'}</p>
             <p><strong>Required:</strong> {details.required_amount ? `Rs. ${details.required_amount}` : '-'}</p>
-            <p><strong>Payment:</strong> {getHealthPaymentStatusLabel(details.payment_status)}</p>
+            <p><strong>{labels.payment}:</strong> {getHealthPaymentStatusLabel(details.payment_status)}</p>
           </div>
 
           {item.admin_remarks ? (
@@ -282,8 +303,8 @@ function HealthApplicationCard({ item }: { item: HealthApplicationListItem }) {
             params={{ id: item.id }}
             className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition"
           >
-            View Detail
-            <ArrowRight className="ml-2 h-4 w-4" />
+            {labels.viewDetails}
+            <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
           </Link>
         </div>
       </div>

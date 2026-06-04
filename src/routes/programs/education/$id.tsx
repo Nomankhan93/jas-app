@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { useProgramTrackingCopy } from "../../../lib/program-tracking-i18n";
 import {
   EDUCATION_DOCUMENT_BUCKET,
   formatEducationFileSize,
@@ -57,6 +58,7 @@ type EducationApplicationDetail = {
 };
 
 function EducationApplicationDetailPage() {
+  const { copy, textDir, textAlignClass, iconBeforeClass } = useProgramTrackingCopy("education");
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
@@ -166,7 +168,7 @@ function EducationApplicationDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-10 text-white md:py-14">
         <div className="mx-auto max-w-7xl">
           <button
@@ -174,12 +176,12 @@ function EducationApplicationDetailPage() {
             onClick={handleBack}
             className="inline-flex items-center text-sm font-bold text-amber-300 transition hover:text-amber-200"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to My Applications
+            <ArrowLeft className={`${iconBeforeClass} h-4 w-4`} />
+            {copy.program.detailBack}
           </button>
 
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-            <div>
+            <div className={textAlignClass} dir={textDir}>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
                 <GraduationCap className="h-4 w-4 text-amber-300" />
                 Education Application Detail
@@ -201,7 +203,7 @@ function EducationApplicationDetailPage() {
                   {application.application_no || "Application"}
                 </p>
                 <p className="mt-1 text-white/70">
-                  Submitted:{" "}
+                  {copy.common.submitted}:{" "}
                   {new Date(application.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -231,7 +233,14 @@ function EducationApplicationDetailPage() {
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
               <div className="space-y-6">
-                <SummaryCard application={application} />
+                <SummaryCard
+                application={application}
+                labels={{
+                  membershipNo: copy.common.membershipNo,
+                  approvedAmount: copy.common.approvedAmount,
+                  adminRemarks: copy.common.adminRemarks,
+                }}
+              />
 
                 <InfoSection
                   title="Student / Applicant Details"
@@ -250,7 +259,7 @@ function EducationApplicationDetailPage() {
                 />
 
                 <InfoSection
-                  title="Institute & Academic Details"
+                  title="Institute & {copy.program.academicDetails}"
                   icon={<ClipboardCheck className="h-5 w-5" />}
                   items={[
                     ["Guardian Name", details.guardian_name || "-"],
@@ -267,7 +276,7 @@ function EducationApplicationDetailPage() {
                 />
 
                 <InfoSection
-                  title="Support Request"
+                  title={copy.program.supportType}
                   icon={<BadgeIndianRupee className="h-5 w-5" />}
                   items={[
                     ["Support Type", details.support_type || "-"],
@@ -295,7 +304,7 @@ function EducationApplicationDetailPage() {
                   icon={<CalendarDays className="h-5 w-5" />}
                   items={[
                     [
-                      "Submitted At",
+                      `${copy.common.submitted} At`,
                       application.submitted_at
                         ? new Date(application.submitted_at).toLocaleString()
                         : "-",
@@ -331,8 +340,14 @@ function EducationApplicationDetailPage() {
 
 function SummaryCard({
   application,
+  labels,
 }: {
   application: EducationApplicationDetail;
+  labels: {
+    membershipNo: string;
+    approvedAmount: string;
+    adminRemarks: string;
+  };
 }) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -357,7 +372,7 @@ function SummaryCard({
           </h2>
 
           <p className="mt-2 font-semibold text-slate-500">
-            Membership No: {application.membership_no}
+            {labels.membershipNo}: {application.membership_no}
           </p>
         </div>
 
@@ -367,13 +382,13 @@ function SummaryCard({
               ? `Rs. ${Number(application.approved_amount)}`
               : "Amount Pending"}
           </p>
-          <p className="mt-1">Approved Amount</p>
+          <p className="mt-1">{labels.approvedAmount}</p>
         </div>
       </div>
 
       {application.admin_remarks ? (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <strong>Admin Remarks:</strong> {application.admin_remarks}
+          <strong>{labels.adminRemarks}:</strong> {application.admin_remarks}
         </div>
       ) : null}
     </section>
