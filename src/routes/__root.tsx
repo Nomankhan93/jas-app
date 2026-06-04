@@ -36,6 +36,12 @@ import {
   UserPlus,
   X,
 } from 'lucide-react'
+import {
+  I18nProvider,
+  LanguageSwitcher,
+  useI18n,
+  type TranslationKey,
+} from '../lib/i18n'
 import { supabase } from '../lib/supabase/client'
 import appCss from '../styles.css?url'
 
@@ -186,6 +192,25 @@ const programItems: ProgramItem[] = [
   },
 ]
 
+const publicPageTranslationKeys: Record<string, string> = {
+  '/about': 'about',
+  '/vision-mission': 'visionMission',
+  '/manifesto': 'manifesto',
+  '/constitution': 'constitution',
+  '/cwc': 'cwc',
+  '/committees': 'committees',
+  '/gallery': 'gallery',
+  '/events': 'events',
+  '/contact': 'contact',
+}
+
+const programTranslationKeys: Record<string, string> = {
+  '/programs/education': 'education',
+  '/programs/health': 'health',
+  '/programs/welfare': 'welfare',
+  '/programs/employment': 'employment',
+}
+
 function RootComponent() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -199,19 +224,21 @@ function RootComponent() {
 
   return (
     <RootDocument>
-      <div className="min-h-screen bg-[linear-gradient(180deg,#fbf9f4_0%,#f6f2e9_55%,#f8f5ef_100%)] text-stone-950">
-        <div
-          className="animate-fade-in pointer-events-none fixed inset-x-0 top-0 z-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(196,145,44,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(11,42,29,0.10),transparent_35%)]"
-          aria-hidden="true"
-        />
+      <I18nProvider>
+        <div className="min-h-screen bg-[linear-gradient(180deg,#fbf9f4_0%,#f6f2e9_55%,#f8f5ef_100%)] text-stone-950">
+          <div
+            className="animate-fade-in pointer-events-none fixed inset-x-0 top-0 z-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(196,145,44,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(11,42,29,0.10),transparent_35%)]"
+            aria-hidden="true"
+          />
 
-        <PwaBootstrap />
-        {!isPublicVerifyPage ? <Header compact={isCardPreviewPage} /> : null}
+          <PwaBootstrap />
+          {!isPublicVerifyPage ? <Header compact={isCardPreviewPage} /> : null}
 
-        <div className="animate-fade-up relative z-10">
-          <Outlet />
+          <div className="animate-fade-up relative z-10">
+            <Outlet />
+          </div>
         </div>
-      </div>
+      </I18nProvider>
     </RootDocument>
   )
 }
@@ -242,45 +269,54 @@ function RootDocument({ children }: { children: ReactNode }) {
 function NotFoundPage() {
   return (
     <RootDocument>
-      <div className="min-h-screen bg-[linear-gradient(180deg,#fbf9f4_0%,#f6f2e9_55%,#f8f5ef_100%)] text-stone-950">
-        <Header compact />
-
-        <main className="relative z-10 px-3 py-10 sm:px-4 sm:py-16">
-          <section className="page-wrap overflow-hidden rounded-[2rem] bg-white p-6 text-center shadow-sm ring-1 ring-slate-200/70 sm:p-10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100">
-              <ShieldCheck size={30} />
-            </div>
-
-            <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-              Page Not Found
-            </p>
-
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-              This JAS page does not exist
-            </h1>
-
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-              The page may have been moved, removed, or the link may be
-              incorrect. Use the links below to return to a valid JAS page.
-            </p>
-
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <Link to="/" className="primary-btn no-underline">
-                Go to Home
-              </Link>
-
-              <Link to="/dashboard" className="secondary-btn no-underline">
-                Open Dashboard
-              </Link>
-
-              <Link to="/contact" className="secondary-btn no-underline">
-                Contact JAS
-              </Link>
-            </div>
-          </section>
-        </main>
-      </div>
+      <I18nProvider>
+        <NotFoundPageContent />
+      </I18nProvider>
     </RootDocument>
+  )
+}
+
+function NotFoundPageContent() {
+  const { t } = useI18n()
+
+  return (
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fbf9f4_0%,#f6f2e9_55%,#f8f5ef_100%)] text-stone-950">
+      <Header compact />
+
+      <main className="relative z-10 px-3 py-10 sm:px-4 sm:py-16">
+        <section className="page-wrap overflow-hidden rounded-[2rem] bg-white p-6 text-center shadow-sm ring-1 ring-slate-200/70 sm:p-10">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100">
+            <ShieldCheck size={30} />
+          </div>
+
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+            {t('notFound.eyebrow')}
+          </p>
+
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+            {t('notFound.title')}
+          </h1>
+
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+            {t('notFound.description')}
+          </p>
+
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link to="/" className="primary-btn no-underline">
+              {t('notFound.home')}
+            </Link>
+
+            <Link to="/dashboard" className="secondary-btn no-underline">
+              {t('notFound.dashboard')}
+            </Link>
+
+            <Link to="/contact" className="secondary-btn no-underline">
+              {t('notFound.contact')}
+            </Link>
+          </div>
+        </section>
+      </main>
+    </div>
   )
 }
 
@@ -312,6 +348,7 @@ function PwaBootstrap() {
 }
 
 function Header({ compact }: { compact: boolean }) {
+  const { language, t } = useI18n()
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [authLoading, setAuthLoading] = useState(true)
@@ -415,45 +452,73 @@ function Header({ compact }: { compact: boolean }) {
     }
   }, [syncAuthState])
 
+  const localizedPublicPageItems = useMemo(() => {
+    return publicPageItems.map((item) => {
+      const key = publicPageTranslationKeys[item.to]
+
+      if (!key) return item
+
+      return {
+        ...item,
+        label: t(`public.${key}.label` as TranslationKey),
+        description: t(`public.${key}.description` as TranslationKey),
+      }
+    })
+  }, [language, t])
+
+  const localizedProgramItems = useMemo(() => {
+    return programItems.map((item) => {
+      const key = programTranslationKeys[item.to]
+
+      if (!key) return item
+
+      return {
+        ...item,
+        label: t(`program.${key}.label` as TranslationKey),
+        description: t(`program.${key}.description` as TranslationKey),
+      }
+    })
+  }, [language, t])
+
   const memberItems = useMemo(() => {
     const items: NavItem[] = []
 
     if (authLoading) return items
 
     if (!isLoggedIn) {
-      items.push({ to: '/signup', label: 'Membership', icon: <IdCard size={16} /> })
+      items.push({ to: '/signup', label: t('nav.membership'), icon: <IdCard size={16} /> })
       return items
     }
 
     items.push(
-      { to: '/donors', label: 'Donors', icon: <Trophy size={16} /> },
-      { to: '/notifications', label: 'Updates', icon: <Bell size={16} /> },
-      { to: '/register', label: 'Register', icon: <UserPlus size={16} /> },
-      { to: '/card', label: 'Digital Card', icon: <IdCard size={16} /> },
-      { to: '/designation-card', label: 'Office Bearer Card', icon: <ShieldCheck size={16} /> },
+      { to: '/donors', label: t('nav.donors'), icon: <Trophy size={16} /> },
+      { to: '/notifications', label: t('nav.updates'), icon: <Bell size={16} /> },
+      { to: '/register', label: t('nav.register'), icon: <UserPlus size={16} /> },
+      { to: '/card', label: t('nav.digitalCard'), icon: <IdCard size={16} /> },
+      { to: '/designation-card', label: t('nav.officeBearerCard'), icon: <ShieldCheck size={16} /> },
     )
 
     return items
-  }, [authLoading, isLoggedIn])
+  }, [authLoading, isLoggedIn, language, t])
 
   const mobileNavItems = useMemo(() => {
     const items: NavItem[] = [
-      { to: '/news', label: 'News', icon: <Newspaper size={16} /> },
-      { to: '/donate', label: 'Donate', icon: <BadgeIndianRupee size={16} /> },
+      { to: '/news', label: t('nav.news'), icon: <Newspaper size={16} /> },
+      { to: '/donate', label: t('nav.donate'), icon: <BadgeIndianRupee size={16} /> },
       ...memberItems,
     ]
 
-    if (isAdmin) items.push({ to: '/admin', label: 'Admin Panel', icon: <ShieldCheck size={16} /> })
+    if (isAdmin) items.push({ to: '/admin', label: t('nav.adminPanel'), icon: <ShieldCheck size={16} /> })
 
     return items
-  }, [isAdmin, memberItems])
+  }, [isAdmin, language, memberItems, t])
 
   const moreActive =
-    publicPageItems.some((item) => isActive(item.to)) ||
+    localizedPublicPageItems.some((item) => isActive(item.to)) ||
     memberItems.some((item) => isActive(item.to))
   const programsActive = pathname.startsWith('/programs/')
   const dashboardPath = isAdmin ? '/admin' : '/dashboard'
-  const dashboardLabel = isAdmin ? 'Admin Panel' : 'Dashboard'
+  const dashboardLabel = isAdmin ? t('nav.adminPanel') : t('nav.dashboard')
   const accountInitial = isAdmin ? 'A' : 'N'
 
   function toggleMenu(menu: Exclude<HeaderMenuKey, null>) {
@@ -486,18 +551,18 @@ function Header({ compact }: { compact: boolean }) {
   }
 
   return (
-    <header ref={headerRef} className={`site-header ${compact ? 'shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''}`}>
+    <header ref={headerRef} dir="ltr" className={`site-header ${compact ? 'shadow-[0_10px_30px_rgba(15,23,42,0.06)]' : ''}`}>
       <div className="site-header-inner page-wrap flex items-center gap-3 py-3">
         <div className="site-brand-wrap animate-fade-up min-w-0 flex-1 sm:flex-none">
           <Link to="/" className="site-brand-link brand-pill lift-hover pressable min-w-0 rounded-[1.35rem] px-3 py-2.5 sm:px-4" aria-label="Jatt Alliance Sindh home">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10"><ShieldCheck size={18} className="text-[#d8a949]" aria-hidden="true" /></span>
-            <span className="min-w-0"><span className="block truncate font-[Manrope,Inter,sans-serif] text-xl font-extrabold tracking-tight text-white sm:text-2xl">Jatt Alliance Sindh</span><span className="mt-0.5 block truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-white/60">Member Platform</span></span>
+            <span className="min-w-0"><span className="block truncate font-[Manrope,Inter,sans-serif] text-xl font-extrabold tracking-tight text-white sm:text-2xl">{t('brand.name')}</span><span className="mt-0.5 block truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-white/60">{t('brand.platform')}</span></span>
             <span className="hidden shrink-0 rounded-full border border-white/12 bg-white/10 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white/90 sm:inline-flex">JAS</span>
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-4 lg:flex lg:gap-5" aria-label="Main navigation">
-          <NavLink to="/" label="Home" active={isActive('/')} delayClass="delay-1" />
+        <nav className="hidden items-center gap-4 xl:gap-5 lg:flex" aria-label="Main navigation">
+          <NavLink to="/" label={t('nav.home')} active={isActive('/')} delayClass="delay-1" />
 
           <div className="relative">
             <button
@@ -507,18 +572,18 @@ function Header({ compact }: { compact: boolean }) {
               aria-expanded={programsOpen}
               aria-haspopup="menu"
             >
-              Programs
+              {t('nav.programs')}
               <ChevronDown size={14} className={`transition ${programsOpen ? 'rotate-180' : ''}`} />
             </button>
             {programsOpen ? (
               <div onClick={closeMenus} className="absolute left-0 top-full z-[60] mt-4 w-[320px] rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
-                {programItems.map((item) => <ProgramDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
+                {localizedProgramItems.map((item) => <ProgramDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
               </div>
             ) : null}
           </div>
 
-          <NavLink to="/donate" label="Donate" active={isActive('/donate')} delayClass="delay-3" />
-          <NavLink to="/news" label="News" active={isActive('/news')} delayClass="delay-4" />
+          <NavLink to="/donate" label={t('nav.donate')} active={isActive('/donate')} delayClass="delay-3" />
+          <NavLink to="/news" label={t('nav.news')} active={isActive('/news')} delayClass="delay-4" />
 
           <div className="relative">
             <button
@@ -528,21 +593,21 @@ function Header({ compact }: { compact: boolean }) {
               aria-expanded={moreOpen}
               aria-haspopup="menu"
             >
-              More
+              {t('nav.more')}
               <ChevronDown size={14} className={`transition ${moreOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {moreOpen ? (
               <div onClick={closeMenus} className="absolute right-0 top-full z-[60] mt-4 w-[420px] rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
                 <div className="grid gap-3">
-                  <DropdownGroup title="Organization">
+                  <DropdownGroup title={t('nav.organization')}>
                     <div className="grid gap-1 sm:grid-cols-2">
-                      {publicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
+                      {localizedPublicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
                     </div>
                   </DropdownGroup>
 
                   {memberItems.length ? (
-                    <DropdownGroup title={isLoggedIn ? 'Member Access' : 'Membership'}>
+                    <DropdownGroup title={isLoggedIn ? t('nav.memberAccess') : t('nav.membership')}>
                       <div className="grid gap-1 sm:grid-cols-2">
                         {memberItems.map((item) => <CompactDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
                       </div>
@@ -550,9 +615,9 @@ function Header({ compact }: { compact: boolean }) {
                   ) : null}
 
                   {isAdmin ? (
-                    <DropdownGroup title="Admin">
+                    <DropdownGroup title={t('nav.admin')}>
                       <div className="grid gap-1 sm:grid-cols-2">
-                        <CompactDropdownItem item={{ to: '/admin', label: 'Admin Panel', icon: <ShieldCheck size={16} /> }} active={isActive('/admin')} />
+                        <CompactDropdownItem item={{ to: '/admin', label: t('nav.adminPanel'), icon: <ShieldCheck size={16} /> }} active={isActive('/admin')} />
                       </div>
                     </DropdownGroup>
                   ) : null}
@@ -562,7 +627,9 @@ function Header({ compact }: { compact: boolean }) {
           </div>
         </nav>
 
-        <div className="ml-auto hidden items-center gap-3 lg:flex">
+        <div className="ml-auto hidden items-center gap-2 xl:gap-3 lg:flex">
+          <LanguageSwitcher />
+
           {authLoading ? (
             <div className="h-11 w-28 animate-pulse rounded-[var(--r-lg)] bg-white/25" />
           ) : isLoggedIn ? (
@@ -576,7 +643,7 @@ function Header({ compact }: { compact: boolean }) {
                   type="button"
                   onClick={() => toggleMenu('account')}
                   className="animate-fade-up flex h-12 w-12 items-center justify-center rounded-full bg-emerald-900 text-sm font-black text-white shadow-sm ring-1 ring-white/25 transition hover:-translate-y-0.5 hover:bg-emerald-800"
-                  aria-label="Open account menu"
+                  aria-label={t('account.open')}
                   aria-expanded={accountOpen}
                 >
                   {accountInitial}
@@ -585,9 +652,9 @@ function Header({ compact }: { compact: boolean }) {
                 {accountOpen ? (
                   <div onClick={closeMenus} className="absolute right-0 top-full z-[70] mt-3 w-64 rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
                     <CompactDropdownItem item={{ to: dashboardPath, label: dashboardLabel, icon: <ShieldCheck size={16} /> }} active={isActive(dashboardPath)} />
-                    <CompactDropdownItem item={{ to: '/card', label: 'Digital Card', icon: <IdCard size={16} /> }} active={isActive('/card')} />
-                    <CompactDropdownItem item={{ to: '/designation-card', label: 'Office Bearer Card', icon: <ShieldCheck size={16} /> }} active={isActive('/designation-card')} />
-                    <CompactDropdownItem item={{ to: '/notifications', label: 'Updates', icon: <Bell size={16} /> }} active={isActive('/notifications')} />
+                    <CompactDropdownItem item={{ to: '/card', label: t('nav.digitalCard'), icon: <IdCard size={16} /> }} active={isActive('/card')} />
+                    <CompactDropdownItem item={{ to: '/designation-card', label: t('nav.officeBearerCard'), icon: <ShieldCheck size={16} /> }} active={isActive('/designation-card')} />
+                    <CompactDropdownItem item={{ to: '/notifications', label: t('nav.updates'), icon: <Bell size={16} /> }} active={isActive('/notifications')} />
                     <button
                       type="button"
                       onClick={handleLogout}
@@ -595,7 +662,7 @@ function Header({ compact }: { compact: boolean }) {
                       className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <LogOut size={16} aria-hidden="true" />
-                      {logoutLoading ? 'Logging out...' : 'Logout'}
+                      {logoutLoading ? t('auth.loggingOut') : t('auth.logout')}
                     </button>
                   </div>
                 ) : null}
@@ -603,8 +670,8 @@ function Header({ compact }: { compact: boolean }) {
             </>
           ) : (
             <>
-              <Link to="/login" className="secondary-btn animate-fade-up pressable lift-hover">Login</Link>
-              <Link to="/signup" className="animate-fade-up inline-flex min-h-[2.75rem] items-center justify-center rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-7 py-3 text-sm font-black text-[#102719] shadow-[0_14px_32px_rgba(196,145,44,0.28)] transition duration-200 hover:-translate-y-0.5 active:scale-[0.985]">Join Now</Link>
+              <Link to="/login" className="secondary-btn animate-fade-up pressable lift-hover">{t('auth.login')}</Link>
+              <Link to="/signup" className="animate-fade-up inline-flex min-h-[2.75rem] items-center justify-center rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-7 py-3 text-sm font-black text-[#102719] shadow-[0_14px_32px_rgba(196,145,44,0.28)] transition duration-200 hover:-translate-y-0.5 active:scale-[0.985]">{t('auth.joinNow')}</Link>
             </>
           )}
         </div>
@@ -618,7 +685,7 @@ function Header({ compact }: { compact: boolean }) {
           }}
           aria-expanded={mobileOpen}
           aria-controls="mobile-navigation"
-          aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-label={mobileOpen ? t('menu.close') : t('menu.open')}
         >
           {mobileOpen ? <X size={21} /> : <Menu size={21} />}
         </button>
@@ -628,18 +695,21 @@ function Header({ compact }: { compact: boolean }) {
         <div id="mobile-navigation" className="mobile-navigation-panel border-t border-[var(--line)] bg-[#fbf8f2] px-3 pt-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] lg:hidden">
           <div className="mobile-navigation-card soft-panel animate-slide-down page-wrap max-w-7xl rounded-[1.5rem] bg-white/90 p-2 backdrop-blur">
             <nav className="grid gap-1" aria-label="Mobile navigation">
-              <MobileNavLink to="/" label="Home" icon={<Home size={16} />} active={isActive('/')} delayClass="delay-1" />
+              <MobileNavLink to="/" label={t('nav.home')} icon={<Home size={16} />} active={isActive('/')} delayClass="delay-1" />
               <div className="my-1 rounded-[1rem] bg-amber-50/70 p-2">
-                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-amber-800">Organization</p>
-                {publicPageItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
+                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-amber-800">{t('nav.organization')}</p>
+                {localizedPublicPageItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
               </div>
               <div className="my-1 rounded-[1rem] bg-emerald-50/60 p-2">
-                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-emerald-800">Programs</p>
-                {programItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
+                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-emerald-800">{t('nav.programs')}</p>
+                {localizedProgramItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
               </div>
               {mobileNavItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
             </nav>
-            {!authLoading ? <div className="mt-3 border-t border-[var(--line)] pt-3">{isLoggedIn ? <button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? 'Logging out...' : 'Logout'}</button> : <div className="grid grid-cols-2 gap-2"><Link to="/login" className="secondary-btn pressable px-4">Login</Link><Link to="/signup" className="primary-btn pressable px-4">Join Now</Link></div>}</div> : null}
+            <div className="mt-3 border-t border-[var(--line)] pt-3">
+              <LanguageSwitcher compact />
+            </div>
+            {!authLoading ? <div className="mt-3 border-t border-[var(--line)] pt-3">{isLoggedIn ? <button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? t('auth.loggingOut') : t('auth.logout')}</button> : <div className="grid grid-cols-2 gap-2"><Link to="/login" className="secondary-btn pressable px-4">{t('auth.login')}</Link><Link to="/signup" className="primary-btn pressable px-4">{t('auth.joinNow')}</Link></div>}</div> : null}
           </div>
         </div>
       ) : null}
