@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatDonationMoney, getDonationPurposeLabel } from '../lib/donations'
+import { useI18n, type TranslationKey } from '../lib/i18n'
 import {
   MEMBERSHIP_BASE_FEE,
   MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
@@ -42,7 +43,6 @@ import {
 import {
   getNotificationTone,
   getProgramApplyPath,
-  getProgramLabel,
   getProgramPath,
   getProgramSingularLabel,
   getProgramStatusClass,
@@ -135,8 +135,38 @@ type DashboardData = {
 
 const programOrder = ['education', 'health', 'welfare', 'employment']
 
+
+const dashboardProgramLabelKeys: Record<string, TranslationKey> = {
+  education: 'dashboard.program.education',
+  health: 'dashboard.program.health',
+  welfare: 'dashboard.program.welfare',
+  employment: 'dashboard.program.employment',
+}
+
+function getLocalizedProgramLabel(
+  programKey: string,
+  t: (key: TranslationKey) => string,
+) {
+  return t(dashboardProgramLabelKeys[programKey] ?? 'dashboard.program.education')
+}
+
+function getLocalizedMemberStatusLabel(
+  status: MemberStatus,
+  t: (key: TranslationKey) => string,
+) {
+  switch (status) {
+    case 'approved':
+      return t('dashboard.status.approved')
+    case 'rejected':
+      return t('dashboard.status.rejected')
+    default:
+      return t('dashboard.status.pending')
+  }
+}
+
 function DashboardPage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [loading, setLoading] = useState(true)
   const [, setRefreshing] = useState(false)
   const [showSensitive, setShowSensitive] = useState(false)
@@ -285,11 +315,11 @@ function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen px-4 py-10">
+      <main dir="ltr" className="min-h-screen px-4 py-10">
         <div className="page-wrap rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-            Loading member dashboard...
+            {t('dashboard.loading')}
           </div>
         </div>
       </main>
@@ -298,15 +328,14 @@ function DashboardPage() {
 
   if (!member) {
     return (
-      <main className="min-h-screen px-4 py-10">
+      <main dir="ltr" className="min-h-screen px-4 py-10">
         <div className="page-wrap rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
           <ShieldCheck className="h-10 w-10 text-amber-700" />
           <h1 className="mt-4 text-3xl font-black text-slate-950">
-            Membership application required
+            {t('dashboard.noMember.title')}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-700">
-            Dashboard details tab show honge jab aap membership form submit kar
-            denge. Pehle registration complete karen.
+            {t('dashboard.noMember.description')}
           </p>
           <div className="mt-5 max-w-2xl rounded-2xl border border-amber-200 bg-white/70 p-4 text-sm leading-6 text-amber-900">
             <p className="font-black">
@@ -315,7 +344,7 @@ function DashboardPage() {
             <p className="mt-1 text-amber-800">{getMembershipFeeSubtext()}</p>
           </div>
           <Link to="/register" className="primary-btn mt-6">
-            Submit Membership Form
+            {t('dashboard.noMember.cta')}
           </Link>
         </div>
       </main>
@@ -323,7 +352,7 @@ function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-8 md:py-10">
+    <main dir="ltr" className="min-h-screen px-4 py-8 md:py-10">
       <div className="page-wrap space-y-8">
         {error ? (
           <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
@@ -338,21 +367,20 @@ function DashboardPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-200">
                   <LayoutIcon />
-                  Unified Member Dashboard
+                  {t('dashboard.unified')}
                 </div>
 
                 <h1 className="mt-5 text-3xl font-black md:text-5xl">
-                  Welcome, {member.full_name}
+                  {t('dashboard.welcome')}, <span dir="auto">{member.full_name}</span>
                 </h1>
 
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-white/70 md:text-base">
-                  Membership, programs, donations, donor rank aur latest updates
-                  ek hi dashboard par track karen.
+                  {t('dashboard.subtitle')}
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   <InfoChip icon={<IdCard className="h-4 w-4" />}>
-                    {member.member_no || 'Member ID pending'}
+                    <span dir="ltr">{member.member_no || t('dashboard.memberIdPending')}</span>
                   </InfoChip>
                   <InfoChip icon={<MapPin className="h-4 w-4" />}>
                     {member.taluka
@@ -360,7 +388,7 @@ function DashboardPage() {
                       : member.district}
                   </InfoChip>
                   <InfoChip icon={<CalendarDays className="h-4 w-4" />}>
-                    Joined {formatDate(member.created_at)}
+                    {t('dashboard.joined')} <span dir="ltr">{formatDate(member.created_at)}</span>
                   </InfoChip>
                 </div>
               </div>
@@ -384,16 +412,16 @@ function DashboardPage() {
                       {member.full_name}
                     </p>
                     <p className="mt-1 text-sm font-semibold text-white/65">
-                      Father: {member.father_name}
+                      {t('dashboard.father')}: <span dir="auto">{member.father_name}</span>
                     </p>
                     <StatusBadge status={member.status} />
                   </div>
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <MiniMetric label="Notifications" value={summaries.unreadNotifications} />
+                  <MiniMetric label={t('dashboard.notifications')} value={summaries.unreadNotifications} />
                   <MiniMetric
-                    label="Donor Rank"
+                    label={t('dashboard.donorRank')}
                     value={data.donorRank ? `#${data.donorRank}` : '-'}
                   />
                 </div>
@@ -403,31 +431,31 @@ function DashboardPage() {
 
           <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5 lg:p-6">
             <OverviewCard
-              label="Membership"
-              value={getMemberStatusLabel(member.status)}
+              label={t('dashboard.membership')}
+              value={getLocalizedMemberStatusLabel(member.status, t)}
               icon={<ShieldCheck className="h-5 w-5" />}
               tone="emerald"
             />
             <OverviewCard
-              label="Fee Status"
+              label={t('dashboard.feeStatus')}
               value={getMembershipPaymentStatusLabel(membershipPaymentStatus)}
               icon={<CreditCard className="h-5 w-5" />}
               tone="amber"
             />
             <OverviewCard
-              label="Programs Submitted"
+              label={t('dashboard.programsSubmitted')}
               value={data.applications.length}
               icon={<BookOpenCheck className="h-5 w-5" />}
               tone="amber"
             />
             <OverviewCard
-              label="Total Donated"
+              label={t('dashboard.totalDonated')}
               value={formatDonationMoney(summaries.totalDonated)}
               icon={<BadgeIndianRupee className="h-5 w-5" />}
               tone="emerald"
             />
             <OverviewCard
-              label="Pending Donations"
+              label={t('dashboard.pendingDonations')}
               value={summaries.pendingDonations}
               icon={<Trophy className="h-5 w-5" />}
               tone="slate"
@@ -441,18 +469,18 @@ function DashboardPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                    My Activity
+                    {t('dashboard.myActivity')}
                   </p>
                   <h2 className="mt-2 text-2xl font-black text-slate-950">
-                    Program summary
+                    {t('dashboard.programSummary')}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Education, Health, Welfare aur Employment statuses.
+                    {t('dashboard.programSummaryDesc')}
                   </p>
                 </div>
                 <Link to="/notifications" className="secondary-btn">
                   <Bell className="h-4 w-4" />
-                  View Updates
+                  {t('dashboard.viewUpdates')}
                 </Link>
               </div>
 
@@ -467,13 +495,13 @@ function DashboardPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-                    Member Profile
+                    {t('dashboard.memberProfile')}
                   </p>
                   <h2 className="mt-2 text-2xl font-black text-slate-950">
-                    Personal information
+                    {t('dashboard.personalInfo')}
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    CNIC/mobile masked by default hain.
+                    {t('dashboard.maskedDesc')}
                   </p>
                 </div>
                 <button
@@ -486,34 +514,34 @@ function DashboardPage() {
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
-                  {showSensitive ? 'Hide' : 'Show'} Sensitive
+                  {showSensitive ? t('dashboard.hideSensitive') : t('dashboard.showSensitive')}
                 </button>
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <InfoBox label="Full name" value={member.full_name} />
-                <InfoBox label="Father name" value={member.father_name} />
+                <InfoBox label={t('dashboard.fullName')} value={member.full_name} />
+                <InfoBox label={t('dashboard.fatherName')} value={member.father_name} />
                 <InfoBox
-                  label="CNIC"
+                  label={t('dashboard.cnic')}
                   value={showSensitive ? member.cnic : maskCnic(member.cnic)}
                 />
                 <InfoBox
-                  label="Mobile"
+                  label={t('dashboard.mobile')}
                   value={showSensitive ? member.mobile : maskMobile(member.mobile)}
                 />
-                <InfoBox label="District" value={member.district} />
-                <InfoBox label="Taluka" value={member.taluka || 'Not provided'} />
+                <InfoBox label={t('dashboard.district')} value={member.district} />
+                <InfoBox label={t('dashboard.taluka')} value={member.taluka || t('dashboard.notProvided')} />
                 <InfoBox
-                  label="Profession"
-                  value={member.profession || 'Not provided'}
+                  label={t('dashboard.profession')}
+                  value={member.profession || t('dashboard.notProvided')}
                 />
                 <InfoBox
-                  label="Education"
-                  value={member.education || 'Not provided'}
+                  label={t('dashboard.education')}
+                  value={member.education || t('dashboard.notProvided')}
                 />
                 <InfoBox
-                  label="Blood Group"
-                  value={member.blood_group || 'Not provided'}
+                  label={t('dashboard.bloodGroup')}
+                  value={member.blood_group || t('dashboard.notProvided')}
                 />
               </div>
             </section>
@@ -598,6 +626,7 @@ function ProgramSummaryCard({
 }: {
   item: { programKey: string; total: number; latest?: ProgramApplication }
 }) {
+  const { t } = useI18n()
   const Icon = getProgramIcon(item.programKey)
   const latest = item.latest
 
@@ -610,10 +639,10 @@ function ProgramSummaryCard({
           </div>
           <div>
             <h3 className="text-lg font-black text-slate-950">
-              {getProgramLabel(item.programKey)}
+              {getLocalizedProgramLabel(item.programKey, t)}
             </h3>
             <p className="mt-1 text-sm font-semibold text-slate-500">
-              {item.total} submitted record{item.total === 1 ? '' : 's'}
+              {item.total} {t('dashboard.programsSubmitted').toLowerCase()}
             </p>
           </div>
         </div>
@@ -635,29 +664,29 @@ function ProgramSummaryCard({
             {latest.application_no || getProgramSingularLabel(item.programKey)}
           </p>
           <p className="mt-1 text-slate-500">
-            Updated {formatDate(latest.updated_at || latest.created_at)}
+            {t('dashboard.updated')} <span dir="ltr">{formatDate(latest.updated_at || latest.created_at)}</span>
           </p>
           {latest.approved_amount ? (
             <p className="mt-1 font-bold text-emerald-800">
-              Approved amount: {formatDonationMoney(latest.approved_amount)}
+              {t('dashboard.approvedAmount')}: {formatDonationMoney(latest.approved_amount)}
             </p>
           ) : null}
           <a
             href={`${getProgramPath(item.programKey)}/${latest.id}`}
             className="mt-4 inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline"
           >
-            Open details
+            {t('dashboard.viewUpdates')}
             <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       ) : (
         <div className="mt-4 rounded-2xl bg-white p-4 text-sm shadow-sm">
-          <p className="text-slate-600">No application submitted yet.</p>
+          <p className="text-slate-600">{t('dashboard.noApplication')}</p>
           <a
             href={getProgramApplyPath(item.programKey)}
             className="mt-4 inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline"
           >
-            Apply now
+            {t('dashboard.applyNow')}
             <ArrowRight className="h-4 w-4" />
           </a>
         </div>
@@ -668,21 +697,22 @@ function ProgramSummaryCard({
 
 
 function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) {
+  const { t } = useI18n()
   const status = getMembershipPaymentDisplayStatus(payment)
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-amber-200 bg-amber-50 p-4 shadow-sm sm:p-5">
+    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+        <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-            Membership Fee
+            {t('dashboard.membershipFee')}
           </p>
-          <h2 className="mt-2 text-2xl font-black text-slate-950">
+          <h2 className="mt-2 text-xl font-black text-slate-950">
             {formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
           </h2>
         </div>
         <span
-          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
+          className={`rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
             status,
           )}`}
         >
@@ -690,95 +720,77 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <InfoBox
-          label="Base Fee"
-          value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
-        />
-        <InfoBox
-          label="Tax/Charges"
-          value={payment ? formatMembershipMoney(payment.tax_amount) : 'Rs. 0'}
-        />
-      </div>
+      <div className="mt-4 grid gap-4">
+        <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
+          <InfoBox
+            label={t('dashboard.baseFee')}
+            value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
+          />
+          <InfoBox
+            label={t('dashboard.taxCharges')}
+            value={payment ? formatMembershipMoney(payment.tax_amount) : t('dashboard.applicableAtPayment')}
+          />
+          <InfoBox
+            label={t('dashboard.paymentAccount')}
+            value={`${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} · ${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}`}
+          />
+          <InfoBox
+            label={t('dashboard.accountTitle')}
+            value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}
+          />
+          <InfoBox
+            label={t('dashboard.iban')}
+            value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}
+          />
+          <InfoBox
+            label={t('dashboard.tillId')}
+            value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId}
+          />
+          <InfoBox
+            label={t('dashboard.receipt')}
+            value={
+              payment?.receipt_path
+                ? payment.receipt_file_name || 'Uploaded for admin verification'
+                : MEMBERSHIP_PAYMENT_COMING_SOON_TEXT
+            }
+          />
+        </div>
 
-      <div className="mt-3 grid gap-3 text-sm">
-        <InfoBox
-          label="Payment Account"
-          value={`${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} · ${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}`}
-        />
-        <InfoBox
-          label="Account Title"
-          value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}
-        />
-        <InfoBox
-          label="IBAN"
-          value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}
-        />
-        <InfoBox
-          label="Till ID"
-          value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId}
-        />
-      </div>
-
-      <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-3 text-center shadow-sm">
-        <a
-          href={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
-          target="_blank"
-          rel="noreferrer"
-          className="block no-underline"
-          aria-label="Open membership payment QR code"
-        >
+        <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm">
           <img
             src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
             alt="Membership fee payment QR code"
             className="mx-auto w-full max-w-[180px] rounded-xl object-contain"
             loading="lazy"
           />
-        </a>
-        <p className="mt-3 text-xs font-bold leading-5 text-slate-800">
-          {getMembershipPaymentQrHelpText()}
-        </p>
-        <a
-          href={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-black text-amber-900 no-underline transition hover:bg-amber-100"
-        >
-          Open QR full size
-        </a>
-      </div>
-
-      <div className="mt-3">
-        <InfoBox
-          label="Receipt"
-          value={
-            payment?.receipt_path
-              ? payment.receipt_file_name || 'Uploaded for admin verification'
-              : MEMBERSHIP_PAYMENT_COMING_SOON_TEXT
-          }
-        />
+          <p className="mt-3 text-xs font-bold leading-5 text-slate-800">
+            {getMembershipPaymentQrHelpText()}
+          </p>
+        </div>
       </div>
 
       <p className="mt-4 text-xs leading-5 text-amber-800">
-        Uploading payment receipt is required before application submission. Membership fee is separate from voluntary donations.
+        {t('dashboard.receiptRequired')}
       </p>
     </section>
   )
 }
 
 function QuickActions({ member }: { member: Member }) {
+  const { t } = useI18n()
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-        Quick Actions
+        {t('dashboard.quickActions')}
       </p>
-      <h2 className="mt-2 text-xl font-black text-slate-950">Next steps</h2>
+      <h2 className="mt-2 text-xl font-black text-slate-950">{t('dashboard.nextSteps')}</h2>
       <div className="mt-5 grid gap-3">
         {member.status === 'approved' ? (
           <>
             <Link to="/card" className="primary-btn w-full">
               <CreditCard className="h-4 w-4" />
-              Open Digital Card
+              {t('dashboard.openDigitalCard')}
             </Link>
 
             <Link
@@ -787,22 +799,22 @@ function QuickActions({ member }: { member: Member }) {
               style={{ color: '#ffffff' }}
             >
               <BadgeCheck className="h-4 w-4" />
-              Office Bearer Card
+              {t('dashboard.officeBearerCard')}
             </Link>
           </>
         ) : (
           <Link to="/register" className="primary-btn w-full">
             <IdCard className="h-4 w-4" />
-            Open Membership Form
+            {t('dashboard.noMember.cta')}
           </Link>
         )}
         <Link to="/donate" className="secondary-btn w-full">
           <BadgeIndianRupee className="h-4 w-4" />
-          Submit Donation
+          {t('dashboard.submitDonation')}
         </Link>
         <Link to="/donors" className="secondary-btn w-full">
           <Trophy className="h-4 w-4" />
-          View Donors
+          {t('dashboard.viewDonors')}
         </Link>
       </div>
     </section>
@@ -820,10 +832,12 @@ function DonationPanel({
   donorRank: number | null
   latestDonation?: FinanceDonation
 }) {
+  const { t } = useI18n()
+
   return (
     <section className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-        My Donations
+        {t('dashboard.myDonations')}
       </p>
       <p className="mt-2 text-3xl font-black text-slate-950">
         {formatDonationMoney(totalDonated)}
@@ -831,7 +845,7 @@ function DonationPanel({
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-white p-3 shadow-sm">
           <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-400">
-            Approved
+            {t('dashboard.approved')}
           </p>
           <p className="mt-1 text-xl font-black text-slate-950">
             {donationCount}
@@ -839,7 +853,7 @@ function DonationPanel({
         </div>
         <div className="rounded-2xl bg-white p-3 shadow-sm">
           <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-400">
-            Rank
+            {t('dashboard.rank')}
           </p>
           <p className="mt-1 text-xl font-black text-slate-950">
             {donorRank ? `#${donorRank}` : '-'}
@@ -848,13 +862,13 @@ function DonationPanel({
       </div>
       {latestDonation ? (
         <p className="mt-4 text-sm font-semibold leading-6 text-slate-600">
-          Latest: {latestDonation.donation_no || 'Donation'} ·{' '}
+          {t('dashboard.latest')}: {latestDonation.donation_no || t('dashboard.myDonations')} ·{' '}
           {getDonationPurposeLabel(latestDonation.purpose)} ·{' '}
           {getProgramStatusLabel(latestDonation.status)}
         </p>
       ) : (
         <p className="mt-4 text-sm font-semibold leading-6 text-slate-600">
-          Approved donation ke baad leaderboard rank yahan show hoga.
+          {t('dashboard.noDonationRank')}
         </p>
       )}
     </section>
@@ -866,19 +880,21 @@ function NotificationsPreview({
 }: {
   notifications: UserNotification[]
 }) {
+  const { t } = useI18n()
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-            Recent Updates
+            {t('dashboard.recentUpdates')}
           </p>
           <h2 className="mt-2 text-xl font-black text-slate-950">
-            Notifications
+            {t('dashboard.notifications')}
           </h2>
         </div>
         <Link to="/notifications" className="text-sm font-black text-emerald-800">
-          View all
+          {t('dashboard.viewAll')}
         </Link>
       </div>
 
@@ -898,8 +914,7 @@ function NotificationsPreview({
         ))}
         {!notifications.length ? (
           <p className="rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">
-            Abhi koi notification nahi hai. Status change hone par updates yahan
-            show honge.
+            {t('dashboard.noNotifications')}
           </p>
         ) : null}
       </div>
@@ -921,6 +936,7 @@ function InfoBox({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: MemberStatus }) {
+  const { t } = useI18n()
   const config = {
     approved: 'border-emerald-200 bg-emerald-50 text-emerald-800',
     rejected: 'border-red-200 bg-red-50 text-red-800',
@@ -938,7 +954,7 @@ function StatusBadge({ status }: { status: MemberStatus }) {
       ) : (
         <BadgeCheck className="h-3.5 w-3.5" />
       )}
-      {getMemberStatusLabel(status)}
+      {getLocalizedMemberStatusLabel(status, t)}
     </span>
   )
 }
@@ -1065,14 +1081,4 @@ function getProgramIcon(programKey: string) {
   }
 }
 
-function getMemberStatusLabel(status: MemberStatus) {
-  switch (status) {
-    case 'approved':
-      return 'Approved'
-    case 'rejected':
-      return 'Rejected'
-    default:
-      return 'Pending Review'
-  }
-}
 
