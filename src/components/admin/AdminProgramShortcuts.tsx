@@ -15,7 +15,6 @@ import {
   Network,
   Newspaper,
   ShieldCheck,
-  Vote,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -29,7 +28,6 @@ type AdminRoleName =
   | 'ration_admin'
   | 'welfare_admin'
   | 'finance_admin'
-  | 'election_admin'
 
 type AdminModuleKey =
   | 'membership'
@@ -45,7 +43,6 @@ type AdminModuleKey =
   | 'area-permissions'
   | 'audit-logs'
   | 'committees'
-  | 'elections'
 
 type AdminRouteTo =
   | '/admin/programs/education'
@@ -60,7 +57,6 @@ type AdminRouteTo =
   | '/admin/area-permissions'
   | '/admin/audit-logs'
   | '/admin/committees'
-  | '/admin/elections'
 
 type ModuleCardConfig = {
   key: AdminModuleKey
@@ -83,7 +79,6 @@ type ModuleCardConfig = {
     | 'area'
     | 'audit'
     | 'committees'
-    | 'elections'
   metric?: string
   metricLabel?: string
   badgeLabel?: string
@@ -242,17 +237,6 @@ export function AdminProgramShortcuts({
       tone: 'committees',
       badgeLabel: 'Phase 1',
     },
-    {
-      key: 'elections',
-      title: 'Elections & Voting',
-      description:
-        'Manage elections at all levels, handle candidate nominations, voter lists, voting process and results publication.',
-      to: '/admin/elections',
-      actionLabel: 'Open Elections',
-      icon: Vote,
-      tone: 'committees',
-      badgeLabel: 'Phase 1',
-    },
   ]
 
   const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
@@ -322,7 +306,6 @@ function canAccessAdminModule(
     welfare: 'welfare_admin',
     employment: 'employment_admin',
     finance: 'finance_admin',
-    elections: 'election_admin',
   }
 
   const requiredRole = roleByModule[moduleKey]
