@@ -962,3 +962,104 @@ comment on function public.current_user_can_access_membership_area(text, text, t
 
 comment on function public.current_user_can_access_finance_area(text, text, text) is
 'Area-aware finance access helper. Used by finance donation/expense/audit RLS policies.';
+
+create or replace function public.search_users_for_area_permissions(
+  _query text default '',
+  _limit integer default 20
+)
+returns table (
+  user_id uuid,
+  email text,
+  roles text[],
+  member_id uuid,
+  member_no text,
+  full_name text,
+  father_name text,
+  district text,
+  taluka text,
+  active_permissions_count bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = public, auth
+as $$
+declare
+  search_text text := trim(coalesce(_query, ''));
+  safe_limit integer := greatest(1, least(coalesce(_limit, 20), 50));
+begin
+  if not public.current_user_is_super_admin() then
+    raise exception 'Only super admin can search users for area permissions.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  with matched_users as (
+    select
+      u.id as uid,
+      u.email::text as user_email
+    from auth.users u
+    where search_text = ''
+       or u.email ilike '%' || search_text || '%'
+       or u.id::text ilike '%' || search_text || '%'
+       or exists (
+         select 1
+         from public.members m
+         where m.user_id = u.id
+           and (
+             m.full_name ilike '%' || search_text || '%'
+             or m.father_name ilike '%' || search_text || '%'
+             or m.member_no ilike '%' || search_text || '%'
+             or m.mobile ilike '%' || search_text || '%'
+           )
+       )
+    order by u.email nulls last
+    limit safe_limit
+  )
+  select
+    mu.uid as user_id,
+    mu.user_email as email,
+
+    coalesce(
+      (
+        select array_agg(distinct ur.role::text order by ur.role::text)
+        from public.user_roles ur
+        where ur.user_id = mu.uid
+      ),
+      array[]::text[]
+    ) as roles,
+
+    member_row.id as member_id,
+    member_row.member_no::text as member_no,
+    member_row.full_name::text as full_name,
+    member_row.father_name::text as father_name,
+    member_row.district::text as district,
+    member_row.taluka::text as taluka,
+
+    (
+      select count(*)
+      from public.admin_area_permissions aap
+      where aap.user_id = mu.uid
+        and aap.is_active = true
+    ) as active_permissions_count
+
+  from matched_users mu
+  left join lateral (
+    select
+      m.id,
+      m.member_no,
+      m.full_name,
+      m.father_name,
+      m.district,
+      m.taluka
+    from public.members m
+    where m.user_id = mu.uid
+    order by m.created_at desc nulls last
+    limit 1
+  ) member_row on true
+  order by mu.user_email nulls last;
+end;
+$$;
+
+grant execute on function public.search_users_for_area_permissions(text, integer)
+to authenticated;

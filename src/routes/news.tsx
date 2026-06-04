@@ -11,6 +11,7 @@ import {
   type NewsPost,
 } from '../lib/media'
 
+
 export const Route = createFileRoute('/news')({
   component: NewsPage,
 })
