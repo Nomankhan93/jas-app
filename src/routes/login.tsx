@@ -15,6 +15,7 @@ import {
   Smartphone,
   Sparkles,
 } from 'lucide-react'
+import { useI18n, type TranslationKey } from '../lib/i18n'
 import { supabase } from '../lib/supabase/client'
 
 export const Route = createFileRoute('/login')({
@@ -26,6 +27,7 @@ type PhoneStep = 'phone' | 'otp'
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { t, direction } = useI18n()
 
   const [method, setMethod] = useState<LoginMethod>('email')
 
@@ -86,12 +88,12 @@ function LoginPage() {
     const normalizedEmail = email.trim().toLowerCase()
 
     if (!isValidEmail(normalizedEmail)) {
-      setError('Please enter a valid email address.')
+      setError(t('login.error.invalidEmail'))
       return
     }
 
     if (!password.trim()) {
-      setError('Please enter your password.')
+      setError(t('login.error.passwordRequired'))
       return
     }
 
@@ -105,7 +107,7 @@ function LoginPage() {
     setLoading(false)
 
     if (loginError) {
-      setError(toFriendlyAuthError(loginError.message))
+      setError(toFriendlyAuthError(loginError.message, t))
       return
     }
 
@@ -117,7 +119,7 @@ function LoginPage() {
 
     if (!isValidPakistanMobile(phoneNumber)) {
       throw new Error(
-        'Please enter a valid Pakistan mobile number, for example 03341013222.',
+        t('login.error.invalidPhone'),
       )
     }
 
@@ -130,7 +132,7 @@ function LoginPage() {
     })
 
     if (otpError) {
-      throw new Error(toFriendlyAuthError(otpError.message))
+      throw new Error(toFriendlyAuthError(otpError.message, t))
     }
 
     return phoneNumber
@@ -146,10 +148,10 @@ function LoginPage() {
       setPhone(phoneNumber)
       setPhoneStep('otp')
       setMessage(
-        `OTP sent successfully to ${formatPakistanPhoneForDisplay(phoneNumber)}.`,
+        t('login.message.otpSent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP.')
+      setError(err instanceof Error ? err.message : t('login.error.sendOtpFailed'))
     } finally {
       setLoading(false)
     }
@@ -163,10 +165,10 @@ function LoginPage() {
       const phoneNumber = await sendOtp(phone)
       setPhone(phoneNumber)
       setMessage(
-        `A new OTP was sent to ${formatPakistanPhoneForDisplay(phoneNumber)}.`,
+        t('login.message.otpResent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend OTP.')
+      setError(err instanceof Error ? err.message : t('login.error.resendOtpFailed'))
     } finally {
       setLoading(false)
     }
@@ -179,7 +181,7 @@ function LoginPage() {
     const cleanOtp = otp.replace(/\D/g, '')
 
     if (cleanOtp.length !== 6) {
-      setError('Please enter the 6-digit OTP code.')
+      setError(t('login.error.otpLength'))
       return
     }
 
@@ -194,7 +196,7 @@ function LoginPage() {
     setLoading(false)
 
     if (verifyError) {
-      setError(toFriendlyAuthError(verifyError.message))
+      setError(toFriendlyAuthError(verifyError.message, t))
       return
     }
 
@@ -208,7 +210,7 @@ function LoginPage() {
           <div className="rounded-[2rem] border border-[#e8e0d1] bg-white p-6 shadow-sm">
             <div className="flex items-center gap-3 text-sm font-bold text-stone-700">
               <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-              Checking session...
+              {t('authPage.common.checkingSession')}
             </div>
           </div>
         </div>
@@ -218,7 +220,7 @@ function LoginPage() {
 
   return (
     <main className="page-main">
-      <div className="page-wrap page-stack">
+      <div className="page-wrap page-stack" dir={direction}>
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
           <aside className="home-hero animate-fade-up">
             <div className="home-hero-inner !grid-cols-1">
@@ -226,60 +228,58 @@ function LoginPage() {
                 <div className="home-hero-badge animate-fade-up">
                   <span className="brand-dot" />
                   <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-900">
-                    Secure Member Access
+                    {t('login.hero.badge')}
                   </span>
                 </div>
 
                 <p className="home-hero-kicker animate-fade-up delay-1">
-                  Jatt Alliance Sindh · Member Portal
+                  {t('login.hero.kicker')}
                 </p>
 
                 <h1 className="home-hero-title text-balance animate-fade-up delay-2">
-                  Member Login
+                  {t('login.hero.title')}
                   <br />
-                  <span className="home-hero-accent">Portal Access</span>
+                  <span className="home-hero-accent">{t('login.hero.accent')}</span>
                 </h1>
 
                 <div className="home-hero-rule ajrak-rule animate-fade-in delay-2" />
 
                 <p className="home-hero-text text-pretty animate-fade-up delay-3">
-                  Access your membership status, submitted profile, and digital
-                  member card after admin approval.
+                  {t('login.hero.description')}
                 </p>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
                   <FeaturePill
                     icon={<ShieldCheck size={16} />}
-                    title="Protected access"
-                    text="Secure sign in"
+                    title={t('login.feature.protected.title')}
+                    text={t('login.feature.protected.text')}
                     delay="delay-2"
                   />
                   <FeaturePill
                     icon={<Smartphone size={16} />}
-                    title="OTP login"
-                    text="Mobile friendly"
+                    title={t('login.feature.otp.title')}
+                    text={t('login.feature.otp.text')}
                     delay="delay-3"
                   />
                   <FeaturePill
                     icon={<CheckCircle2 size={16} />}
-                    title="Member tools"
-                    text="Dashboard ready"
+                    title={t('login.feature.tools.title')}
+                    text={t('login.feature.tools.text')}
                     delay="delay-4"
                   />
                 </div>
 
                 <div className="mt-8 rounded-[1.5rem] border border-white/60 bg-white/70 p-4 shadow-sm backdrop-blur animate-fade-up delay-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-stone-500">
-                    Need an account?
+                    {t('login.needAccount.label')}
                   </p>
                   <p className="mt-2 text-sm leading-7 text-stone-600">
-                    Create your account to start your JAS membership journey and
-                    receive your verified digital member access.
+                    {t('login.needAccount.text')}
                   </p>
 
                   <div className="mt-4">
                     <Link to="/signup" className="secondary-btn pressable lift-hover">
-                      Create account
+                      {t('login.needAccount.cta')}
                       <ArrowRight size={16} />
                     </Link>
                   </div>
@@ -292,14 +292,13 @@ function LoginPage() {
             <div className="mb-6">
               <div className="badge-soft bg-[var(--gold-pale)] text-[var(--gold)]">
                 <Sparkles size={14} />
-                Sign in
+                {t('login.form.badge')}
               </div>
 
-              <h2 className="section-title mt-4">Member Login</h2>
+              <h2 className="section-title mt-4">{t('login.form.title')}</h2>
 
               <p className="mt-3 text-sm leading-7 text-stone-600">
-                Access your membership dashboard using your preferred login
-                method.
+                {t('login.form.description')}
               </p>
             </div>
 
@@ -310,7 +309,7 @@ function LoginPage() {
                   onClick={() => switchMethod('email')}
                   icon={<Mail size={15} />}
                 >
-                  Email
+                  {t('authPage.common.emailMethod')}
                 </MethodTab>
 
                 <MethodTab
@@ -318,14 +317,14 @@ function LoginPage() {
                   onClick={() => switchMethod('phone')}
                   icon={<Smartphone size={15} />}
                 >
-                  Mobile OTP
+                  {t('authPage.common.mobileOtp')}
                 </MethodTab>
               </div>
             </div>
 
             {method === 'email' ? (
               <form onSubmit={handleEmailLogin} className="space-y-4">
-                <FormField label="Email" htmlFor="email">
+                <FormField label={t('authPage.common.email')} htmlFor="email">
                   <input
                     id="email"
                     type="email"
@@ -337,11 +336,11 @@ function LoginPage() {
                     }}
                     required
                     className="input-clean"
-                    placeholder="you@example.com"
+                    placeholder={t('login.email.placeholder')}
                   />
                 </FormField>
 
-                <FormField label="Password" htmlFor="password">
+                <FormField label={t('authPage.common.password')} htmlFor="password">
                   <div className="relative">
                     <input
                       id="password"
@@ -354,14 +353,14 @@ function LoginPage() {
                       }}
                       required
                       className="input-clean pr-12"
-                      placeholder="Your password"
+                      placeholder={t('login.password.placeholder')}
                     />
 
                     <button
                       type="button"
                       onClick={() => setShowPassword((value) => !value)}
                       className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('authPage.common.hidePassword') : t('authPage.common.showPassword')}
                     >
                       {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
@@ -376,7 +375,7 @@ function LoginPage() {
                   className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
-                  {loading ? 'Logging in...' : 'Access Portal'}
+                  {loading ? t('login.submit.loading') : t('login.submit.cta')}
                 </button>
               </form>
             ) : null}
@@ -385,14 +384,14 @@ function LoginPage() {
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div className="rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-stone-500">
-                    Step 1
+                    {t('authPage.common.step1')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-stone-900">
-                    Enter your mobile number to receive an OTP.
+                    {t('login.phone.step1Text')}
                   </p>
                 </div>
 
-                <FormField label="Mobile Number" htmlFor="phone">
+                <FormField label={t('authPage.common.mobileNumber')} htmlFor="phone">
                   <input
                     id="phone"
                     type="tel"
@@ -408,8 +407,7 @@ function LoginPage() {
                     placeholder="03341013222"
                   />
                   <p className="mt-2 text-xs leading-5 text-stone-500">
-                    Enter 03XXXXXXXXX. The app will convert it to
-                    923XXXXXXXXX for Supabase OTP.
+                    {t('authPage.common.phoneHint')}
                   </p>
                 </FormField>
 
@@ -421,7 +419,7 @@ function LoginPage() {
                   className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Smartphone size={16} />}
-                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                  {loading ? t('authPage.common.sendingOtp') : t('authPage.common.sendOtp')}
                 </button>
               </form>
             ) : null}
@@ -430,15 +428,14 @@ function LoginPage() {
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 p-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
-                    Step 2
+                    {t('authPage.common.step2')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-emerald-900">
-                    Enter the 6-digit OTP sent to{' '}
-                    {formatPakistanPhoneForDisplay(phone)}.
+                    {t('login.otp.step2Text').replace('{phone}', formatPakistanPhoneForDisplay(phone))}
                   </p>
                 </div>
 
-                <FormField label="Enter OTP" htmlFor="otp">
+                <FormField label={t('authPage.common.enterOtp')} htmlFor="otp">
                   <input
                     id="otp"
                     type="text"
@@ -465,7 +462,7 @@ function LoginPage() {
                   className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                  {loading ? 'Verifying...' : 'Verify & Login'}
+                  {loading ? t('authPage.common.verifying') : t('login.otp.verifyCta')}
                 </button>
 
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -476,7 +473,7 @@ function LoginPage() {
                     className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <RotateCcw size={16} />
-                    Resend OTP
+                    {t('authPage.common.resendOtp')}
                   </button>
 
                   <button
@@ -489,16 +486,16 @@ function LoginPage() {
                     disabled={loading}
                     className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Change Number
+                    {t('authPage.common.changeNumber')}
                   </button>
                 </div>
               </form>
             ) : null}
 
             <p className="mt-6 text-center text-sm text-stone-600">
-              Don&apos;t have an account?{' '}
+              {t('login.noAccount')}{' '}
               <Link to="/signup" className="font-bold text-[var(--forest)]">
-                Create account
+                {t('login.needAccount.cta')}
               </Link>
             </p>
           </section>
@@ -643,23 +640,23 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-function toFriendlyAuthError(message: string) {
+function toFriendlyAuthError(message: string, t: (key: TranslationKey) => string) {
   const lower = message.toLowerCase()
 
   if (lower.includes('invalid login credentials')) {
-    return 'Invalid email or password. Please check your details and try again.'
+    return t('login.auth.invalidCredentials')
   }
 
   if (lower.includes('email not confirmed')) {
-    return 'Please confirm your email address before logging in.'
+    return t('login.auth.emailNotConfirmed')
   }
 
   if (lower.includes('otp')) {
-    return 'Invalid or expired OTP. Please request a new code and try again.'
+    return t('login.auth.invalidOtp')
   }
 
   if (lower.includes('phone')) {
-    return 'Phone login failed. Please check your mobile number and try again.'
+    return t('login.auth.phoneFailed')
   }
 
   return message

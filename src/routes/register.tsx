@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent, ReactNode } from 'react'
+import { useI18n, type TranslationKey } from '../lib/i18n'
 import { supabase } from '../lib/supabase/client'
 import {
   MEMBERSHIP_BASE_FEE,
   MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
   MEMBERSHIP_PAYMENT_QR_IMAGE_PATH,
-  MEMBERSHIP_PROCESSING_LABEL,
   MEMBERSHIP_RECEIPT_ALLOWED_TYPES,
   MEMBERSHIP_RECEIPT_BUCKET,
   MEMBERSHIP_RECEIPT_MAX_SIZE_BYTES,
@@ -14,9 +14,6 @@ import {
   type MembershipPayment,
   createPendingMembershipPaymentPayload,
   formatMembershipMoney,
-  getManualMembershipPaymentInstruction,
-  getMembershipFeeNotice,
-  getMembershipPaymentQrHelpText,
 } from '../lib/membership-fee'
 import {
   formatCnicInput,
@@ -248,45 +245,46 @@ const initialForm: RegisterFormState = {
 }
 
 const formSteps: Array<{
-  title: string
-  shortTitle: string
-  description: string
+  titleKey: TranslationKey
+  shortTitleKey: TranslationKey
+  descriptionKey: TranslationKey
   fields: FormField[]
 }> = [
   {
-    title: 'Personal Identity',
-    shortTitle: 'Identity',
-    description: 'Your legal name, CNIC, and mobile number.',
+    titleKey: 'register.step.identity.title',
+    shortTitleKey: 'register.step.identity.short',
+    descriptionKey: 'register.step.identity.desc',
     fields: ['fullName', 'fatherName', 'cnic', 'mobile'],
   },
   {
-    title: 'Location & Address',
-    shortTitle: 'Location',
-    description: 'Your district, taluka, and residential address.',
+    titleKey: 'register.step.location.title',
+    shortTitleKey: 'register.step.location.short',
+    descriptionKey: 'register.step.location.desc',
     fields: ['district', 'taluka', 'address'],
   },
   {
-    title: 'Profile Details',
-    shortTitle: 'Profile',
-    description: 'Optional information for a complete member profile.',
+    titleKey: 'register.step.profile.title',
+    shortTitleKey: 'register.step.profile.short',
+    descriptionKey: 'register.step.profile.desc',
     fields: ['profession', 'casteBranch', 'dateOfBirth', 'gender', 'education', 'bloodGroup'],
   },
   {
-    title: 'Emergency Contact',
-    shortTitle: 'Emergency',
-    description: 'Someone we can contact if needed.',
+    titleKey: 'register.step.emergency.title',
+    shortTitleKey: 'register.step.emergency.short',
+    descriptionKey: 'register.step.emergency.desc',
     fields: ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactMobile'],
   },
   {
-    title: 'Photo, Payment & Declaration',
-    shortTitle: 'Submit',
-    description: 'Upload your photo, payment receipt, and confirm the declaration.',
+    titleKey: 'register.step.submit.title',
+    shortTitleKey: 'register.step.submit.short',
+    descriptionKey: 'register.step.submit.desc',
     fields: ['photo', 'paymentReceipt', 'declarationAccepted'],
   },
 ]
 
 function RegisterPage() {
   const navigate = useNavigate()
+  const { t, direction } = useI18n()
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -311,7 +309,16 @@ function RegisterPage() {
   const locked = existingMember?.status === 'approved'
   const isRejected = existingMember?.status === 'rejected'
   const isLastStep = currentStep === formSteps.length - 1
-  const currentStepData = formSteps[currentStep]
+  const localizedSteps = useMemo(() =>
+    formSteps.map((step) => ({
+      ...step,
+      title: t(step.titleKey),
+      shortTitle: t(step.shortTitleKey),
+      description: t(step.descriptionKey),
+    })),
+    [t],
+  )
+  const currentStepData = localizedSteps[currentStep]
   const progressPercent = Math.round(((currentStep + 1) / formSteps.length) * 100)
 
   const talukaOptions = useMemo(() => {
@@ -473,7 +480,7 @@ function RegisterPage() {
     if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
       setFieldErrors((current) => ({
         ...current,
-        photo: 'Photo must be PNG, JPG, JPEG, or WebP.',
+        photo: t('register.photo.hint'),
       }))
       event.target.value = ''
       return
@@ -482,7 +489,7 @@ function RegisterPage() {
     if (file.size > MAX_PHOTO_SIZE_BYTES) {
       setFieldErrors((current) => ({
         ...current,
-        photo: 'Photo must be less than 2MB.',
+        photo: t('register.photo.hint'),
       }))
       event.target.value = ''
       return
@@ -511,7 +518,7 @@ function RegisterPage() {
     if (!MEMBERSHIP_RECEIPT_ALLOWED_TYPES.includes(file.type)) {
       setFieldErrors((current) => ({
         ...current,
-        paymentReceipt: 'Receipt must be PNG, JPG, WebP, or PDF.',
+        paymentReceipt: t('register.payment.receiptHint').replace('{size}', MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL),
       }))
       event.target.value = ''
       return
@@ -520,7 +527,7 @@ function RegisterPage() {
     if (file.size > MEMBERSHIP_RECEIPT_MAX_SIZE_BYTES) {
       setFieldErrors((current) => ({
         ...current,
-        paymentReceipt: `Receipt must be less than ${MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL}.`,
+        paymentReceipt: t('register.payment.receiptHint').replace('{size}', MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL),
       }))
       event.target.value = ''
       return
@@ -559,7 +566,7 @@ function RegisterPage() {
     const stepErrors = validateStep(currentStep)
 
     if (Object.keys(stepErrors).length > 0) {
-      setError('Please fix the highlighted fields before continuing.')
+      setError(t('register.error.fixHighlightedContinue'))
       focusFirstInvalidField()
       return
     }
@@ -589,7 +596,7 @@ function RegisterPage() {
     const stepErrors = validateStep(currentStep)
 
     if (Object.keys(stepErrors).length > 0) {
-      setError('Please complete the current step first.')
+      setError(t('register.error.completeCurrentStep'))
       focusFirstInvalidField()
       return
     }
@@ -616,10 +623,10 @@ function RegisterPage() {
       )
 
       setDraftSavedAt(savedAt)
-      setSuccess('Draft saved on this device.')
+      setSuccess(t('register.draftSaved'))
       setError('')
     } catch {
-      setError('Draft could not be saved on this device.')
+      setError(t('register.draftSaveFailed'))
     }
   }
 
@@ -628,7 +635,7 @@ function RegisterPage() {
 
     localStorage.removeItem(draftKey(userId))
     setDraftSavedAt('')
-    setSuccess('Local draft cleared.')
+    setSuccess(t('register.draftCleared'))
     setError('')
   }
 
@@ -638,12 +645,12 @@ function RegisterPage() {
     setSuccess('')
 
     if (!userId) {
-      setError('You must be logged in.')
+      setError(t('register.error.loginRequired'))
       return
     }
 
     if (existingMember?.status === 'approved') {
-      setError('Approved membership forms cannot be edited.')
+      setError(t('register.error.approvedLocked'))
       return
     }
 
@@ -660,7 +667,7 @@ function RegisterPage() {
         setCurrentStep(targetStep)
       }
 
-      setError('Please fix the highlighted fields before submitting.')
+      setError(t('register.error.fixHighlightedSubmit'))
       focusFirstInvalidField()
       return
     }
@@ -817,8 +824,8 @@ function RegisterPage() {
 
     setSuccess(
       existingMember
-        ? 'Your membership application has been updated successfully.'
-        : 'Your membership application has been submitted successfully.',
+        ? t('register.success.updated')
+        : t('register.success.submitted'),
     )
 
     window.setTimeout(() => {
@@ -832,41 +839,41 @@ function RegisterPage() {
     const normalizedEmergencyMobile = normalizeMobile(form.emergencyContactMobile)
 
     if (!form.fullName.trim()) {
-      errors.fullName = 'Full name is required.'
+      errors.fullName = t('register.error.fullNameRequired')
     } else if (form.fullName.trim().length < 3) {
-      errors.fullName = 'Full name must be at least 3 characters.'
+      errors.fullName = t('register.error.fullNameShort')
     }
 
     if (!form.fatherName.trim()) {
-      errors.fatherName = "Father's name is required."
+      errors.fatherName = t('register.error.fatherRequired')
     } else if (form.fatherName.trim().length < 3) {
-      errors.fatherName = "Father's name must be at least 3 characters."
+      errors.fatherName = t('register.error.fullNameShort')
     }
 
     if (!/^[0-9]{5}-[0-9]{7}-[0-9]$/.test(form.cnic.trim())) {
-      errors.cnic = 'CNIC format must be 12345-1234567-1.'
+      errors.cnic = t('register.error.cnicInvalid')
     }
 
     if (!isPakistaniMobile(normalizedMobile)) {
-      errors.mobile = 'Enter a valid Pakistani mobile number.'
+      errors.mobile = t('register.error.mobileInvalid')
     }
 
     if (!form.district) {
-      errors.district = 'Please select your district.'
+      errors.district = t('register.error.districtRequired')
     }
 
     if (!form.taluka) {
-      errors.taluka = 'Please select your taluka.'
+      errors.taluka = t('register.error.talukaRequired')
     }
 
     if (!form.address.trim()) {
-      errors.address = 'Complete residential address is required.'
+      errors.address = t('register.error.addressRequired')
     } else if (form.address.trim().length < 10) {
-      errors.address = 'Please enter a more complete address.'
+      errors.address = t('register.error.addressRequired')
     }
 
     if (form.dateOfBirth && form.dateOfBirth > todayDate()) {
-      errors.dateOfBirth = 'Date of birth cannot be in the future.'
+      errors.dateOfBirth = t('register.error.dobFuture')
     }
 
     if (
@@ -874,19 +881,19 @@ function RegisterPage() {
       !isPakistaniMobile(normalizedEmergencyMobile)
     ) {
       errors.emergencyContactMobile =
-        'Enter a valid Pakistani emergency contact number.'
+        t('register.error.emergencyMobileInvalid')
     }
 
     if (!existingMember && !photo) {
-      errors.photo = 'Photo is required.'
+      errors.photo = t('register.error.photoRequired')
     }
 
     if (!paymentReceipt && !existingMembershipPayment?.receipt_path) {
-      errors.paymentReceipt = 'Payment receipt is required before submitting the application.'
+      errors.paymentReceipt = t('register.error.receiptRequired')
     }
 
     if (!form.declarationAccepted) {
-      errors.declarationAccepted = 'Please accept the declaration.'
+      errors.declarationAccepted = t('register.error.declarationRequired')
     }
 
     return errors
@@ -911,7 +918,7 @@ function RegisterPage() {
           <div className="reg-grid">
             <Field
               name="fullName"
-              label="Full Name"
+              label={t('register.field.fullName')}
               required
               error={fieldErrors.fullName}
             >
@@ -930,7 +937,7 @@ function RegisterPage() {
 
             <Field
               name="fatherName"
-              label="Father's Name"
+              label={t('register.field.fatherName')}
               required
               error={fieldErrors.fatherName}
             >
@@ -949,9 +956,9 @@ function RegisterPage() {
 
             <Field
               name="cnic"
-              label="CNIC"
+              label={t('register.field.cnic')}
               required
-              hint="Format: 12345-1234567-1"
+              hint={t('register.hint.cnic')}
               error={fieldErrors.cnic}
             >
               <input
@@ -972,9 +979,9 @@ function RegisterPage() {
 
             <Field
               name="mobile"
-              label="Mobile Number"
+              label={t('register.field.mobile')}
               required
-              hint="Example: 03001234567 or +923001234567"
+              hint={t('register.hint.mobile')}
               error={fieldErrors.mobile}
             >
               <input
@@ -1006,7 +1013,7 @@ function RegisterPage() {
           <div className="reg-grid">
             <Field
               name="district"
-              label="District"
+              label={t('register.field.district')}
               required
               error={fieldErrors.district}
             >
@@ -1030,7 +1037,7 @@ function RegisterPage() {
 
             <Field
               name="taluka"
-              label="Taluka / Town / Sub-division"
+              label={t('register.field.taluka')}
               required
               error={fieldErrors.taluka}
             >
@@ -1056,7 +1063,7 @@ function RegisterPage() {
 
             <Field
               name="address"
-              label="Complete Residential Address"
+              label={t('register.field.address')}
               required
               error={fieldErrors.address}
               className="span-2"
@@ -1085,33 +1092,33 @@ function RegisterPage() {
           description={currentStepData.description}
         >
           <div className="reg-grid">
-            <Field name="profession" label="Profession">
+            <Field name="profession" label={t('register.field.profession')}>
               <input
                 id="profession"
                 value={form.profession}
                 onChange={(event) => updateField('profession', event.target.value)}
                 disabled={locked}
                 className="reg-input"
-                placeholder="e.g. Teacher, Farmer, Business"
+                placeholder={t('register.placeholder.profession')}
                 autoComplete="organization-title"
               />
             </Field>
 
-            <Field name="casteBranch" label="Caste Branch">
+            <Field name="casteBranch" label={t('register.field.casteBranch')}>
               <input
                 id="casteBranch"
                 value={form.casteBranch}
                 onChange={(event) => updateField('casteBranch', event.target.value)}
                 disabled={locked}
                 className="reg-input"
-                placeholder="Optional"
+                placeholder={t('register.placeholder.optional')}
                 autoComplete="off"
               />
             </Field>
 
             <Field
               name="dateOfBirth"
-              label="Date of Birth"
+              label={t('register.field.dateOfBirth')}
               error={fieldErrors.dateOfBirth}
             >
               <input
@@ -1127,7 +1134,7 @@ function RegisterPage() {
               />
             </Field>
 
-            <Field name="gender" label="Gender">
+            <Field name="gender" label={t('register.field.gender')}>
               <select
                 id="gender"
                 value={form.gender}
@@ -1135,7 +1142,7 @@ function RegisterPage() {
                 disabled={locked}
                 className="reg-input reg-select"
               >
-                <option value="">— Optional —</option>
+                <option value="">{t('register.optional')}</option>
                 {genderOptions.map((item) => (
                   <option key={item} value={item}>
                     {item}
@@ -1144,19 +1151,19 @@ function RegisterPage() {
               </select>
             </Field>
 
-            <Field name="education" label="Education / Qualification">
+            <Field name="education" label={t('register.field.education')}>
               <input
                 id="education"
                 value={form.education}
                 onChange={(event) => updateField('education', event.target.value)}
                 disabled={locked}
                 className="reg-input"
-                placeholder="e.g. Matric, BA, MBA"
+                placeholder={t('register.placeholder.education')}
                 autoComplete="off"
               />
             </Field>
 
-            <Field name="bloodGroup" label="Blood Group">
+            <Field name="bloodGroup" label={t('register.field.bloodGroup')}>
               <select
                 id="bloodGroup"
                 value={form.bloodGroup}
@@ -1164,7 +1171,7 @@ function RegisterPage() {
                 disabled={locked}
                 className="reg-input reg-select"
               >
-                <option value="">— Optional —</option>
+                <option value="">{t('register.optional')}</option>
                 {bloodGroupOptions.map((item) => (
                   <option key={item} value={item}>
                     {item}
@@ -1184,7 +1191,7 @@ function RegisterPage() {
           description={currentStepData.description}
         >
           <div className="reg-grid">
-            <Field name="emergencyContactName" label="Contact Name">
+            <Field name="emergencyContactName" label={t('register.field.contactName')}>
               <input
                 id="emergencyContactName"
                 value={form.emergencyContactName}
@@ -1198,7 +1205,7 @@ function RegisterPage() {
               />
             </Field>
 
-            <Field name="emergencyContactRelation" label="Relation">
+            <Field name="emergencyContactRelation" label={t('register.field.relation')}>
               <input
                 id="emergencyContactRelation"
                 value={form.emergencyContactRelation}
@@ -1207,15 +1214,15 @@ function RegisterPage() {
                 }
                 disabled={locked}
                 className="reg-input"
-                placeholder="e.g. Brother, Father"
+                placeholder={t('register.placeholder.relation')}
                 autoComplete="off"
               />
             </Field>
 
             <Field
               name="emergencyContactMobile"
-              label="Contact Mobile"
-              hint="Optional, e.g. 03001234567"
+              label={t('register.field.contactMobile')}
+              hint={t('register.hint.emergencyMobile')}
               error={fieldErrors.emergencyContactMobile}
             >
               <input
@@ -1251,7 +1258,7 @@ function RegisterPage() {
             {photoSrc ? (
               <img
                 src={photoSrc}
-                alt="Selected member photo preview"
+                alt={t('register.photo.alt')}
                 className="reg-photo-img"
               />
             ) : (
@@ -1267,7 +1274,7 @@ function RegisterPage() {
                   <circle cx="12" cy="8" r="4" />
                   <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                 </svg>
-                <span>No photo</span>
+                <span>{t('register.photo.none')}</span>
               </div>
             )}
           </div>
@@ -1292,7 +1299,7 @@ function RegisterPage() {
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              {photo ? photo.name : 'Choose photo'}
+              {photo ? photo.name : t('register.photo.choose')}
             </label>
 
             <input
@@ -1307,7 +1314,7 @@ function RegisterPage() {
             />
 
             <p id="photo-hint" className="reg-upload-hint">
-              PNG, JPG or WebP · Passport style · Clear face visible · Max 2MB
+              {t('register.photo.hint')}
             </p>
 
             {fieldErrors.photo ? (
@@ -1319,46 +1326,46 @@ function RegisterPage() {
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          <p className="font-black">{getMembershipFeeNotice()}</p>
+          <p className="font-black">{t('register.fee.notice').replace('{amount}', formatMembershipMoney(MEMBERSHIP_BASE_FEE)).replace('{charges}', t('signup.fee.processingCharges'))}</p>
           <p className="mt-1 text-amber-800">
-            {getManualMembershipPaymentInstruction()}
+            {t('register.fee.manualInstruction').replace('{bank}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName).replace('{account}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber)}
           </p>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,340px)]">
             <div className="grid gap-3 rounded-2xl bg-white/80 p-4 text-slate-900 ring-1 ring-amber-100 sm:grid-cols-2">
               <div>
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
-                  Bank Name
+                  {t('register.payment.bankName')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName}</p>
               </div>
               <div>
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
-                  Account Title
+                  {t('register.payment.accountTitle')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}</p>
               </div>
               <div>
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
-                  Account No
+                  {t('register.payment.accountNo')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}</p>
               </div>
               <div>
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
-                  IBAN
+                  {t('register.payment.iban')}
                 </p>
                 <p className="mt-1 break-all font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}</p>
               </div>
               <div>
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
-                  Payment Network
+                  {t('register.payment.network')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.paymentNetwork}</p>
               </div>
               <div>
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
-                  Till ID
+                  {t('register.payment.tillId')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId}</p>
               </div>
@@ -1372,10 +1379,10 @@ function RegisterPage() {
                 loading="lazy"
               />
               <p className="mt-3 text-sm font-bold text-slate-900">
-                {getMembershipPaymentQrHelpText()}
+                {t('register.payment.qrHelp').replace('{network}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.paymentNetwork).replace('{tillId}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId)}
               </p>
               <p className="mt-1 text-xs leading-5 text-slate-600">
-                After payment, upload the receipt below to complete your membership application.
+                {t('register.payment.afterPayment')}
               </p>
             </div>
           </div>
@@ -1404,8 +1411,8 @@ function RegisterPage() {
                 ? paymentReceipt.name
                 : existingMembershipPayment?.receipt_file_name ||
                   (existingMembershipPayment?.receipt_path
-                    ? 'Receipt already uploaded'
-                    : 'Upload payment receipt')}
+                    ? t('register.payment.receiptUploaded')
+                    : t('register.payment.uploadReceipt'))}
             </label>
 
             <input
@@ -1420,7 +1427,7 @@ function RegisterPage() {
             />
 
             <p id="paymentReceipt-hint" className="reg-upload-hint mt-2">
-              Required before submit · PNG, JPG, WebP or PDF · Max {MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL}
+              {t('register.payment.receiptHint').replace('{size}', MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL)}
             </p>
 
             {fieldErrors.paymentReceipt ? (
@@ -1448,9 +1455,7 @@ function RegisterPage() {
             aria-describedby={getDescriptionIds('declarationAccepted')}
           />
           <span>
-            I confirm that the provided information is true and authorize{' '}
-            <strong>Jatt Alliance Sindh</strong> to review it for membership
-            approval and digital card issuance.
+            {t('register.declaration')}
           </span>
         </label>
 
@@ -1467,11 +1472,11 @@ function RegisterPage() {
     return (
       <>
         <style>{styles}</style>
-        <main className="reg-page">
+        <main className="reg-page" dir={direction}>
           <div className="reg-card">
             <div className="reg-loading">
               <span className="reg-spinner" />
-              <p>Loading form…</p>
+              <p>{t('register.loading')}</p>
             </div>
           </div>
         </main>
@@ -1483,7 +1488,7 @@ function RegisterPage() {
     <>
       <style>{styles}</style>
 
-      <main className="reg-page">
+      <main className="reg-page" dir={direction}>
         <div className="reg-bg-pattern" aria-hidden="true" />
 
         <div className="reg-card">
@@ -1502,27 +1507,26 @@ function RegisterPage() {
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
               </svg>
-              Jatt Alliance Sindh
+              {t('register.brand')}
             </div>
 
-            <h1 className="reg-title">Membership Registration</h1>
+            <h1 className="reg-title">{t('register.title')}</h1>
 
             <p className="reg-subtitle">
-              Complete your application step by step. Your details will be sent
-              for admin review.
+              {t('register.subtitle')}
             </p>
 
-            <MembershipFeeSummary />
+            <MembershipFeeSummary t={t} />
 
             <div className="reg-title-line" />
           </div>
 
-          <div className="reg-progress-wrap" aria-label="Registration progress">
+          <div className="reg-progress-wrap" aria-label={t('register.progressLabel')}>
             <div className="reg-progress-top">
               <span>
-                Step {currentStep + 1} of {formSteps.length}
+                {t('register.stepOf').replace('{current}', String(currentStep + 1)).replace('{total}', String(formSteps.length))}
               </span>
-              <strong>{progressPercent}% Complete</strong>
+              <strong>{t('register.complete').replace('{percent}', String(progressPercent))}</strong>
             </div>
 
             <div className="reg-progress-track" aria-hidden="true">
@@ -1533,9 +1537,9 @@ function RegisterPage() {
             </div>
 
             <div className="reg-step-tabs">
-              {formSteps.map((step, index) => (
+              {localizedSteps.map((step, index) => (
                 <button
-                  key={step.title}
+                  key={step.titleKey}
                   type="button"
                   className={`reg-step-tab ${
                     index === currentStep ? 'is-active' : ''
@@ -1554,22 +1558,21 @@ function RegisterPage() {
           {existingMember?.status === 'approved' ? (
             <div className="reg-banner reg-banner--success">
               <span className="reg-banner-icon">✓</span>
-              Your membership is approved. You cannot edit this form now.
+              {t('register.approvedBanner')}
             </div>
           ) : null}
 
           {isRejected ? (
             <div className="reg-banner reg-banner--warning">
               <span className="reg-banner-icon">!</span>
-              Your application was rejected. Please update your details and
-              resubmit for admin review.
+              {t('register.rejectedBanner')}
             </div>
           ) : null}
 
           {draftSavedAt && !existingMember ? (
             <div className="reg-banner reg-banner--info">
               <span className="reg-banner-icon">i</span>
-              A local draft is available on this device.
+              {t('register.draftAvailable')}
             </div>
           ) : null}
 
@@ -1598,7 +1601,7 @@ function RegisterPage() {
                     onClick={handlePreviousStep}
                     className="reg-btn-secondary"
                   >
-                    ← Previous
+                    ← {t('register.previous')}
                   </button>
                 ) : (
                   <button
@@ -1606,7 +1609,7 @@ function RegisterPage() {
                     onClick={() => navigate({ to: '/dashboard' })}
                     className="reg-btn-secondary"
                   >
-                    ← Back to Dashboard
+                    ← {t('register.backDashboard')}
                   </button>
                 )}
 
@@ -1616,7 +1619,7 @@ function RegisterPage() {
                     onClick={saveDraft}
                     className="reg-btn-soft"
                   >
-                    Save Draft
+                    {t('register.saveDraft')}
                   </button>
                 ) : null}
 
@@ -1626,7 +1629,7 @@ function RegisterPage() {
                     onClick={clearDraft}
                     className="reg-btn-soft reg-btn-soft--danger"
                   >
-                    Clear Draft
+                    {t('register.clearDraft')}
                   </button>
                 ) : null}
               </div>
@@ -1639,7 +1642,7 @@ function RegisterPage() {
                     disabled={locked}
                     className="reg-btn-primary"
                   >
-                    Next Step →
+                    {t('register.nextStep')} →
                   </button>
                 ) : (
                   <button
@@ -1650,14 +1653,14 @@ function RegisterPage() {
                     {submitting ? (
                       <>
                         <span className="reg-spinner reg-spinner--sm" />
-                        Saving…
+                        {t('register.saving')}
                       </>
                     ) : isRejected ? (
-                      'Resubmit Application'
+                      t('register.resubmit')
                     ) : existingMember ? (
-                      'Update Form'
+                      t('register.updateForm')
                     ) : (
-                      'Submit Application'
+                      t('register.submitApplication')
                     )}
                   </button>
                 )}
@@ -1671,17 +1674,17 @@ function RegisterPage() {
 }
 
 
-function MembershipFeeSummary() {
+function MembershipFeeSummary({ t }: { t: (key: TranslationKey) => string }) {
   return (
     <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-left text-sm text-amber-950 shadow-sm">
       <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-700">
-        Membership Fee
+        {t('signup.fee.label')}
       </p>
       <p className="mt-2 text-base font-black text-amber-950">
-        {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {MEMBERSHIP_PROCESSING_LABEL}
+        {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {t('signup.fee.processingCharges')}
       </p>
       <p className="mt-1 leading-6 text-amber-800">
-        Pay via {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} and upload receipt before submit.
+        {t('register.fee.payVia').replace('{bank}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName)}
       </p>
     </div>
   )

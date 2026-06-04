@@ -15,12 +15,11 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react'
+import { useI18n, type TranslationKey } from '../lib/i18n'
 import { supabase } from '../lib/supabase/client'
 import {
   MEMBERSHIP_BASE_FEE,
-  MEMBERSHIP_PROCESSING_LABEL,
   formatMembershipMoney,
-  getMembershipFeeSubtext,
 } from '../lib/membership-fee'
 
 export const Route = createFileRoute('/signup')({
@@ -32,6 +31,7 @@ type PhoneStep = 'phone' | 'otp'
 
 function SignupPage() {
   const navigate = useNavigate()
+  const { t, direction } = useI18n()
 
   const [method, setMethod] = useState<SignupMethod>('email')
 
@@ -91,12 +91,12 @@ function SignupPage() {
     const name = fullName.trim()
 
     if (!name) {
-      setError('Please enter your full name.')
+      setError(t('signup.error.fullNameRequired'))
       return null
     }
 
     if (name.length < 3) {
-      setError('Full name must be at least 3 characters.')
+      setError(t('signup.error.fullNameShort'))
       return null
     }
 
@@ -113,17 +113,17 @@ function SignupPage() {
     const normalizedEmail = email.trim().toLowerCase()
 
     if (!isValidEmail(normalizedEmail)) {
-      setError('Please enter a valid email address.')
+      setError(t('signup.error.invalidEmail'))
       return
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
+      setError(t('signup.error.passwordShort'))
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Password and confirm password do not match.')
+      setError(t('signup.error.passwordMismatch'))
       return
     }
 
@@ -142,7 +142,7 @@ function SignupPage() {
     setLoading(false)
 
     if (signupError) {
-      setError(toFriendlyAuthError(signupError.message))
+      setError(toFriendlyAuthError(signupError.message, t))
       return
     }
 
@@ -152,7 +152,7 @@ function SignupPage() {
     }
 
     setMessage(
-      'Account created successfully. Please check your email if confirmation is required, then login.',
+      t('signup.message.created'),
     )
 
     window.setTimeout(() => {
@@ -164,14 +164,14 @@ function SignupPage() {
     const name = validateFullName()
 
     if (!name) {
-      throw new Error('Please enter your full name.')
+      throw new Error(t('signup.error.fullNameRequired'))
     }
 
     const phoneNumber = normalizePakistanPhone(phoneInput)
 
     if (!isValidPakistanMobile(phoneNumber)) {
       throw new Error(
-        'Please enter a valid Pakistan mobile number, for example 03333300393.',
+        t('signup.error.invalidPhone'),
       )
     }
 
@@ -187,7 +187,7 @@ function SignupPage() {
     })
 
     if (otpError) {
-      throw new Error(toFriendlyAuthError(otpError.message))
+      throw new Error(toFriendlyAuthError(otpError.message, t))
     }
 
     return phoneNumber
@@ -203,10 +203,10 @@ function SignupPage() {
       setPhone(phoneNumber)
       setPhoneStep('otp')
       setMessage(
-        `OTP sent successfully to ${formatPakistanPhoneForDisplay(phoneNumber)}.`,
+        t('login.message.otpSent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP.')
+      setError(err instanceof Error ? err.message : t('signup.error.sendOtpFailed'))
     } finally {
       setLoading(false)
     }
@@ -220,10 +220,10 @@ function SignupPage() {
       const phoneNumber = await sendSignupOtp(phone)
       setPhone(phoneNumber)
       setMessage(
-        `A new OTP was sent to ${formatPakistanPhoneForDisplay(phoneNumber)}.`,
+        t('login.message.otpResent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
       )
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to resend OTP.')
+      setError(err instanceof Error ? err.message : t('signup.error.resendOtpFailed'))
     } finally {
       setLoading(false)
     }
@@ -236,7 +236,7 @@ function SignupPage() {
     const cleanOtp = otp.replace(/\D/g, '')
 
     if (cleanOtp.length !== 6) {
-      setError('Please enter the 6-digit OTP code.')
+      setError(t('signup.error.otpLength'))
       return
     }
 
@@ -251,7 +251,7 @@ function SignupPage() {
     setLoading(false)
 
     if (verifyError) {
-      setError(toFriendlyAuthError(verifyError.message))
+      setError(toFriendlyAuthError(verifyError.message, t))
       return
     }
 
@@ -265,7 +265,7 @@ function SignupPage() {
           <div className="rounded-[2rem] border border-[#e8e0d1] bg-white p-6 shadow-sm">
             <div className="flex items-center gap-3 text-sm font-bold text-stone-700">
               <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-              Checking session...
+              {t('authPage.common.checkingSession')}
             </div>
           </div>
         </div>
@@ -275,7 +275,7 @@ function SignupPage() {
 
   return (
     <main className="page-main">
-      <div className="page-wrap page-stack">
+      <div className="page-wrap page-stack" dir={direction}>
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch">
           <aside className="home-hero animate-fade-up">
             <div className="home-hero-inner !grid-cols-1">
@@ -283,73 +283,71 @@ function SignupPage() {
                 <div className="home-hero-badge animate-fade-up">
                   <span className="brand-dot" />
                   <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-900">
-                    Membership Registration
+                    {t('signup.hero.badge')}
                   </span>
                 </div>
 
                 <p className="home-hero-kicker animate-fade-up delay-1">
-                  Jatt Alliance Sindh · New Member Access
+                  {t('signup.hero.kicker')}
                 </p>
 
                 <h1 className="home-hero-title text-balance animate-fade-up delay-2">
-                  Apply for
+                  {t('signup.hero.title')}
                   <br />
-                  <span className="home-hero-accent">Membership</span>
+                  <span className="home-hero-accent">{t('signup.hero.accent')}</span>
                 </h1>
 
                 <div className="home-hero-rule ajrak-rule animate-fade-in delay-2" />
 
                 <p className="home-hero-text text-pretty animate-fade-up delay-3">
-                  Create your account to submit the JAS membership application,
-                  track review status, and access your digital card after approval.
+                  {t('signup.hero.description')}
                 </p>
 
                 <div className="mt-8 rounded-[1.5rem] border border-amber-200 bg-amber-50/80 p-4 shadow-sm animate-fade-up delay-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-amber-700">
-                    Membership Fee
+                    {t('signup.fee.label')}
                   </p>
                   <p className="mt-2 text-lg font-black text-stone-950">
-                    {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {MEMBERSHIP_PROCESSING_LABEL}
+                    {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {t('signup.fee.processingCharges')}
                   </p>
                   <p className="mt-1 text-sm leading-6 text-amber-800">
-                    {getMembershipFeeSubtext()}
+                    {t('signup.fee.subtext')}
                   </p>
                 </div>
 
                 <div className="mt-8 grid gap-3 sm:grid-cols-3">
                   <FeaturePill
                     icon={<UserRound size={16} />}
-                    title="Create profile"
-                    text="Start your account"
+                    title={t('signup.feature.profile.title')}
+                    text={t('signup.feature.profile.text')}
                     delay="delay-2"
                   />
                   <FeaturePill
                     icon={<Smartphone size={16} />}
-                    title="OTP signup"
-                    text="Fast mobile access"
+                    title={t('signup.feature.otp.title')}
+                    text={t('signup.feature.otp.text')}
                     delay="delay-3"
                   />
                   <FeaturePill
                     icon={<CheckCircle2 size={16} />}
-                    title="Member ready"
-                    text="Proceed to dashboard"
+                    title={t('signup.feature.ready.title')}
+                    text={t('signup.feature.ready.text')}
                     delay="delay-4"
                   />
                 </div>
 
                 <div className="mt-8 rounded-[1.5rem] border border-white/60 bg-white/70 p-4 shadow-sm backdrop-blur animate-fade-up delay-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-stone-500">
-                    Already registered?
+                    {t('signup.already.label')}
                   </p>
 
                   <p className="mt-2 text-sm leading-7 text-stone-600">
-                    Login to continue your application, check approval status,
-                    or access your member dashboard.
+                    {t('signup.already.text')}
                   </p>
 
                   <div className="mt-4">
                     <Link to="/login" className="secondary-btn pressable lift-hover">
-                      Login instead
+                      {t('signup.already.cta')}
                       <ArrowRight size={16} />
                     </Link>
                   </div>
@@ -362,14 +360,13 @@ function SignupPage() {
             <div className="mb-6">
               <div className="badge-soft bg-[var(--gold-pale)] text-[var(--gold)]">
                 <Sparkles size={14} />
-                Create account
+                {t('signup.form.badge')}
               </div>
 
-              <h2 className="section-title mt-4">Create Account</h2>
+              <h2 className="section-title mt-4">{t('signup.form.title')}</h2>
 
               <p className="mt-3 text-sm leading-7 text-stone-600">
-                Register as a member of Jatt Alliance Sindh using email or
-                mobile OTP.
+                {t('signup.form.description')}
               </p>
             </div>
 
@@ -380,7 +377,7 @@ function SignupPage() {
                   onClick={() => switchMethod('email')}
                   icon={<Mail size={15} />}
                 >
-                  Email
+                  {t('authPage.common.emailMethod')}
                 </MethodTab>
 
                 <MethodTab
@@ -388,14 +385,14 @@ function SignupPage() {
                   onClick={() => switchMethod('phone')}
                   icon={<Smartphone size={15} />}
                 >
-                  Mobile OTP
+                  {t('authPage.common.mobileOtp')}
                 </MethodTab>
               </div>
             </div>
 
             {method === 'email' ? (
               <form onSubmit={handleEmailSignup} className="space-y-4">
-                <FormField label="Full Name" htmlFor="fullName">
+                <FormField label={t('authPage.common.fullName')} htmlFor="fullName">
                   <input
                     id="fullName"
                     autoComplete="name"
@@ -406,11 +403,11 @@ function SignupPage() {
                     }}
                     required
                     className="input-clean"
-                    placeholder="Enter your full name"
+                    placeholder={t('signup.fullName.placeholder')}
                   />
                 </FormField>
 
-                <FormField label="Email" htmlFor="email">
+                <FormField label={t('authPage.common.email')} htmlFor="email">
                   <input
                     id="email"
                     type="email"
@@ -422,11 +419,11 @@ function SignupPage() {
                     }}
                     required
                     className="input-clean"
-                    placeholder="you@example.com"
+                    placeholder={t('login.email.placeholder')}
                   />
                 </FormField>
 
-                <FormField label="Password" htmlFor="password">
+                <FormField label={t('authPage.common.password')} htmlFor="password">
                   <div className="relative">
                     <input
                       id="password"
@@ -440,21 +437,21 @@ function SignupPage() {
                       required
                       minLength={6}
                       className="input-clean pr-12"
-                      placeholder="Minimum 6 characters"
+                      placeholder={t('signup.password.placeholder')}
                     />
 
                     <button
                       type="button"
                       onClick={() => setShowPassword((value) => !value)}
                       className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('authPage.common.hidePassword') : t('authPage.common.showPassword')}
                     >
                       {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   </div>
                 </FormField>
 
-                <FormField label="Confirm Password" htmlFor="confirmPassword">
+                <FormField label={t('authPage.common.confirmPassword')} htmlFor="confirmPassword">
                   <input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
@@ -467,7 +464,7 @@ function SignupPage() {
                     required
                     minLength={6}
                     className="input-clean"
-                    placeholder="Re-enter password"
+                    placeholder={t('signup.confirmPassword.placeholder')}
                   />
                 </FormField>
 
@@ -483,7 +480,7 @@ function SignupPage() {
                   ) : (
                     <ShieldCheck size={16} />
                   )}
-                  {loading ? 'Creating account...' : 'Create Account'}
+                  {loading ? t('signup.submit.loading') : t('signup.submit.cta')}
                 </button>
               </form>
             ) : null}
@@ -492,14 +489,14 @@ function SignupPage() {
               <form onSubmit={handleSendSignupOtp} className="space-y-4">
                 <div className="rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-stone-500">
-                    Step 1
+                    {t('authPage.common.step1')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-stone-900">
-                    Enter your name and mobile number to receive an OTP.
+                    {t('signup.phone.step1Text')}
                   </p>
                 </div>
 
-                <FormField label="Full Name" htmlFor="phoneFullName">
+                <FormField label={t('authPage.common.fullName')} htmlFor="phoneFullName">
                   <input
                     id="phoneFullName"
                     autoComplete="name"
@@ -510,11 +507,11 @@ function SignupPage() {
                     }}
                     required
                     className="input-clean"
-                    placeholder="Enter your full name"
+                    placeholder={t('signup.fullName.placeholder')}
                   />
                 </FormField>
 
-                <FormField label="Mobile Number" htmlFor="phone">
+                <FormField label={t('authPage.common.mobileNumber')} htmlFor="phone">
                   <input
                     id="phone"
                     type="tel"
@@ -530,8 +527,7 @@ function SignupPage() {
                     placeholder="03333300393"
                   />
                   <p className="mt-2 text-xs leading-5 text-stone-500">
-                    Enter 03XXXXXXXXX. The app will convert it to 923XXXXXXXXX
-                    for Supabase OTP.
+                    {t('authPage.common.phoneHint')}
                   </p>
                 </FormField>
 
@@ -547,7 +543,7 @@ function SignupPage() {
                   ) : (
                     <Smartphone size={16} />
                   )}
-                  {loading ? 'Sending OTP...' : 'Send OTP'}
+                  {loading ? t('authPage.common.sendingOtp') : t('authPage.common.sendOtp')}
                 </button>
               </form>
             ) : null}
@@ -556,15 +552,14 @@ function SignupPage() {
               <form onSubmit={handleVerifySignupOtp} className="space-y-4">
                 <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 p-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
-                    Step 2
+                    {t('authPage.common.step2')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-emerald-900">
-                    Enter the 6-digit OTP sent to{' '}
-                    {formatPakistanPhoneForDisplay(phone)}.
+                    {t('signup.otp.step2Text').replace('{phone}', formatPakistanPhoneForDisplay(phone))}
                   </p>
                 </div>
 
-                <FormField label="Enter OTP" htmlFor="otp">
+                <FormField label={t('authPage.common.enterOtp')} htmlFor="otp">
                   <input
                     id="otp"
                     type="text"
@@ -595,7 +590,7 @@ function SignupPage() {
                   ) : (
                     <CheckCircle2 size={16} />
                   )}
-                  {loading ? 'Verifying...' : 'Verify & Create Account'}
+                  {loading ? t('authPage.common.verifying') : t('signup.otp.verifyCta')}
                 </button>
 
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -606,7 +601,7 @@ function SignupPage() {
                     className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <RotateCcw size={16} />
-                    Resend OTP
+                    {t('authPage.common.resendOtp')}
                   </button>
 
                   <button
@@ -619,16 +614,16 @@ function SignupPage() {
                     disabled={loading}
                     className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Change Number
+                    {t('authPage.common.changeNumber')}
                   </button>
                 </div>
               </form>
             ) : null}
 
             <p className="mt-6 text-center text-sm text-stone-600">
-              Already have an account?{' '}
+              {t('signup.haveAccount')}{' '}
               <Link to="/login" className="font-bold text-[var(--forest)]">
-                Login
+                {t('signup.loginLink')}
               </Link>
             </p>
           </section>
@@ -773,31 +768,31 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
-function toFriendlyAuthError(message: string) {
+function toFriendlyAuthError(message: string, t: (key: TranslationKey) => string) {
   const lower = message.toLowerCase()
 
   if (lower.includes('user already registered')) {
-    return 'This email or phone is already registered. Please login instead.'
+    return t('signup.auth.alreadyRegistered')
   }
 
   if (lower.includes('already registered')) {
-    return 'This account already exists. Please login instead.'
+    return t('signup.auth.accountExists')
   }
 
   if (lower.includes('password')) {
-    return 'Password is too weak or invalid. Please use at least 6 characters.'
+    return t('signup.auth.passwordInvalid')
   }
 
   if (lower.includes('otp')) {
-    return 'Invalid or expired OTP. Please request a new code and try again.'
+    return t('signup.auth.invalidOtp')
   }
 
   if (lower.includes('phone')) {
-    return 'Phone signup failed. Please check your mobile number and try again.'
+    return t('signup.auth.phoneFailed')
   }
 
   if (lower.includes('email')) {
-    return 'Email signup failed. Please check your email address and try again.'
+    return t('signup.auth.emailFailed')
   }
 
   return message
