@@ -10,6 +10,7 @@ export const roleOptions = [
   { value: 'finance_admin', label: 'Finance Admin', description: 'Manage donations, expenses and finance audit records.' },
   { value: 'admin', label: 'Admin', description: 'Central operations access to all core modules.' },
   { value: 'super_admin', label: 'Super Admin', description: 'Owner-level access including role management.' },
+  { value: 'election_admin', label: 'Election Admin', description: 'Manage elections, candidates, voter lists and results.' },
 ] as const
 
 export type AppRole = (typeof roleOptions)[number]['value']
