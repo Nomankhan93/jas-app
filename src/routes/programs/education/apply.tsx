@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import { type ChangeEvent, type FormEvent, useState } from "react";
 import { supabase } from "../../../lib/supabase/client";
+import { useProgramApplyCopy } from "../../../lib/program-apply-i18n";
 import {
   EDUCATION_DOCUMENT_ACCEPT,
   EDUCATION_DOCUMENT_BUCKET,
-  EDUCATION_MAX_DOCUMENT_SIZE_MB,
   createEducationDocumentStoragePath,
   educationDocumentOptions,
   educationRequiredDocumentTypes,
@@ -94,6 +94,7 @@ const initialForm: EducationFormState = {
 
 function EducationApplyPage() {
   const navigate = useNavigate();
+  const { copy, textDir, textAlignClass, arrowClass, iconBeforeClass } = useProgramApplyCopy("education");
 
   const [form, setForm] = useState<EducationFormState>(initialForm);
   const [documentFiles, setDocumentFiles] = useState<DocumentFileState>({});
@@ -374,23 +375,21 @@ function EducationApplyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl space-y-5">
+          <div className={`max-w-3xl space-y-5 ${textAlignClass}`} dir={textDir}>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
               <ShieldCheck className="h-4 w-4 text-amber-300" />
-              Education Application
+              {copy.program.badge}
             </div>
 
             <h1 className="text-4xl font-black md:text-6xl">
-              Apply for Education Support
+              {copy.program.title}
             </h1>
 
             <p className="text-lg leading-8 text-white/75">
-              Scholarship, fee support, books, uniform, exam fee, hostel,
-              transport or skills training support ke liye application submit
-              karen.
+              {copy.program.description}
             </p>
           </div>
         </div>
@@ -403,12 +402,11 @@ function EducationApplyPage() {
         >
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
-              1. Membership Verification
+              {copy.common.membershipVerification}
             </h2>
 
             <p className="mt-2 text-sm leading-7 text-slate-600">
-              Approved JAS membership number enter karen. Student khud member ho
-              sakta hai ya kisi approved member ka dependent.
+              {copy.common.verifyMembershipText}
             </p>
 
             <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
@@ -417,7 +415,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("membershipNo", event.target.value)
                 }
-                placeholder="Membership No, e.g. JAS-2026-0001"
+                placeholder={copy.common.membershipPlaceholder}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-amber-500"
               />
 
@@ -428,26 +426,26 @@ function EducationApplyPage() {
                 className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-6 py-3 font-black text-white transition hover:bg-slate-800 disabled:opacity-60"
               >
                 {verifying ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} />
                 ) : (
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className={`${iconBeforeClass} h-4 w-4`} />
                 )}
-                Verify
+                {copy.common.verify}
               </button>
             </div>
 
             {verifiedMember?.valid ? (
               <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Verified: {verifiedMember.full_name || "Approved Member"} —{" "}
-                {verifiedMember.district || "District"} /{" "}
-                {verifiedMember.taluka || "Taluka"}
+                {copy.common.verified}: {verifiedMember.full_name || copy.common.approvedMember} —{" "}
+                {verifiedMember.district || copy.common.district} /{" "}
+                {verifiedMember.taluka || copy.common.taluka}
               </div>
             ) : null}
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
-              2. Student / Applicant Details
+              {copy.program.applicantDetails}
             </h2>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -456,7 +454,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("studentName", event.target.value)
                 }
-                placeholder="Student full name"
+                placeholder={copy.program.studentName}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -465,7 +463,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("guardianName", event.target.value)
                 }
-                placeholder="Father / guardian name"
+                placeholder={copy.program.guardianName}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -481,7 +479,7 @@ function EducationApplyPage() {
               >
                 {relationshipOptions.map((option) => (
                   <option key={option.value} value={option.value}>
-                    Relationship: {option.label}
+                    {copy.common.relationship}: {option.label}
                   </option>
                 ))}
               </select>
@@ -491,21 +489,21 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("studentCnic", event.target.value)
                 }
-                placeholder="Student CNIC / B-form"
+                placeholder={copy.program.studentCnic}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
               <input
                 value={form.phone}
                 onChange={(event) => updateField("phone", event.target.value)}
-                placeholder="Phone number"
+                placeholder={copy.common.phone}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
               <input
                 value={form.email}
                 onChange={(event) => updateField("email", event.target.value)}
-                placeholder="Email optional"
+                placeholder={copy.common.emailOptional}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -514,14 +512,14 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("district", event.target.value)
                 }
-                placeholder="District"
+                placeholder={copy.common.district}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
               <input
                 value={form.taluka}
                 onChange={(event) => updateField("taluka", event.target.value)}
-                placeholder="Taluka"
+                placeholder={copy.common.taluka}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
             </div>
@@ -529,7 +527,7 @@ function EducationApplyPage() {
             <textarea
               value={form.address}
               onChange={(event) => updateField("address", event.target.value)}
-              placeholder="Full address"
+              placeholder={copy.program.fullAddress}
               rows={3}
               className="mt-4 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
             />
@@ -537,7 +535,7 @@ function EducationApplyPage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
-              3. Institute & Academic Details
+              {copy.program.academicDetails}
             </h2>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -546,7 +544,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("instituteName", event.target.value)
                 }
-                placeholder="Institute / school / college / university name"
+                placeholder={copy.program.instituteName}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -569,7 +567,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("classDegree", event.target.value)
                 }
-                placeholder="Class / degree / program"
+                placeholder={copy.program.classDegree}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -578,7 +576,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("boardUniversity", event.target.value)
                 }
-                placeholder="Board / university"
+                placeholder={copy.program.boardUniversity}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -587,7 +585,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("academicYear", event.target.value)
                 }
-                placeholder="Academic year"
+                placeholder={copy.program.academicYear}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -596,7 +594,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("lastExam", event.target.value)
                 }
-                placeholder="Last exam passed"
+                placeholder={copy.program.lastExam}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -605,7 +603,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("totalMarks", event.target.value)
                 }
-                placeholder="Total marks"
+                placeholder={copy.program.totalMarks}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -614,7 +612,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("obtainedMarks", event.target.value)
                 }
-                placeholder="Obtained marks"
+                placeholder={copy.program.obtainedMarks}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
 
@@ -623,7 +621,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("percentage", event.target.value)
                 }
-                placeholder="Percentage / GPA"
+                placeholder={copy.program.percentage}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
             </div>
@@ -631,7 +629,7 @@ function EducationApplyPage() {
 
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
-              4. Support Request
+              {copy.program.supportRequest}
             </h2>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -654,7 +652,7 @@ function EducationApplyPage() {
                 onChange={(event) =>
                   updateField("requiredAmount", event.target.value)
                 }
-                placeholder="Required support amount"
+                placeholder={copy.program.requiredAmount}
                 type="number"
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               />
@@ -663,7 +661,7 @@ function EducationApplyPage() {
             <textarea
               value={form.reason}
               onChange={(event) => updateField("reason", event.target.value)}
-              placeholder="Reason for support / financial need details"
+              placeholder={copy.program.reason}
               rows={5}
               className="mt-4 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
             />
@@ -673,17 +671,16 @@ function EducationApplyPage() {
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
               <div>
                 <h2 className="text-2xl font-black text-slate-950">
-                  5. Required Documents
+                  {copy.program.documentsTitle}
                 </h2>
 
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-                  PDF, JPG, PNG ya WEBP upload karen. Har file maximum{" "}
-                  {EDUCATION_MAX_DOCUMENT_SIZE_MB}MB honi chahiye.
+                  {copy.common.uploadHint5}
                 </p>
               </div>
 
               <span className="inline-flex w-fit rounded-full bg-amber-100 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-800">
-                Documents Required
+                {copy.common.documentsRequired}
               </span>
             </div>
 
@@ -705,11 +702,11 @@ function EducationApplyPage() {
 
                           {document.required ? (
                             <span className="rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-red-700">
-                              Required
+                              {copy.common.required}
                             </span>
                           ) : (
                             <span className="rounded-full bg-slate-200 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-slate-600">
-                              Optional
+                              {copy.common.optional}
                             </span>
                           )}
                         </div>
@@ -733,8 +730,8 @@ function EducationApplyPage() {
 
                       <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
                         <label className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800">
-                          <Upload className="mr-2 h-4 w-4" />
-                          {selectedFile ? "Change File" : "Upload File"}
+                          <Upload className={`${iconBeforeClass} h-4 w-4`} />
+                          {selectedFile ? copy.common.changeFile : copy.common.uploadFile}
                           <input
                             type="file"
                             accept={EDUCATION_DOCUMENT_ACCEPT}
@@ -751,8 +748,8 @@ function EducationApplyPage() {
                             onClick={() => updateDocumentFile(document.type, null)}
                             className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-100"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Remove
+                            <Trash2 className={`${iconBeforeClass} h-4 w-4`} />
+                            {copy.common.remove}
                           </button>
                         ) : null}
                       </div>
@@ -774,7 +771,7 @@ function EducationApplyPage() {
               to="/programs/education"
               className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 font-black text-slate-800 no-underline"
             >
-              Back
+              {copy.common.back}
             </Link>
 
             <button
@@ -783,10 +780,10 @@ function EducationApplyPage() {
               className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-6 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60"
             >
               {submitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} />
               ) : null}
-              {submitting ? "Submitting..." : "Submit Application"}
-              <ArrowRight className="ml-2 h-4 w-4" />
+              {submitting ? copy.common.submitting : copy.common.submitApplication}
+              <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
             </button>
           </div>
         </form>

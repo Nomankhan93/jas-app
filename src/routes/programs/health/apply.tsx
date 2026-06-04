@@ -12,10 +12,10 @@ import {
 } from 'lucide-react'
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramApplyCopy } from '../../../lib/program-apply-i18n'
 import {
   HEALTH_DOCUMENT_ACCEPT,
   HEALTH_DOCUMENT_BUCKET,
-  HEALTH_MAX_DOCUMENT_SIZE_MB,
   createHealthDocumentStoragePath,
   formatHealthFileSize,
   healthDocumentOptions,
@@ -88,6 +88,7 @@ const initialForm: HealthFormState = {
 }
 
 function HealthApplyPage() {
+  const { copy, textDir, textAlignClass, iconBeforeClass } = useProgramApplyCopy('health')
   const navigate = useNavigate()
 
   const [form, setForm] = useState<HealthFormState>(initialForm)
@@ -315,6 +316,7 @@ function HealthApplyPage() {
       estimated_cost: form.estimatedCost.trim(),
       required_amount: form.requiredAmount.trim(),
       emergency: form.emergency,
+      case_priority: form.emergency ? 'emergency' : 'normal',
       case_summary: form.caseSummary.trim(),
       payment_status: 'not_started',
     }
@@ -365,22 +367,21 @@ function HealthApplyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl space-y-5">
+          <div className={`max-w-3xl space-y-5 ${textAlignClass}`} dir={textDir}>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
               <ShieldCheck className="h-4 w-4 text-red-300" />
-              Health Application
+              {copy.program.badge}
             </div>
 
             <h1 className="text-4xl font-black md:text-6xl">
-              Apply for Medical Help
+              {copy.program.title}
             </h1>
 
             <p className="text-lg leading-8 text-white/75">
-              Treatment, medicine, hospital, lab report, surgery ya emergency
-              support ke liye private medical application submit karen.
+              {copy.program.description}
             </p>
           </div>
         </div>
@@ -388,10 +389,9 @@ function HealthApplyPage() {
 
       <section className="px-4 py-10 md:py-16">
         <form onSubmit={handleSubmit} className="mx-auto grid max-w-6xl gap-6">
-          <FormCard title="1. Membership Verification">
+          <FormCard title={copy.common.membershipVerification}>
             <p className="text-sm leading-7 text-slate-600">
-              Approved JAS membership number enter karen. Patient khud member ho
-              sakta hai ya kisi approved member ka dependent.
+              {copy.common.verifyMembershipText}
             </p>
 
             <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
@@ -400,7 +400,7 @@ function HealthApplyPage() {
                 onChange={(event) =>
                   updateField('membershipNo', event.target.value)
                 }
-                placeholder="Membership No, e.g. JAS-2026-0001"
+                placeholder={copy.common.membershipPlaceholder}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-red-500"
               />
 
@@ -411,27 +411,27 @@ function HealthApplyPage() {
                 className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-6 py-3 font-black no-underline transition disabled:opacity-60"
               >
                 {verifying ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} />
                 ) : (
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className={`${iconBeforeClass} h-4 w-4`} />
                 )}
-                Verify
+                {copy.common.verify}
               </button>
             </div>
 
             {verifiedMember?.valid ? (
               <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Verified: {verifiedMember.full_name || 'Approved Member'} —{' '}
-                {verifiedMember.district || 'District'} /{' '}
-                {verifiedMember.taluka || 'Taluka'}
+                {copy.common.verified}: {verifiedMember.full_name || copy.common.approvedMember} —{' '}
+                {verifiedMember.district || copy.common.district} /{' '}
+                {verifiedMember.taluka || copy.common.taluka}
               </div>
             ) : null}
           </FormCard>
 
-          <FormCard title="2. Patient Details">
+          <FormCard title={copy.program.patientDetails}>
             <div className="grid gap-4 md:grid-cols-2">
-              <TextInput value={form.patientName} onChange={(value) => updateField('patientName', value)} placeholder="Patient full name" />
-              <TextInput value={form.guardianName} onChange={(value) => updateField('guardianName', value)} placeholder="Father / guardian name" />
+              <TextInput value={form.patientName} onChange={(value) => updateField('patientName', value)} placeholder={copy.program.patientName} />
+              <TextInput value={form.guardianName} onChange={(value) => updateField('guardianName', value)} placeholder={copy.program.guardianName} />
               <select
                 value={form.relationshipToMember}
                 onChange={(event) =>
@@ -444,12 +444,12 @@ function HealthApplyPage() {
               >
                 {relationshipOptions.map((option) => (
                   <option key={option.value} value={option.value}>
-                    Relationship: {option.label}
+                    {copy.common.relationship}: {option.label}
                   </option>
                 ))}
               </select>
-              <TextInput value={form.patientCnic} onChange={(value) => updateField('patientCnic', value)} placeholder="Patient CNIC / B-form" />
-              <TextInput value={form.patientAge} onChange={(value) => updateField('patientAge', value)} placeholder="Patient age" />
+              <TextInput value={form.patientCnic} onChange={(value) => updateField('patientCnic', value)} placeholder={copy.program.patientCnic} />
+              <TextInput value={form.patientAge} onChange={(value) => updateField('patientAge', value)} placeholder={copy.program.patientAge} />
               <select
                 value={form.patientGender}
                 onChange={(event) => updateField('patientGender', event.target.value)}
@@ -459,23 +459,23 @@ function HealthApplyPage() {
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
-              <TextInput value={form.phone} onChange={(value) => updateField('phone', value)} placeholder="Phone number" />
-              <TextInput value={form.email} onChange={(value) => updateField('email', value)} placeholder="Email optional" />
-              <TextInput value={form.district} onChange={(value) => updateField('district', value)} placeholder="District" />
-              <TextInput value={form.taluka} onChange={(value) => updateField('taluka', value)} placeholder="Taluka" />
+              <TextInput value={form.phone} onChange={(value) => updateField('phone', value)} placeholder={copy.common.phone} />
+              <TextInput value={form.email} onChange={(value) => updateField('email', value)} placeholder={copy.common.emailOptional} />
+              <TextInput value={form.district} onChange={(value) => updateField('district', value)} placeholder={copy.common.district} />
+              <TextInput value={form.taluka} onChange={(value) => updateField('taluka', value)} placeholder={copy.common.taluka} />
               <textarea
                 value={form.address}
                 onChange={(event) => updateField('address', event.target.value)}
-                placeholder="Address"
+                placeholder={copy.common.address}
                 rows={3}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-500 md:col-span-2"
               />
             </div>
           </FormCard>
 
-          <FormCard title="3. Medical Case Details">
+          <FormCard title={copy.program.caseDetails}>
             <div className="grid gap-4 md:grid-cols-2">
-              <TextInput value={form.diseaseName} onChange={(value) => updateField('diseaseName', value)} placeholder="Disease / medical condition" />
+              <TextInput value={form.diseaseName} onChange={(value) => updateField('diseaseName', value)} placeholder={copy.program.diseaseName} />
               <select
                 value={form.treatmentType}
                 onChange={(event) => updateField('treatmentType', event.target.value)}
@@ -485,11 +485,11 @@ function HealthApplyPage() {
                   <option key={option} value={option}>{option}</option>
                 ))}
               </select>
-              <TextInput value={form.hospitalName} onChange={(value) => updateField('hospitalName', value)} placeholder="Hospital / clinic name" />
-              <TextInput value={form.doctorName} onChange={(value) => updateField('doctorName', value)} placeholder="Doctor name" />
-              <TextInput value={form.doctorContact} onChange={(value) => updateField('doctorContact', value)} placeholder="Doctor contact optional" />
-              <TextInput value={form.estimatedCost} onChange={(value) => updateField('estimatedCost', value)} placeholder="Estimated total cost" />
-              <TextInput value={form.requiredAmount} onChange={(value) => updateField('requiredAmount', value)} placeholder="Required support amount" />
+              <TextInput value={form.hospitalName} onChange={(value) => updateField('hospitalName', value)} placeholder={copy.program.hospitalName} />
+              <TextInput value={form.doctorName} onChange={(value) => updateField('doctorName', value)} placeholder={copy.program.doctorName} />
+              <TextInput value={form.doctorContact} onChange={(value) => updateField('doctorContact', value)} placeholder={copy.program.doctorContact} />
+              <TextInput value={form.estimatedCost} onChange={(value) => updateField('estimatedCost', value)} placeholder={copy.program.estimatedCost} />
+              <TextInput value={form.requiredAmount} onChange={(value) => updateField('requiredAmount', value)} placeholder={copy.program.requiredAmount} />
               <label className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-800">
                 <input
                   type="checkbox"
@@ -502,14 +502,14 @@ function HealthApplyPage() {
               <textarea
                 value={form.caseSummary}
                 onChange={(event) => updateField('caseSummary', event.target.value)}
-                placeholder="Case summary / why support is needed"
+                placeholder={copy.program.caseSummary}
                 rows={5}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-500 md:col-span-2"
               />
             </div>
           </FormCard>
 
-          <FormCard title="4. Medical Documents">
+          <FormCard title={copy.program.documentsTitle}>
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <p className="font-semibold leading-6">
@@ -543,7 +543,7 @@ function HealthApplyPage() {
                     </div>
 
                     <label className="mt-4 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm font-black text-slate-700 transition hover:border-red-400 hover:text-red-700">
-                      <Upload className="mr-2 h-4 w-4" />
+                      <Upload className={`${iconBeforeClass} h-4 w-4`} />
                       Upload Document
                       <input
                         type="file"
@@ -581,8 +581,7 @@ function HealthApplyPage() {
             </div>
 
             <p className="mt-4 text-sm text-slate-500">
-              Allowed files: PDF, JPG, PNG, WEBP. Max size:{' '}
-              {HEALTH_MAX_DOCUMENT_SIZE_MB}MB.
+              {copy.common.uploadHint8}
             </p>
           </FormCard>
 
@@ -595,10 +594,10 @@ function HealthApplyPage() {
           <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-black text-slate-950">
-                Submit private health application
+                {copy.common.submitApplication}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Application health committee/admin review ke liye submit hogi.
+                {copy.program.description}
               </p>
             </div>
 
@@ -607,7 +606,7 @@ function HealthApplyPage() {
                 to="/programs/health"
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-700 no-underline transition hover:bg-slate-50"
               >
-                Cancel
+                {copy.common.back}
               </Link>
 
               <button
@@ -616,11 +615,11 @@ function HealthApplyPage() {
                 className="inline-flex items-center justify-center rounded-xl bg-red-500 px-6 py-3 font-black text-slate-950 transition hover:bg-red-400 disabled:opacity-60"
               >
                 {submitting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} />
                 ) : (
-                  <HeartPulse className="mr-2 h-4 w-4" />
+                  <HeartPulse className={`${iconBeforeClass} h-4 w-4`} />
                 )}
-                Submit Application
+                {submitting ? copy.common.submitting : copy.common.submitApplication}
               </button>
             </div>
           </div>

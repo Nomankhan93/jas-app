@@ -10,11 +10,11 @@ import {
 } from 'lucide-react'
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramApplyCopy } from '../../../lib/program-apply-i18n'
 import type { Database } from '../../../lib/supabase/database.types'
 import {
   EMPLOYMENT_DOCUMENT_ACCEPT,
   EMPLOYMENT_DOCUMENT_BUCKET,
-  EMPLOYMENT_MAX_DOCUMENT_SIZE_MB,
   createEmploymentDocumentStoragePath,
   currentEmploymentStatusOptions,
   employmentDocumentOptions,
@@ -73,6 +73,7 @@ const initialForm: FormState = {
 }
 
 function EmploymentApplyPage() {
+  const { copy, textDir, textAlignClass, iconBeforeClass } = useProgramApplyCopy('employment')
   const navigate = useNavigate()
   const [form, setForm] = useState<FormState>(initialForm)
   const [membership, setMembership] = useState<VerifyMembershipResult | null>(null)
@@ -282,24 +283,24 @@ function EmploymentApplyPage() {
   const member = membership?.verified ? membership.member : null
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10">
+    <main className="min-h-screen bg-slate-50 px-4 py-10" dir="ltr">
       <div className="mx-auto max-w-5xl">
         <Link to="/programs/employment" className="text-sm font-black text-emerald-700 no-underline">
-          ← Back to Employment Program
+          ← {copy.program.back}
         </Link>
 
         <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-          <div className="mb-7 flex flex-wrap items-start justify-between gap-4">
+          <div className={`mb-7 flex flex-wrap items-start justify-between gap-4 ${textAlignClass}`} dir={textDir}>
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700">
                 <BriefcaseBusiness className="h-4 w-4" />
-                Employment Profile
+                {copy.program.badge}
               </div>
               <h1 className="mt-4 text-3xl font-black text-slate-950 md:text-4xl">
-                Job seeker registration
+                {copy.program.title}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                Approved JAS member apni CV, skills, education aur job preference submit kar sakta hai.
+                {copy.program.description}
               </p>
             </div>
           </div>
@@ -313,7 +314,7 @@ function EmploymentApplyPage() {
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-              <h2 className="text-xl font-black text-slate-950">1. Verify Membership</h2>
+              <h2 className="text-xl font-black text-slate-950">{copy.program.verifyMembership}</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
                 <input
                   value={form.membershipNo}
@@ -327,8 +328,8 @@ function EmploymentApplyPage() {
                   disabled={verifying}
                   className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-5 font-black text-white disabled:opacity-60"
                 >
-                  {verifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  Verify
+                  {verifying ? <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} /> : null}
+                  {copy.common.verify}
                 </button>
               </div>
 
@@ -337,65 +338,65 @@ function EmploymentApplyPage() {
                   <div className="flex items-center gap-2 font-black">
                     <CheckCircle2 className="h-4 w-4" /> Verified Member
                   </div>
-                  <p className="mt-2"><strong>Name:</strong> {member.full_name}</p>
-                  <p><strong>Father:</strong> {member.father_name}</p>
-                  <p><strong>Member ID:</strong> {member.member_no}</p>
+                  <p className="mt-2"><strong>{copy.common.name}:</strong> {member.full_name}</p>
+                  <p><strong>{copy.common.father}:</strong> {member.father_name}</p>
+                  <p><strong>{copy.common.memberId}:</strong> {member.member_no}</p>
                 </div>
               ) : null}
             </section>
 
             <section className="grid gap-4 md:grid-cols-2">
-              <Field label="Education Level" required>
-                <input value={form.educationLevel} onChange={(event) => update('educationLevel', event.target.value)} className="input-clean" placeholder="MBA, Intermediate, Matric, Diploma..." />
+              <Field label={copy.program.educationLevel} required>
+                <input value={form.educationLevel} onChange={(event) => update('educationLevel', event.target.value)} className="input-clean" placeholder={copy.program.educationPlaceholder} />
               </Field>
-              <Field label="Field of Study">
-                <input value={form.fieldOfStudy} onChange={(event) => update('fieldOfStudy', event.target.value)} className="input-clean" placeholder="Finance, Computer Science, Commerce..." />
+              <Field label={copy.program.fieldOfStudy}>
+                <input value={form.fieldOfStudy} onChange={(event) => update('fieldOfStudy', event.target.value)} className="input-clean" placeholder={copy.program.fieldPlaceholder} />
               </Field>
-              <Field label="Skills (comma separated)" required>
-                <input value={form.skills} onChange={(event) => update('skills', event.target.value)} className="input-clean" placeholder="MS Office, Sales, Teaching, Driving..." />
+              <Field label={copy.program.skills} required>
+                <input value={form.skills} onChange={(event) => update('skills', event.target.value)} className="input-clean" placeholder={copy.program.skillsPlaceholder} />
               </Field>
-              <Field label="Experience Years">
-                <input value={form.experienceYears} onChange={(event) => update('experienceYears', event.target.value)} className="input-clean" placeholder="Fresh, 1 year, 3 years..." />
+              <Field label={copy.program.experienceYears}>
+                <input value={form.experienceYears} onChange={(event) => update('experienceYears', event.target.value)} className="input-clean" placeholder={copy.program.experiencePlaceholder} />
               </Field>
-              <Field label="Preferred Job Location" required>
-                <input value={form.preferredJobLocation} onChange={(event) => update('preferredJobLocation', event.target.value)} className="input-clean" placeholder="Kunri, Karachi, Hyderabad, Remote..." />
+              <Field label={copy.program.preferredJobLocation} required>
+                <input value={form.preferredJobLocation} onChange={(event) => update('preferredJobLocation', event.target.value)} className="input-clean" placeholder={copy.program.locationPlaceholder} />
               </Field>
-              <Field label="Expected Salary">
-                <input value={form.expectedSalary} onChange={(event) => update('expectedSalary', event.target.value)} className="input-clean" placeholder="Rs. 35,000" />
+              <Field label={copy.program.expectedSalary}>
+                <input value={form.expectedSalary} onChange={(event) => update('expectedSalary', event.target.value)} className="input-clean" placeholder={copy.program.salaryPlaceholder} />
               </Field>
-              <Field label="Employment Type">
+              <Field label={copy.program.employmentType}>
                 <select value={form.employmentType} onChange={(event) => update('employmentType', event.target.value as EmploymentType)} className="input-clean">
                   {employmentTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </Field>
-              <Field label="Current Employment Status">
+              <Field label={copy.program.currentEmploymentStatus}>
                 <select value={form.currentEmploymentStatus} onChange={(event) => update('currentEmploymentStatus', event.target.value as EmploymentCurrentStatus)} className="input-clean">
                   {currentEmploymentStatusOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </Field>
-              <Field label="Training Interest">
+              <Field label={copy.program.trainingInterest}>
                 <select value={form.trainingInterest} onChange={(event) => update('trainingInterest', event.target.value as TrainingInterest)} className="input-clean">
                   {trainingInterestOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </Field>
-              <Field label="Availability">
-                <input value={form.availability} onChange={(event) => update('availability', event.target.value)} className="input-clean" placeholder="Immediate, after 15 days..." />
+              <Field label={copy.program.availability}>
+                <input value={form.availability} onChange={(event) => update('availability', event.target.value)} className="input-clean" placeholder={copy.program.availabilityPlaceholder} />
               </Field>
-              <Field label="Experience Summary" full>
-                <textarea value={form.experienceSummary} onChange={(event) => update('experienceSummary', event.target.value)} className="input-clean min-h-28" placeholder="Previous work, responsibilities or practical experience." />
+              <Field label={copy.program.experienceSummary} full>
+                <textarea value={form.experienceSummary} onChange={(event) => update('experienceSummary', event.target.value)} className="input-clean min-h-28" placeholder={copy.program.experienceSummaryPlaceholder} />
               </Field>
-              <Field label="Skill Development Request" full>
-                <textarea value={form.skillDevelopmentRequest} onChange={(event) => update('skillDevelopmentRequest', event.target.value)} className="input-clean min-h-28" placeholder="Kis skill/training ki need hai?" />
+              <Field label={copy.program.skillDevelopmentRequest} full>
+                <textarea value={form.skillDevelopmentRequest} onChange={(event) => update('skillDevelopmentRequest', event.target.value)} className="input-clean min-h-28" placeholder={copy.program.skillRequestPlaceholder} />
               </Field>
-              <Field label="CV Summary" full>
-                <textarea value={form.cvSummary} onChange={(event) => update('cvSummary', event.target.value)} className="input-clean min-h-28" placeholder="Short profile summary for employment committee." />
+              <Field label={copy.program.cvSummary} full>
+                <textarea value={form.cvSummary} onChange={(event) => update('cvSummary', event.target.value)} className="input-clean min-h-28" placeholder={copy.program.cvSummaryPlaceholder} />
               </Field>
             </section>
 
             <section>
-              <h2 className="text-xl font-black text-slate-950">Required Documents</h2>
+              <h2 className="text-xl font-black text-slate-950">{copy.program.documentReview}</h2>
               <p className="mt-2 text-sm text-slate-600">
-                CV aur CNIC required hain. Max file size {EMPLOYMENT_MAX_DOCUMENT_SIZE_MB}MB.
+                {copy.common.uploadHint5}
               </p>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {employmentDocumentOptions.map((option) => {
@@ -414,12 +415,12 @@ function EmploymentApplyPage() {
                           <p>{file.name}</p>
                           <p className="mt-1 text-xs text-slate-500">{formatEmploymentFileSize(file.size)}</p>
                           <button type="button" onClick={() => removeFile(option.type)} className="mt-2 inline-flex items-center gap-1 text-xs font-black text-red-600">
-                            <Trash2 className="h-3.5 w-3.5" /> Remove
+                            <Trash2 className="h-3.5 w-3.5" /> {copy.common.remove}
                           </button>
                         </div>
                       ) : (
                         <label className="mt-4 inline-flex cursor-pointer items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-black text-emerald-800 ring-1 ring-slate-200 hover:bg-emerald-50">
-                          <Upload className="mr-2 h-4 w-4" /> Upload File
+                          <Upload className={`${iconBeforeClass} h-4 w-4`} /> {copy.common.uploadFile}
                           <input type="file" accept={EMPLOYMENT_DOCUMENT_ACCEPT} className="sr-only" onChange={(event) => handleFileChange(option.type, event)} />
                         </label>
                       )}
@@ -434,8 +435,8 @@ function EmploymentApplyPage() {
               disabled={submitting}
               className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-700 px-5 font-black text-white transition hover:bg-emerald-800 disabled:opacity-60 md:w-auto"
             >
-              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Submit Employment Profile
+              {submitting ? <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} /> : null}
+              {submitting ? copy.program.submitting : copy.program.submitProfile}
             </button>
           </form>
         </div>

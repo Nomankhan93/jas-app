@@ -11,10 +11,10 @@ import {
 } from 'lucide-react'
 import { type ChangeEvent, type FormEvent, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useProgramApplyCopy } from '../../../lib/program-apply-i18n'
 import {
   WELFARE_DOCUMENT_ACCEPT,
   WELFARE_DOCUMENT_BUCKET,
-  WELFARE_MAX_DOCUMENT_SIZE_MB,
   createWelfareDocumentStoragePath,
   formatWelfareFileSize,
   relationshipOptions,
@@ -74,6 +74,7 @@ const initialForm: WelfareFormState = {
 }
 
 function WelfareApplyPage() {
+  const { copy, textDir, textAlignClass, iconBeforeClass } = useProgramApplyCopy('welfare')
   const navigate = useNavigate()
 
   const [form, setForm] = useState<WelfareFormState>(initialForm)
@@ -315,17 +316,17 @@ function WelfareApplyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl space-y-5">
+          <div className={`max-w-3xl space-y-5 ${textAlignClass}`} dir={textDir}>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
               <ShieldCheck className="h-4 w-4 text-amber-300" />
-              Welfare Case Application
+              {copy.program.badge}
             </div>
-            <h1 className="text-4xl font-black md:text-6xl">Apply for Welfare Support</h1>
+            <h1 className="text-4xl font-black md:text-6xl">{copy.program.title}</h1>
             <p className="text-lg leading-8 text-white/75">
-              Financial help, ration support, widow/orphan support, emergency help, disaster relief, legal help ya family support ke liye case submit karen.
+              {copy.program.description}
             </p>
           </div>
         </div>
@@ -333,15 +334,15 @@ function WelfareApplyPage() {
 
       <section className="px-4 py-10 md:py-16">
         <form onSubmit={handleSubmit} className="mx-auto grid max-w-6xl gap-6">
-          <FormCard title="1. Membership Verification">
+          <FormCard title={copy.common.membershipVerification}>
             <p className="text-sm leading-7 text-slate-600">
-              Approved JAS membership number enter karen. Applicant khud member ho sakta hai ya approved member ka dependent.
+              {copy.common.verifyMembershipText}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
               <input
                 value={form.membershipNo}
                 onChange={(event) => updateField('membershipNo', event.target.value)}
-                placeholder="Membership No, e.g. JAS-2026-0001"
+                placeholder={copy.common.membershipPlaceholder}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-amber-500"
               />
               <button
@@ -350,44 +351,44 @@ function WelfareApplyPage() {
                 disabled={verifying}
                 className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-6 py-3 font-black no-underline transition disabled:opacity-60"
               >
-                {verifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                Verify
+                {verifying ? <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} /> : <CheckCircle2 className={`${iconBeforeClass} h-4 w-4`} />}
+                {copy.common.verify}
               </button>
             </div>
             {verifiedMember?.valid ? (
               <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
-                Verified: {verifiedMember.full_name || 'Approved Member'} — {verifiedMember.district || 'District'} / {verifiedMember.taluka || 'Taluka'}
+                {copy.common.verified}: {verifiedMember.full_name || copy.common.approvedMember} — {verifiedMember.district || copy.common.district} / {verifiedMember.taluka || copy.common.taluka}
               </div>
             ) : null}
           </FormCard>
 
-          <FormCard title="2. Applicant Details">
+          <FormCard title={copy.program.applicantDetails}>
             <div className="grid gap-4 md:grid-cols-2">
-              <TextInput value={form.applicantName} onChange={(value) => updateField('applicantName', value)} placeholder="Applicant full name" />
-              <TextInput value={form.guardianName} onChange={(value) => updateField('guardianName', value)} placeholder="Father / guardian name" />
+              <TextInput value={form.applicantName} onChange={(value) => updateField('applicantName', value)} placeholder={copy.program.applicantName} />
+              <TextInput value={form.guardianName} onChange={(value) => updateField('guardianName', value)} placeholder={copy.program.guardianName} />
               <select
                 value={form.relationshipToMember}
                 onChange={(event) => updateField('relationshipToMember', event.target.value as MemberRelationship)}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500"
               >
-                {relationshipOptions.map((option) => <option key={option.value} value={option.value}>Relationship: {option.label}</option>)}
+                {relationshipOptions.map((option) => <option key={option.value} value={option.value}>{copy.common.relationship}: {option.label}</option>)}
               </select>
-              <TextInput value={form.applicantCnic} onChange={(value) => updateField('applicantCnic', value)} placeholder="Applicant CNIC / B-form" />
-              <TextInput value={form.phone} onChange={(value) => updateField('phone', value)} placeholder="Phone number" />
-              <TextInput value={form.email} onChange={(value) => updateField('email', value)} placeholder="Email optional" />
-              <TextInput value={form.district} onChange={(value) => updateField('district', value)} placeholder="District" />
-              <TextInput value={form.taluka} onChange={(value) => updateField('taluka', value)} placeholder="Taluka" />
+              <TextInput value={form.applicantCnic} onChange={(value) => updateField('applicantCnic', value)} placeholder={copy.program.applicantCnic} />
+              <TextInput value={form.phone} onChange={(value) => updateField('phone', value)} placeholder={copy.common.phone} />
+              <TextInput value={form.email} onChange={(value) => updateField('email', value)} placeholder={copy.common.emailOptional} />
+              <TextInput value={form.district} onChange={(value) => updateField('district', value)} placeholder={copy.common.district} />
+              <TextInput value={form.taluka} onChange={(value) => updateField('taluka', value)} placeholder={copy.common.taluka} />
               <textarea
                 value={form.address}
                 onChange={(event) => updateField('address', event.target.value)}
-                placeholder="Address"
+                placeholder={copy.common.address}
                 rows={3}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 md:col-span-2"
               />
             </div>
           </FormCard>
 
-          <FormCard title="3. Welfare Case Details">
+          <FormCard title={copy.program.caseDetails}>
             <div className="grid gap-4 md:grid-cols-2">
               <select
                 value={form.caseType}
@@ -396,25 +397,25 @@ function WelfareApplyPage() {
               >
                 {welfareCaseTypeOptions.map((option) => <option key={option} value={option}>{option}</option>)}
               </select>
-              <TextInput value={form.requiredAmount} onChange={(value) => updateField('requiredAmount', value)} placeholder="Required support amount" />
-              <TextInput value={form.familyMembers} onChange={(value) => updateField('familyMembers', value)} placeholder="Family members / dependents" />
-              <TextInput value={form.monthlyIncome} onChange={(value) => updateField('monthlyIncome', value)} placeholder="Monthly income optional" />
-              <TextInput value={form.currentSupportSource} onChange={(value) => updateField('currentSupportSource', value)} placeholder="Current support source optional" />
+              <TextInput value={form.requiredAmount} onChange={(value) => updateField('requiredAmount', value)} placeholder={copy.program.requiredAmount} />
+              <TextInput value={form.familyMembers} onChange={(value) => updateField('familyMembers', value)} placeholder={copy.program.familyMembers} />
+              <TextInput value={form.monthlyIncome} onChange={(value) => updateField('monthlyIncome', value)} placeholder={copy.program.monthlyIncome} />
+              <TextInput value={form.currentSupportSource} onChange={(value) => updateField('currentSupportSource', value)} placeholder={copy.program.currentSupportSource} />
               <label className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-black text-red-800">
                 <input type="checkbox" checked={form.emergency} onChange={(event) => updateField('emergency', event.target.checked)} className="h-4 w-4" />
-                Emergency / urgent case
+                {copy.program.emergency}
               </label>
               <textarea
                 value={form.reason}
                 onChange={(event) => updateField('reason', event.target.value)}
-                placeholder="Case reason / why support is needed"
+                placeholder={copy.program.caseReason}
                 rows={5}
                 className="rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-amber-500 md:col-span-2"
               />
             </div>
           </FormCard>
 
-          <FormCard title="4. Documents">
+          <FormCard title={copy.program.documentsTitle}>
             <div className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0" />
               <p className="font-semibold leading-6">
@@ -444,7 +445,7 @@ function WelfareApplyPage() {
                       <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-white p-3 text-sm">
                         <span className="min-w-0 truncate font-semibold text-slate-700">{file.name} ({formatWelfareFileSize(file.size)})</span>
                         <button type="button" onClick={() => updateDocumentFile(document.type, null)} className="text-red-600">
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" aria-label={copy.common.remove} />
                         </button>
                       </div>
                     ) : null}
@@ -452,7 +453,7 @@ function WelfareApplyPage() {
                 )
               })}
             </div>
-            <p className="mt-4 text-xs font-semibold text-slate-500">Allowed: PDF, JPG, PNG, WEBP. Max size: {WELFARE_MAX_DOCUMENT_SIZE_MB}MB per file.</p>
+            <p className="mt-4 text-xs font-semibold text-slate-500">{copy.common.uploadHint5}</p>
           </FormCard>
 
           {message ? (
@@ -461,11 +462,11 @@ function WelfareApplyPage() {
 
           <div className="flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:justify-between">
             <Link to="/programs/welfare" className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 font-black text-slate-700 no-underline">
-              Back
+              {copy.common.back}
             </Link>
             <button type="submit" disabled={submitting} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-6 py-3 font-black no-underline transition disabled:opacity-60">
-              {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-              Submit Welfare Case
+              {submitting ? <Loader2 className={`${iconBeforeClass} h-4 w-4 animate-spin`} /> : <CheckCircle2 className={`${iconBeforeClass} h-4 w-4`} />}
+              {submitting ? copy.common.submitting : copy.common.submitApplication}
             </button>
           </div>
         </form>
