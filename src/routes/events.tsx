@@ -3,12 +3,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { CalendarDays, MapPin } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { fetchPublishedEvents, formatMediaDate, getMediaPublicUrl, type JasEvent } from '../lib/media'
+import { usePublicPageCopy } from '../lib/public-page-i18n'
 
 export const Route = createFileRoute('/events')({
   component: EventsPage,
 })
 
 function EventsPage() {
+  const publicCopy = usePublicPageCopy()
   const [events, setEvents] = useState<JasEvent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -31,21 +33,23 @@ function EventsPage() {
   }
 
   return (
-    <main className="page-wrap py-10 sm:py-14">
+    <main className="page-wrap py-10 sm:py-14" dir="ltr">
       <section className="rounded-[2rem] bg-[linear-gradient(135deg,#fffdf8,#f7f1e6_54%,#edf4ee)] p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8 lg:p-10">
-        <p className="section-eyebrow mb-3">Events</p>
-        <h1 className="section-title text-balance">Upcoming and published JAS events</h1>
-        <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-          Public event notices, meetings, community sessions and program activity dates.
-        </p>
+        <div className={publicCopy.textAlignClass} dir={publicCopy.textDir}>
+          <p className="section-eyebrow mb-3">{publicCopy.media.eventsEyebrow}</p>
+          <h1 className="section-title text-balance">{publicCopy.media.eventsTitle}</h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
+            {publicCopy.media.eventsDescription}
+          </p>
+        </div>
       </section>
 
       {loading ? (
-        <StateCard message="Loading events..." />
+        <StateCard message={publicCopy.media.loadingEvents} />
       ) : error ? (
         <StateCard message={error} tone="error" />
       ) : events.length === 0 ? (
-        <StateCard message="No published events found." />
+        <StateCard message={publicCopy.media.emptyEvents} />
       ) : (
         <section className="mt-7 grid gap-5 lg:grid-cols-2">
           {events.map((event) => <EventCard key={event.id} event={event} />)}

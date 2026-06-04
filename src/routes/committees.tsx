@@ -7,9 +7,12 @@ import {
   getCommitteeLocation,
   getCommitteeStatusClass,
   getCommitteeStatusLabel,
-  getCommitteeTypeLabel,
   type PublicCommitteeRecord,
 } from '../lib/committees-public'
+import {
+  getLocalizedCommitteeTypeLabel,
+  usePublicPageCopy,
+} from '../lib/public-page-i18n'
 
 export const Route = createFileRoute('/committees')({
   component: PublicCommitteesPage,
@@ -18,6 +21,7 @@ export const Route = createFileRoute('/committees')({
 type CommitteeFilter = 'all' | 'central' | 'divisional' | 'district' | 'taluka'
 
 function PublicCommitteesPage() {
+  const publicCopy = usePublicPageCopy()
   const [committees, setCommittees] = useState<PublicCommitteeRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -54,16 +58,16 @@ function PublicCommitteesPage() {
     const query = search.trim().toLowerCase()
 
     return committees.filter((committee) => {
-      const matchesType = filter === 'all' || committee.committee_type === filter
+      const matchesType = filter === 'all' || String(committee.committee_type) === filter
       const matchesSearch =
         query.length === 0 ||
         [
           committee.name,
-          committee.division ?? '',
+          ('division' in committee ? String(committee.division ?? '') : ''),
           committee.district ?? '',
           committee.taluka ?? '',
           committee.notes ?? '',
-          getCommitteeTypeLabel(committee.committee_type),
+          getLocalizedCommitteeTypeLabel(committee.committee_type, publicCopy.committees),
         ]
           .join(' ')
           .toLowerCase()
@@ -71,13 +75,17 @@ function PublicCommitteesPage() {
 
       return matchesType && matchesSearch
     })
-  }, [committees, filter, search])
+  }, [committees, filter, publicCopy.committees, search])
 
   const stats = useMemo(() => {
     return committees.reduce(
       (acc, committee) => {
         acc.total += 1
-        acc[committee.committee_type] += 1
+        const committeeType = String(committee.committee_type)
+        if (committeeType === 'central') acc.central += 1
+        if (committeeType === 'divisional') acc.divisional += 1
+        if (committeeType === 'district') acc.district += 1
+        if (committeeType === 'taluka') acc.taluka += 1
         acc.members += committee.member_count ?? 0
         return acc
       },
@@ -86,49 +94,49 @@ function PublicCommitteesPage() {
   }, [committees])
 
   return (
-    <main className="px-3 py-8 sm:px-4 sm:py-12">
+    <main className="px-3 py-8 sm:px-4 sm:py-12" dir="ltr">
       <div className="page-wrap space-y-7">
         <section className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#fffdf8,#f7f1e6_54%,#edf4ee)] p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-center">
-            <div>
-              <p className="section-eyebrow mb-3">Organization Structure</p>
+            <div className={publicCopy.textAlignClass} dir={publicCopy.textDir}>
+              <p className="section-eyebrow mb-3">{publicCopy.committees.eyebrow}</p>
               <h1 className="max-w-4xl text-[clamp(2.4rem,5.4vw,5rem)] font-black leading-[0.96] tracking-[-0.06em] text-slate-950">
-                Public Committees
+                {publicCopy.committees.title}
               </h1>
               <p className="mt-5 max-w-3xl text-base font-medium leading-8 text-slate-600 sm:text-lg">
-                Publicly displayed Central, Divisional, District and Taluka committees of Jatt Alliance Sindh with official office bearers and tenure details.
+                {publicCopy.committees.description}
               </p>
 
-              <div className="mt-7 flex flex-wrap gap-3">
+              <div className={`mt-7 flex flex-wrap gap-3 ${publicCopy.isRtl ? 'justify-end' : ''}`}>
                 <Link to="/signup" className="primary-btn no-underline">
-                  Become a Member
-                  <ArrowRight size={16} />
+                  {publicCopy.shared.becomeMember}
+                  <ArrowRight className={`h-4 w-4 ${publicCopy.arrowClass}`} />
                 </Link>
                 <Link to="/contact" className="secondary-btn no-underline">
-                  Contact JAS
+                  {publicCopy.shared.contact}
                 </Link>
               </div>
             </div>
 
-            <div className="rounded-[1.8rem] border border-emerald-900/10 bg-white/80 p-5 shadow-sm backdrop-blur">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
+            <div className={`rounded-[1.8rem] border border-emerald-900/10 bg-white/80 p-5 shadow-sm backdrop-blur ${publicCopy.textAlignClass}`} dir={publicCopy.textDir}>
+              <div className={`flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800 ${publicCopy.isRtl ? 'mr-auto' : ''}`}>
                 <Network size={25} />
               </div>
-              <h2 className="mt-5 text-xl font-black text-slate-950">Central → Divisional → District → Taluka</h2>
+              <h2 className="mt-5 text-xl font-black text-slate-950">{publicCopy.committees.hierarchy}</h2>
               <p className="mt-2 text-sm leading-7 text-slate-600">
-                Only committees marked for public display are shown here. Internal or draft committee records remain restricted to administrators.
+                {publicCopy.committees.hierarchyText}
               </p>
             </div>
           </div>
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <StatCard label="Public Committees" value={stats.total} />
-          <StatCard label="Central" value={stats.central} />
-          <StatCard label="Divisional" value={stats.divisional} />
-          <StatCard label="District" value={stats.district} />
-          <StatCard label="Taluka" value={stats.taluka} />
-          <StatCard label="Office Bearers" value={stats.members} />
+          <StatCard label={publicCopy.committees.publicCommittees} value={stats.total} />
+          <StatCard label={publicCopy.committees.central} value={stats.central} />
+          <StatCard label={publicCopy.committees.divisional} value={stats.divisional} />
+          <StatCard label={publicCopy.committees.district} value={stats.district} />
+          <StatCard label={publicCopy.committees.taluka} value={stats.taluka} />
+          <StatCard label={publicCopy.committees.officeBearers} value={stats.members} />
         </section>
 
         <section className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
@@ -139,7 +147,7 @@ function PublicCommitteesPage() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                placeholder="Search committee, district, taluka..."
+                placeholder={publicCopy.committees.searchPlaceholder}
               />
             </div>
 
@@ -148,25 +156,30 @@ function PublicCommitteesPage() {
               onChange={(event) => setFilter(event.target.value as CommitteeFilter)}
               className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             >
-              <option value="all">All committees</option>
-              <option value="central">Central</option>
-              <option value="divisional">Divisional</option>
-              <option value="district">District</option>
-              <option value="taluka">Taluka</option>
+              <option value="all">{publicCopy.committees.allCommittees}</option>
+              <option value="central">{publicCopy.committees.central}</option>
+              <option value="divisional">{publicCopy.committees.divisional}</option>
+              <option value="district">{publicCopy.committees.district}</option>
+              <option value="taluka">{publicCopy.committees.taluka}</option>
             </select>
           </div>
         </section>
 
         {loading ? (
-          <StateCard message="Loading public committees..." />
+          <StateCard message={publicCopy.committees.loading} />
         ) : error ? (
           <StateCard message={error} tone="error" />
         ) : filteredCommittees.length === 0 ? (
-          <StateCard message="No public committees found." />
+          <StateCard message={publicCopy.committees.empty} />
         ) : (
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {filteredCommittees.map((committee) => (
-              <CommitteeCard key={committee.id} committee={committee} />
+              <CommitteeCard
+                key={committee.id}
+                committee={committee}
+                labels={publicCopy.committees}
+                arrowClass={publicCopy.arrowClass}
+              />
             ))}
           </section>
         )}
@@ -175,7 +188,17 @@ function PublicCommitteesPage() {
   )
 }
 
-function CommitteeCard({ committee }: { committee: PublicCommitteeRecord }) {
+function CommitteeCard({
+  committee,
+  labels,
+  arrowClass,
+}: {
+  committee: PublicCommitteeRecord
+  labels: ReturnType<typeof usePublicPageCopy>['committees']
+  arrowClass: string
+}) {
+  const memberCount = committee.member_count ?? 0
+
   return (
     <article className="flex min-h-[320px] flex-col rounded-[1.7rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl">
       <div className="flex items-start justify-between gap-4">
@@ -189,14 +212,14 @@ function CommitteeCard({ committee }: { committee: PublicCommitteeRecord }) {
 
       <div className="mt-5 flex-1">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
-          {getCommitteeTypeLabel(committee.committee_type)}
+          {getLocalizedCommitteeTypeLabel(committee.committee_type, labels)}
         </p>
         <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">{committee.name}</h2>
 
         <div className="mt-4 space-y-2 text-sm font-semibold text-slate-600">
           <p className="flex items-center gap-2"><MapPin size={15} className="text-emerald-700" /> {getCommitteeLocation(committee)}</p>
           <p className="flex items-center gap-2"><CalendarDays size={15} className="text-emerald-700" /> {formatTenure(committee.tenure_start, committee.tenure_end)}</p>
-          <p className="flex items-center gap-2"><Users size={15} className="text-emerald-700" /> {committee.member_count ?? 0} office bearer{(committee.member_count ?? 0) === 1 ? '' : 's'}</p>
+          <p className="flex items-center gap-2"><Users size={15} className="text-emerald-700" /> {memberCount} {memberCount === 1 ? labels.officeBearerSingular : labels.officeBearerPlural}</p>
         </div>
       </div>
 
@@ -205,8 +228,8 @@ function CommitteeCard({ committee }: { committee: PublicCommitteeRecord }) {
         params={{ id: committee.id }}
         className="jas-dark-action-link mt-6 inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-black no-underline"
       >
-        View Committee
-        <ArrowRight size={16} />
+        {labels.viewCommittee}
+        <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
       </Link>
     </article>
   )

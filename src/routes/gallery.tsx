@@ -3,12 +3,14 @@ import { createFileRoute } from '@tanstack/react-router'
 import { ImageIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { fetchPublishedGalleryItems, getMediaPublicUrl, type GalleryItem } from '../lib/media'
+import { usePublicPageCopy } from '../lib/public-page-i18n'
 
 export const Route = createFileRoute('/gallery')({
   component: GalleryPage,
 })
 
 function GalleryPage() {
+  const publicCopy = usePublicPageCopy()
   const [items, setItems] = useState<GalleryItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -31,22 +33,23 @@ function GalleryPage() {
   }
 
   return (
-    <main className="page-wrap py-10 sm:py-14">
+    <main className="page-wrap py-10 sm:py-14" dir="ltr">
       <section className="rounded-[2rem] bg-[linear-gradient(135deg,#fffdf8,#f7f1e6_54%,#edf4ee)] p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8 lg:p-10">
-        <p className="section-eyebrow mb-3">Gallery</p>
-        <h1 className="section-title text-balance">JAS events and community activity gallery</h1>
-        <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-          Published photos from JAS meetings, programs, welfare activities,
-          education support, health assistance and community events.
-        </p>
+        <div className={publicCopy.textAlignClass} dir={publicCopy.textDir}>
+          <p className="section-eyebrow mb-3">{publicCopy.media.galleryEyebrow}</p>
+          <h1 className="section-title text-balance">{publicCopy.media.galleryTitle}</h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
+            {publicCopy.media.galleryDescription}
+          </p>
+        </div>
       </section>
 
       {loading ? (
-        <StateCard message="Loading gallery..." />
+        <StateCard message={publicCopy.media.loadingGallery} />
       ) : error ? (
         <StateCard message={error} tone="error" />
       ) : items.length === 0 ? (
-        <StateCard message="No published gallery items found." />
+        <StateCard message={publicCopy.media.emptyGallery} />
       ) : (
         <section className="mt-7 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => {

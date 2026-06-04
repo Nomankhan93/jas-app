@@ -10,13 +10,14 @@ import {
   newsCategoryOptions,
   type NewsPost,
 } from '../lib/media'
-
+import { usePublicPageCopy } from '../lib/public-page-i18n'
 
 export const Route = createFileRoute('/news')({
   component: NewsPage,
 })
 
 function NewsPage() {
+  const publicCopy = usePublicPageCopy()
   const [posts, setPosts] = useState<NewsPost[]>([])
   const [loading, setLoading] = useState(true)
   const [category, setCategory] = useState('all')
@@ -60,14 +61,13 @@ function NewsPage() {
   const rest = featured ? filteredPosts.filter((post) => post.id !== featured.id) : filteredPosts
 
   return (
-    <main className="page-wrap py-10 sm:py-14">
+    <main className="page-wrap py-10 sm:py-14" dir="ltr">
       <section className="overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#fffdf8,#f7f1e6_54%,#edf4ee)] p-6 shadow-sm ring-1 ring-slate-200/70 sm:p-8 lg:p-10">
-        <div className="max-w-3xl">
-          <p className="section-eyebrow mb-3">News & Updates</p>
-          <h1 className="section-title text-balance">Latest announcements and community updates</h1>
+        <div className={`max-w-3xl ${publicCopy.textAlignClass}`} dir={publicCopy.textDir}>
+          <p className="section-eyebrow mb-3">{publicCopy.media.newsEyebrow}</p>
+          <h1 className="section-title text-balance">{publicCopy.media.newsTitle}</h1>
           <p className="mt-4 text-base leading-8 text-slate-600">
-            Published updates from Jatt Alliance Sindh, including general announcements,
-            program news, events and community activity.
+            {publicCopy.media.newsDescription}
           </p>
         </div>
       </section>
@@ -80,7 +80,7 @@ function NewsPage() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm font-semibold outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              placeholder="Search news, announcements, programs..."
+              placeholder={publicCopy.media.newsSearch}
             />
           </div>
 
@@ -89,7 +89,7 @@ function NewsPage() {
             onChange={(event) => setCategory(event.target.value)}
             className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
           >
-            <option value="all">All categories</option>
+            <option value="all">{publicCopy.shared.allCategories}</option>
             {newsCategoryOptions.map((item) => (
               <option key={item.value} value={item.value}>{item.label}</option>
             ))}
@@ -98,16 +98,32 @@ function NewsPage() {
       </section>
 
       {loading ? (
-        <StateCard message="Loading published news..." />
+        <StateCard message={publicCopy.media.loadingNews} />
       ) : error ? (
         <StateCard message={error} tone="error" />
       ) : filteredPosts.length === 0 ? (
-        <StateCard message="No published news found." />
+        <StateCard message={publicCopy.media.emptyNews} />
       ) : (
         <>
-          {featured ? <FeaturedNews post={featured} /> : null}
+          {featured ? (
+            <FeaturedNews
+              post={featured}
+              labels={{
+                featured: publicCopy.media.featured,
+                readMore: publicCopy.media.readMore,
+              }}
+              arrowClass={publicCopy.arrowClass}
+            />
+          ) : null}
           <section className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {rest.map((post) => <NewsCard key={post.id} post={post} />)}
+            {rest.map((post) => (
+              <NewsCard
+                key={post.id}
+                post={post}
+                readMoreLabel={publicCopy.media.readMore}
+                arrowClass={publicCopy.arrowClass}
+              />
+            ))}
           </section>
         </>
       )}
@@ -115,7 +131,18 @@ function NewsPage() {
   )
 }
 
-function FeaturedNews({ post }: { post: NewsPost }) {
+function FeaturedNews({
+  post,
+  labels,
+  arrowClass,
+}: {
+  post: NewsPost
+  labels: {
+    featured: string
+    readMore: string
+  }
+  arrowClass: string
+}) {
   const coverUrl = getMediaPublicUrl(post.cover_image_path)
 
   return (
@@ -130,21 +157,29 @@ function FeaturedNews({ post }: { post: NewsPost }) {
 
       <div className="flex flex-col justify-center p-6 sm:p-8">
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-800">Featured</span>
+          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-emerald-800">{labels.featured}</span>
           <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-black uppercase tracking-wide text-amber-800">{getNewsCategoryLabel(post.category)}</span>
         </div>
         <h2 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{post.title}</h2>
         {post.summary ? <p className="mt-4 text-base leading-8 text-slate-600">{post.summary}</p> : null}
         <p className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-slate-500"><CalendarDays size={16} /> {formatMediaDate(post.published_at ?? post.created_at)}</p>
         <Link to="/news/$slug" params={{ slug: post.slug }} className="jas-dark-action-link mt-6 inline-flex w-fit items-center gap-2 rounded-2xl px-5 py-3 text-sm font-black no-underline">
-          Read update <ArrowRight size={16} />
+          {labels.readMore} <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
         </Link>
       </div>
     </section>
   )
 }
 
-function NewsCard({ post }: { post: NewsPost }) {
+function NewsCard({
+  post,
+  readMoreLabel,
+  arrowClass,
+}: {
+  post: NewsPost
+  readMoreLabel: string
+  arrowClass: string
+}) {
   const coverUrl = getMediaPublicUrl(post.cover_image_path)
 
   return (
@@ -164,7 +199,7 @@ function NewsCard({ post }: { post: NewsPost }) {
         <h3 className="mt-4 text-xl font-black tracking-tight text-slate-950">{post.title}</h3>
         {post.summary ? <p className="mt-3 line-clamp-3 text-sm leading-7 text-slate-600">{post.summary}</p> : null}
         <Link to="/news/$slug" params={{ slug: post.slug }} className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-black text-emerald-800 no-underline">
-          Read more <ArrowRight size={15} />
+          {readMoreLabel} <ArrowRight className={`h-4 w-4 ${arrowClass}`} />
         </Link>
       </div>
     </article>
