@@ -4,11 +4,19 @@ import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import { supabase } from '../lib/supabase/client'
 import {
   MEMBERSHIP_BASE_FEE,
+  MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
+  MEMBERSHIP_PAYMENT_QR_IMAGE_PATH,
   MEMBERSHIP_PROCESSING_LABEL,
+  MEMBERSHIP_RECEIPT_ALLOWED_TYPES,
+  MEMBERSHIP_RECEIPT_BUCKET,
+  MEMBERSHIP_RECEIPT_MAX_SIZE_BYTES,
+  MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL,
+  type MembershipPayment,
   createPendingMembershipPaymentPayload,
   formatMembershipMoney,
+  getManualMembershipPaymentInstruction,
   getMembershipFeeNotice,
-  getMembershipFeeSubtext,
+  getMembershipPaymentQrHelpText,
 } from '../lib/membership-fee'
 import {
   formatCnicInput,
@@ -215,7 +223,7 @@ type RegisterFormState = {
   declarationAccepted: boolean
 }
 
-type FormField = keyof RegisterFormState | 'photo'
+type FormField = keyof RegisterFormState | 'photo' | 'paymentReceipt'
 
 type FieldErrors = Partial<Record<FormField, string>>
 
@@ -270,10 +278,10 @@ const formSteps: Array<{
     fields: ['emergencyContactName', 'emergencyContactRelation', 'emergencyContactMobile'],
   },
   {
-    title: 'Photo & Declaration',
+    title: 'Photo, Payment & Declaration',
     shortTitle: 'Submit',
-    description: 'Upload your photo and confirm the declaration.',
-    fields: ['photo', 'declarationAccepted'],
+    description: 'Upload your photo, payment receipt, and confirm the declaration.',
+    fields: ['photo', 'paymentReceipt', 'declarationAccepted'],
   },
 ]
 
@@ -284,6 +292,8 @@ function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [userId, setUserId] = useState('')
   const [existingMember, setExistingMember] = useState<ExistingMember | null>(null)
+  const [existingMembershipPayment, setExistingMembershipPayment] =
+    useState<MembershipPayment | null>(null)
 
   const [form, setForm] = useState<RegisterFormState>(initialForm)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
@@ -292,6 +302,7 @@ function RegisterPage() {
   const [photo, setPhoto] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [existingPhotoSignedUrl, setExistingPhotoSignedUrl] = useState<string | null>(null)
+  const [paymentReceipt, setPaymentReceipt] = useState<File | null>(null)
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -377,6 +388,15 @@ function RegisterPage() {
     if (data) {
       setExistingMember(data)
       setForm(memberToForm(data))
+
+      const { data: paymentData } = await supabase
+        .from('membership_payments')
+        .select('*')
+        .eq('member_id', data.id)
+        .maybeSingle()
+        .returns<MembershipPayment | null>()
+
+      setExistingMembershipPayment(paymentData ?? null)
 
       if (data.photo_url) {
         const { data: signed } = await supabase.storage
@@ -474,6 +494,43 @@ function RegisterPage() {
     setFieldErrors((current) => {
       const next = { ...current }
       delete next.photo
+      return next
+    })
+  }
+
+
+  function handlePaymentReceiptChange(event: ChangeEvent<HTMLInputElement>) {
+    setError('')
+    setSuccess('')
+
+    const file = event.target.files?.[0] ?? null
+    setPaymentReceipt(null)
+
+    if (!file) return
+
+    if (!MEMBERSHIP_RECEIPT_ALLOWED_TYPES.includes(file.type)) {
+      setFieldErrors((current) => ({
+        ...current,
+        paymentReceipt: 'Receipt must be PNG, JPG, WebP, or PDF.',
+      }))
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > MEMBERSHIP_RECEIPT_MAX_SIZE_BYTES) {
+      setFieldErrors((current) => ({
+        ...current,
+        paymentReceipt: `Receipt must be less than ${MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL}.`,
+      }))
+      event.target.value = ''
+      return
+    }
+
+    setPaymentReceipt(file)
+
+    setFieldErrors((current) => {
+      const next = { ...current }
+      delete next.paymentReceipt
       return next
     })
   }
@@ -630,6 +687,34 @@ function RegisterPage() {
       }
     }
 
+    let receiptPath = existingMembershipPayment?.receipt_path ?? null
+    let receiptFileName = existingMembershipPayment?.receipt_file_name ?? null
+    let receiptMimeType = existingMembershipPayment?.receipt_mime_type ?? null
+    let receiptSizeBytes = existingMembershipPayment?.receipt_size_bytes ?? null
+    let receiptUploadedAt = existingMembershipPayment?.receipt_uploaded_at ?? null
+
+    if (paymentReceipt) {
+      const extension = paymentReceipt.name.split('.').pop()?.toLowerCase() || 'jpg'
+      receiptPath = `${userId}/receipt-${Date.now()}.${extension}`
+      receiptFileName = paymentReceipt.name
+      receiptMimeType = paymentReceipt.type || 'application/octet-stream'
+      receiptSizeBytes = paymentReceipt.size
+      receiptUploadedAt = new Date().toISOString()
+
+      const { error: receiptUploadError } = await supabase.storage
+        .from(MEMBERSHIP_RECEIPT_BUCKET)
+        .upload(receiptPath, paymentReceipt, {
+          upsert: true,
+          contentType: receiptMimeType,
+        })
+
+      if (receiptUploadError) {
+        setError(receiptUploadError.message)
+        setSubmitting(false)
+        return
+      }
+    }
+
     const normalizedMobile = normalizeMobile(form.mobile)
     const normalizedEmergencyMobile = normalizeMobile(form.emergencyContactMobile)
 
@@ -697,17 +782,32 @@ function RegisterPage() {
     }
 
     if (savedMemberId) {
-      const { error: paymentError } = await supabase
-        .from('membership_payments')
-        .upsert(createPendingMembershipPaymentPayload(savedMemberId, userId), {
-          onConflict: 'member_id',
-          ignoreDuplicates: true,
-        })
+      const paymentAlreadyFinal =
+        existingMembershipPayment?.status === 'paid' ||
+        existingMembershipPayment?.status === 'waived'
 
-      if (paymentError) {
-        setError(paymentError.message)
-        setSubmitting(false)
-        return
+      if (!paymentAlreadyFinal) {
+        const paymentPayload = createPendingMembershipPaymentPayload(
+          savedMemberId,
+          userId,
+          {
+            receipt_path: receiptPath,
+            receipt_file_name: receiptFileName,
+            receipt_mime_type: receiptMimeType,
+            receipt_size_bytes: receiptSizeBytes,
+            receipt_uploaded_at: receiptUploadedAt,
+          },
+        )
+
+        const { error: paymentError } = await supabase
+          .from('membership_payments')
+          .upsert(paymentPayload, { onConflict: 'member_id' })
+
+        if (paymentError) {
+          setError(paymentError.message)
+          setSubmitting(false)
+          return
+        }
       }
     }
 
@@ -779,6 +879,10 @@ function RegisterPage() {
 
     if (!existingMember && !photo) {
       errors.photo = 'Photo is required.'
+    }
+
+    if (!paymentReceipt && !existingMembershipPayment?.receipt_path) {
+      errors.paymentReceipt = 'Payment receipt is required before submitting the application.'
     }
 
     if (!form.declarationAccepted) {
@@ -1217,8 +1321,114 @@ function RegisterPage() {
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
           <p className="font-black">{getMembershipFeeNotice()}</p>
           <p className="mt-1 text-amber-800">
-            {getMembershipFeeSubtext()} Payment gateway is not connected in this phase.
+            {getManualMembershipPaymentInstruction()}
           </p>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,340px)]">
+            <div className="grid gap-3 rounded-2xl bg-white/80 p-4 text-slate-900 ring-1 ring-amber-100 sm:grid-cols-2">
+              <div>
+                <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
+                  Bank Name
+                </p>
+                <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName}</p>
+              </div>
+              <div>
+                <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
+                  Account Title
+                </p>
+                <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}</p>
+              </div>
+              <div>
+                <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
+                  Account No
+                </p>
+                <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}</p>
+              </div>
+              <div>
+                <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
+                  IBAN
+                </p>
+                <p className="mt-1 break-all font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}</p>
+              </div>
+              <div>
+                <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
+                  Payment Network
+                </p>
+                <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.paymentNetwork}</p>
+              </div>
+              <div>
+                <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
+                  Till ID
+                </p>
+                <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId}</p>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm">
+              <img
+                src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
+                alt="Membership fee payment QR code"
+                className="mx-auto w-full max-w-[300px] rounded-xl object-contain"
+                loading="lazy"
+              />
+              <p className="mt-3 text-sm font-bold text-slate-900">
+                {getMembershipPaymentQrHelpText()}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-600">
+                After payment, upload the receipt below to complete your membership application.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label
+              className={`reg-upload-btn ${
+                locked ? 'is-disabled' : 'cursor-pointer'
+              }`}
+              htmlFor="paymentReceipt"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {paymentReceipt
+                ? paymentReceipt.name
+                : existingMembershipPayment?.receipt_file_name ||
+                  (existingMembershipPayment?.receipt_path
+                    ? 'Receipt already uploaded'
+                    : 'Upload payment receipt')}
+            </label>
+
+            <input
+              id="paymentReceipt"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,application/pdf"
+              onChange={handlePaymentReceiptChange}
+              disabled={locked}
+              className="reg-sr-only"
+              aria-invalid={Boolean(fieldErrors.paymentReceipt)}
+              aria-describedby={getDescriptionIds('paymentReceipt', true)}
+            />
+
+            <p id="paymentReceipt-hint" className="reg-upload-hint mt-2">
+              Required before submit · PNG, JPG, WebP or PDF · Max {MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL}
+            </p>
+
+            {fieldErrors.paymentReceipt ? (
+              <p id="paymentReceipt-error" className="reg-error-text">
+                {fieldErrors.paymentReceipt}
+              </p>
+            ) : null}
+          </div>
         </div>
 
         <label
@@ -1471,7 +1681,7 @@ function MembershipFeeSummary() {
         {formatMembershipMoney(MEMBERSHIP_BASE_FEE)} + {MEMBERSHIP_PROCESSING_LABEL}
       </p>
       <p className="mt-1 leading-6 text-amber-800">
-        {getMembershipFeeSubtext()} A pending fee record will be created after application submission.
+        Pay via {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} and upload receipt before submit.
       </p>
     </div>
   )

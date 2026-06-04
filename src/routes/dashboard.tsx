@@ -28,10 +28,13 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { formatDonationMoney, getDonationPurposeLabel } from '../lib/donations'
 import {
   MEMBERSHIP_BASE_FEE,
+  MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
   MEMBERSHIP_PAYMENT_COMING_SOON_TEXT,
+  MEMBERSHIP_PAYMENT_QR_IMAGE_PATH,
   type MembershipPayment,
   formatMembershipMoney,
   getMembershipFeeSubtext,
+  getMembershipPaymentQrHelpText,
   getMembershipPaymentDisplayStatus,
   getMembershipPaymentStatusClass,
   getMembershipPaymentStatusLabel,
@@ -668,18 +671,18 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
   const status = getMembershipPaymentDisplayStatus(payment)
 
   return (
-    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+    <section className="overflow-hidden rounded-3xl border border-amber-200 bg-amber-50 p-4 shadow-sm sm:p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
             Membership Fee
           </p>
-          <h2 className="mt-2 text-xl font-black text-slate-950">
+          <h2 className="mt-2 text-2xl font-black text-slate-950">
             {formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
           </h2>
         </div>
         <span
-          className={`rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
             status,
           )}`}
         >
@@ -687,23 +690,77 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 text-sm">
+      <div className="mt-4 grid grid-cols-2 gap-3">
         <InfoBox
           label="Base Fee"
           value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
         />
         <InfoBox
           label="Tax/Charges"
-          value={payment ? formatMembershipMoney(payment.tax_amount) : 'Applicable at payment step'}
+          value={payment ? formatMembershipMoney(payment.tax_amount) : 'Rs. 0'}
+        />
+      </div>
+
+      <div className="mt-3 grid gap-3 text-sm">
+        <InfoBox
+          label="Payment Account"
+          value={`${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} · ${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}`}
         />
         <InfoBox
-          label="Payment"
-          value={payment?.gateway_reference || MEMBERSHIP_PAYMENT_COMING_SOON_TEXT}
+          label="Account Title"
+          value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}
+        />
+        <InfoBox
+          label="IBAN"
+          value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}
+        />
+        <InfoBox
+          label="Till ID"
+          value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId}
+        />
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-amber-200 bg-white p-3 text-center shadow-sm">
+        <a
+          href={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
+          target="_blank"
+          rel="noreferrer"
+          className="block no-underline"
+          aria-label="Open membership payment QR code"
+        >
+          <img
+            src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
+            alt="Membership fee payment QR code"
+            className="mx-auto w-full max-w-[180px] rounded-xl object-contain"
+            loading="lazy"
+          />
+        </a>
+        <p className="mt-3 text-xs font-bold leading-5 text-slate-800">
+          {getMembershipPaymentQrHelpText()}
+        </p>
+        <a
+          href={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 text-xs font-black text-amber-900 no-underline transition hover:bg-amber-100"
+        >
+          Open QR full size
+        </a>
+      </div>
+
+      <div className="mt-3">
+        <InfoBox
+          label="Receipt"
+          value={
+            payment?.receipt_path
+              ? payment.receipt_file_name || 'Uploaded for admin verification'
+              : MEMBERSHIP_PAYMENT_COMING_SOON_TEXT
+          }
         />
       </div>
 
       <p className="mt-4 text-xs leading-5 text-amber-800">
-        Final payable amount will be shown before payment. Membership fee is separate from voluntary donations.
+        Uploading payment receipt is required before application submission. Membership fee is separate from voluntary donations.
       </p>
     </section>
   )

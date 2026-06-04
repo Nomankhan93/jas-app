@@ -34,10 +34,14 @@ import {
 import { supabase } from '../../../lib/supabase/client'
 import {
   MEMBERSHIP_BASE_FEE,
+  MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
+  MEMBERSHIP_PAYMENT_QR_IMAGE_PATH,
+  MEMBERSHIP_RECEIPT_BUCKET,
   type MembershipPayment,
   type MembershipPaymentStatus,
   formatMembershipMoney,
   getMembershipFeeSubtext,
+  getMembershipPaymentQrHelpText,
   getMembershipPaymentDisplayStatus,
   getMembershipPaymentStatusClass,
   getMembershipPaymentStatusLabel,
@@ -144,6 +148,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const [membershipPayment, setMembershipPayment] = useState<MembershipPayment | null>(null)
   const [paymentAdminNote, setPaymentAdminNote] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -194,9 +199,13 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           throw new Error('Member not found.')
         }
 
-        const [safeMembershipPayment, signedPhotoUrl] = await Promise.all([
-          fetchMembershipPaymentByMemberId(safeMember.id),
+        const safeMembershipPayment = await fetchMembershipPaymentByMemberId(
+          safeMember.id,
+        )
+
+        const [signedPhotoUrl, signedReceiptUrl] = await Promise.all([
           createSignedPhotoUrl(safeMember.photo_url),
+          createSignedReceiptUrl(safeMembershipPayment?.receipt_path),
         ])
 
         if (cancelledRef?.current) return
@@ -205,6 +214,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         setMembershipPayment(safeMembershipPayment)
         setPaymentAdminNote(safeMembershipPayment?.admin_note ?? '')
         setPhotoUrl(signedPhotoUrl)
+        setReceiptUrl(signedReceiptUrl)
       } catch (err) {
         if (!cancelledRef?.current) {
           setError(err instanceof Error ? err.message : 'Failed to load member.')
@@ -212,6 +222,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           setMembershipPayment(null)
           setPaymentAdminNote('')
           setPhotoUrl(null)
+          setReceiptUrl(null)
         }
       } finally {
         if (!cancelledRef?.current) {
@@ -334,7 +345,14 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             total_amount: baseAmount + taxAmount,
             currency: membershipPayment?.currency ?? 'PKR',
             status,
-            payment_method: membershipPayment?.payment_method ?? 'manual',
+            payment_method: membershipPayment?.payment_method ?? 'bank',
+            gateway_provider: membershipPayment?.gateway_provider ?? 'manual_mobilink_microfinance_bank',
+            gateway_reference: membershipPayment?.gateway_reference ?? null,
+            receipt_path: membershipPayment?.receipt_path ?? null,
+            receipt_file_name: membershipPayment?.receipt_file_name ?? null,
+            receipt_mime_type: membershipPayment?.receipt_mime_type ?? null,
+            receipt_size_bytes: membershipPayment?.receipt_size_bytes ?? null,
+            receipt_uploaded_at: membershipPayment?.receipt_uploaded_at ?? null,
             admin_note: paymentAdminNote.trim() || null,
             paid_at:
               status === 'paid'
@@ -534,6 +552,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
         <MembershipFeeAdminPanel
           payment={membershipPayment}
+          receiptUrl={receiptUrl}
           adminNote={paymentAdminNote}
           onAdminNoteChange={setPaymentAdminNote}
           onStatusUpdate={handlePaymentStatusUpdate}
@@ -841,12 +860,14 @@ function MemberPhoto({ src, alt }: { src: string | null; alt: string }) {
 
 function MembershipFeeAdminPanel({
   payment,
+  receiptUrl,
   adminNote,
   onAdminNoteChange,
   onStatusUpdate,
   loading,
 }: {
   payment: MembershipPayment | null
+  receiptUrl: string | null
   adminNote: string
   onAdminNoteChange: (value: string) => void
   onStatusUpdate: (status: MembershipPaymentStatus) => void
@@ -865,7 +886,7 @@ function MembershipFeeAdminPanel({
             Application fee status
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-            Membership fee is separate from voluntary donations. Gateway is not connected in Phase 1.
+            Membership fee is separate from voluntary donations. Applicant must upload a manual bank payment receipt before submission.
           </p>
         </div>
         <span
@@ -877,25 +898,64 @@ function MembershipFeeAdminPanel({
         </span>
       </div>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <InfoItem
-          label="Base Fee"
-          value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
-        />
-        <InfoItem
-          label="Tax/Charges"
-          value={payment ? formatMembershipMoney(payment.tax_amount) : 'Rs. 0'}
-        />
-        <InfoItem
-          label="Total"
-          value={formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
-        />
-        <InfoItem label="Method" value={payment?.payment_method ?? 'manual'} />
-        <InfoItem label="Gateway Provider" value={payment?.gateway_provider} />
-        <InfoItem label="Gateway Reference" value={payment?.gateway_reference} />
-        <InfoItem label="Paid At" value={formatDate(payment?.paid_at, true)} />
-        <InfoItem label="Updated At" value={formatDate(payment?.updated_at, true)} />
-        <InfoItem label="Charges Note" value={getMembershipFeeSubtext()} />
+      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid gap-4 md:grid-cols-3">
+          <InfoItem
+            label="Base Fee"
+            value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
+          />
+          <InfoItem
+            label="Tax/Charges"
+            value={payment ? formatMembershipMoney(payment.tax_amount) : 'Rs. 0'}
+          />
+          <InfoItem
+            label="Total"
+            value={formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
+          />
+          <InfoItem label="Method" value={payment?.payment_method ?? 'bank'} />
+          <InfoItem label="Payment Account" value={`${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} · ${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}`} />
+          <InfoItem label="Account Title" value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle} />
+          <InfoItem label="IBAN" value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban} />
+          <InfoItem label="Till ID" value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId} />
+          <InfoItem label="Receipt File" value={payment?.receipt_file_name || (payment?.receipt_path ? 'Uploaded' : 'Not uploaded')} />
+          <InfoItem label="Receipt Uploaded" value={formatDate(payment?.receipt_uploaded_at, true)} />
+          <InfoItem label="Paid At" value={formatDate(payment?.paid_at, true)} />
+          <InfoItem label="Updated At" value={formatDate(payment?.updated_at, true)} />
+          <InfoItem label="Charges Note" value={getMembershipFeeSubtext()} />
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm">
+          <img
+            src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
+            alt="Membership fee payment QR code"
+            className="mx-auto w-full max-w-[240px] rounded-xl object-contain"
+            loading="lazy"
+          />
+          <p className="mt-3 text-xs font-bold leading-5 text-slate-800">
+            {getMembershipPaymentQrHelpText()}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
+          Payment Receipt
+        </p>
+        {receiptUrl ? (
+          <a
+            href={receiptUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black !text-white no-underline transition hover:bg-slate-800 hover:!text-white"
+            style={{ color: '#ffffff' }}
+          >
+            Open Receipt
+          </a>
+        ) : (
+          <p className="mt-2 text-sm font-semibold text-red-700">
+            No receipt uploaded. Application should not be accepted without manual verification.
+          </p>
+        )}
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
@@ -1169,6 +1229,18 @@ async function createSignedPhotoUrl(photoPath: string | null) {
   const { data, error } = await supabase.storage
     .from(MEMBER_PHOTO_BUCKET)
     .createSignedUrl(photoPath, SIGNED_URL_TTL_SECONDS)
+
+  if (error || !data?.signedUrl) return null
+
+  return data.signedUrl
+}
+
+async function createSignedReceiptUrl(receiptPath: string | null | undefined) {
+  if (!receiptPath) return null
+
+  const { data, error } = await supabase.storage
+    .from(MEMBERSHIP_RECEIPT_BUCKET)
+    .createSignedUrl(receiptPath, SIGNED_URL_TTL_SECONDS)
 
   if (error || !data?.signedUrl) return null
 

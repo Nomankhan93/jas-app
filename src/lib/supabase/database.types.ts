@@ -595,6 +595,11 @@ export type Database = {
           member_id: string
           paid_at: string | null
           payment_method: Database["public"]["Enums"]["membership_payment_method"]
+          receipt_file_name: string | null
+          receipt_mime_type: string | null
+          receipt_path: string | null
+          receipt_size_bytes: number | null
+          receipt_uploaded_at: string | null
           status: Database["public"]["Enums"]["membership_payment_status"]
           tax_amount: number
           total_amount: number
@@ -612,6 +617,11 @@ export type Database = {
           member_id: string
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["membership_payment_method"]
+          receipt_file_name?: string | null
+          receipt_mime_type?: string | null
+          receipt_path?: string | null
+          receipt_size_bytes?: number | null
+          receipt_uploaded_at?: string | null
           status?: Database["public"]["Enums"]["membership_payment_status"]
           tax_amount?: number
           total_amount?: number
@@ -629,6 +639,11 @@ export type Database = {
           member_id?: string
           paid_at?: string | null
           payment_method?: Database["public"]["Enums"]["membership_payment_method"]
+          receipt_file_name?: string | null
+          receipt_mime_type?: string | null
+          receipt_path?: string | null
+          receipt_size_bytes?: number | null
+          receipt_uploaded_at?: string | null
           status?: Database["public"]["Enums"]["membership_payment_status"]
           tax_amount?: number
           total_amount?: number
