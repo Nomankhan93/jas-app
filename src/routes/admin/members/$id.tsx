@@ -32,20 +32,7 @@ import {
   rejectMemberAction,
 } from '../../../lib/admin/actions'
 import { supabase } from '../../../lib/supabase/client'
-import {
-  MEMBERSHIP_BASE_FEE,
-  MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
-  MEMBERSHIP_PAYMENT_QR_IMAGE_PATH,
-  MEMBERSHIP_RECEIPT_BUCKET,
-  type MembershipPayment,
-  type MembershipPaymentStatus,
-  formatMembershipMoney,
-  getMembershipFeeSubtext,
-  getMembershipPaymentQrHelpText,
-  getMembershipPaymentDisplayStatus,
-  getMembershipPaymentStatusClass,
-  getMembershipPaymentStatusLabel,
-} from '../../../lib/membership-fee'
+import { useAdminMemberDetailCopy } from '../../../lib/admin-member-detail-i18n'
 
 export const Route = createFileRoute('/admin/members/$id')({
   component: AdminMemberDetailPage,
@@ -143,17 +130,14 @@ function AdminMemberDetailPage() {
 
 function AdminMemberApplicationPage({ id }: { id: string }) {
   const navigate = useNavigate()
+  const { copy, textDir, textAlignClass } = useAdminMemberDetailCopy()
 
   const [member, setMember] = useState<Member | null>(null)
-  const [membershipPayment, setMembershipPayment] = useState<MembershipPayment | null>(null)
-  const [paymentAdminNote, setPaymentAdminNote] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState('')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
-  const [paymentActionLoading, setPaymentActionLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -196,33 +180,20 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         const safeMember = await fetchMemberById(id)
 
         if (!safeMember) {
-          throw new Error('Member not found.')
+          throw new Error(copy.memberNotFound)
         }
 
-        const safeMembershipPayment = await fetchMembershipPaymentByMemberId(
-          safeMember.id,
-        )
-
-        const [signedPhotoUrl, signedReceiptUrl] = await Promise.all([
-          createSignedPhotoUrl(safeMember.photo_url),
-          createSignedReceiptUrl(safeMembershipPayment?.receipt_path),
-        ])
+        const signedPhotoUrl = await createSignedPhotoUrl(safeMember.photo_url)
 
         if (cancelledRef?.current) return
 
         setMember(safeMember)
-        setMembershipPayment(safeMembershipPayment)
-        setPaymentAdminNote(safeMembershipPayment?.admin_note ?? '')
         setPhotoUrl(signedPhotoUrl)
-        setReceiptUrl(signedReceiptUrl)
       } catch (err) {
         if (!cancelledRef?.current) {
           setError(err instanceof Error ? err.message : 'Failed to load member.')
           setMember(null)
-          setMembershipPayment(null)
-          setPaymentAdminNote('')
           setPhotoUrl(null)
-          setReceiptUrl(null)
         }
       } finally {
         if (!cancelledRef?.current) {
@@ -316,76 +287,13 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
     }
   }
 
-
-  async function handlePaymentStatusUpdate(status: MembershipPaymentStatus) {
-    if (!member || paymentActionLoading) return
-
-    const confirmed = window.confirm(
-      `Update membership fee status to ${getMembershipPaymentStatusLabel(status)}?`,
-    )
-
-    if (!confirmed) return
-
-    setPaymentActionLoading(true)
-    setError('')
-    setSuccess('')
-
-    const taxAmount = Number(membershipPayment?.tax_amount ?? 0)
-    const baseAmount = Number(membershipPayment?.base_amount ?? MEMBERSHIP_BASE_FEE)
-
-    try {
-      const { error: paymentError } = await supabase
-        .from('membership_payments')
-        .upsert(
-          {
-            member_id: member.id,
-            user_id: member.user_id,
-            base_amount: baseAmount,
-            tax_amount: taxAmount,
-            total_amount: baseAmount + taxAmount,
-            currency: membershipPayment?.currency ?? 'PKR',
-            status,
-            payment_method: membershipPayment?.payment_method ?? 'bank',
-            gateway_provider: membershipPayment?.gateway_provider ?? 'manual_mobilink_microfinance_bank',
-            gateway_reference: membershipPayment?.gateway_reference ?? null,
-            receipt_path: membershipPayment?.receipt_path ?? null,
-            receipt_file_name: membershipPayment?.receipt_file_name ?? null,
-            receipt_mime_type: membershipPayment?.receipt_mime_type ?? null,
-            receipt_size_bytes: membershipPayment?.receipt_size_bytes ?? null,
-            receipt_uploaded_at: membershipPayment?.receipt_uploaded_at ?? null,
-            admin_note: paymentAdminNote.trim() || null,
-            paid_at:
-              status === 'paid'
-                ? new Date().toISOString()
-                : status === 'pending'
-                  ? null
-                  : membershipPayment?.paid_at ?? null,
-          },
-          { onConflict: 'member_id' },
-        )
-
-      if (paymentError) throw paymentError
-
-      setSuccess(`Membership fee marked as ${getMembershipPaymentStatusLabel(status)}.`)
-      await loadMember(undefined, { silent: true })
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to update membership fee status.',
-      )
-    } finally {
-      setPaymentActionLoading(false)
-    }
-  }
-
   if (loading) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
         <div className="page-wrap rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-            Loading member application...
+            {copy.loading}
           </div>
         </div>
       </main>
@@ -394,7 +302,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
   if (!member) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
         <div className="page-wrap space-y-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <BackToAdmin />
 
@@ -403,10 +311,10 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
               <div>
                 <h1 className="text-xl font-black text-red-900">
-                  Member not found
+                  {copy.memberNotFound}
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-red-700">
-                  {error || 'This member record could not be loaded.'}
+                  {error || copy.memberNotFoundText}
                 </p>
               </div>
             </div>
@@ -417,16 +325,16 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
+    <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
       <div className="page-wrap space-y-6">
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
             <BackToAdmin />
 
             <div className="mt-5 flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
-              <div className="min-w-0">
+              <div className={`min-w-0 ${textAlignClass}`} dir={textDir}>
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-700">
-                  Member Application
+                  {copy.pageEyebrow}
                 </p>
 
                 <h1 className="mt-2 break-words text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
@@ -434,11 +342,11 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 </h1>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  CNIC:{' '}
+                  {copy.cnic}:{' '}
                   <span className="font-bold text-slate-800">
                     {formatCnic(member.cnic)}
                   </span>{' '}
-                  · District:{' '}
+                  · {copy.district}:{' '}
                   <span className="font-bold text-slate-800">
                     {member.district}
                     {member.taluka ? ` / ${member.taluka}` : ''}
@@ -446,9 +354,9 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 </p>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Member No:{' '}
+                  {copy.memberNo}:{' '}
                   <span className="font-bold text-slate-900">
-                    {member.member_no || 'Not issued yet'}
+                    {member.member_no || copy.notIssuedYet}
                   </span>
                 </p>
               </div>
@@ -466,7 +374,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     <RefreshCw
                       className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
                     />
-                    Refresh
+                    {copy.refresh}
                   </button>
 
                   {canViewCard ? (
@@ -478,7 +386,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                         style={{ color: '#ffffff' }}
                       >
                         <CreditCard className="h-4 w-4" />
-                        View Card
+                        {copy.viewCard}
                       </Link>
 
                       <Link
@@ -488,7 +396,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                         style={{ color: '#ffffff' }}
                       >
                         <BadgeCheck className="h-4 w-4 text-amber-300" />
-                        Office Bearer Card
+                        {copy.officeBearerCard}
                       </Link>
                     </>
                   ) : null}
@@ -496,42 +404,34 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
                 {!canViewCard ? (
                   <p className="max-w-xs text-left text-xs leading-5 text-slate-500 lg:text-right">
-                    Digital card will be available after approval and membership
-                    number issuance.
+                    {copy.digitalCardUnavailable}
                   </p>
                 ) : null}
               </div>
             </div>
           </div>
 
-          <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-5">
+          <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
             <SummaryItem
-              label="Status"
-              value={getStatusLabel(member.status)}
+              label={copy.summary.status}
+              value={getStatusLabel(member.status, copy)}
               icon={<ShieldCheck className="h-4 w-4" />}
             />
             <SummaryItem
-              label="Fee Status"
-              value={getMembershipPaymentStatusLabel(
-                getMembershipPaymentDisplayStatus(membershipPayment),
-              )}
-              icon={<CreditCard className="h-4 w-4" />}
-            />
-            <SummaryItem
-              label="Member No"
-              value={member.member_no || 'Not issued'}
+              label={copy.summary.memberNo}
+              value={member.member_no || copy.notIssued}
               icon={<IdCard className="h-4 w-4" />}
             />
             <SummaryItem
-              label="Submitted"
-              value={formatDate(member.created_at, true) || 'Not provided'}
+              label={copy.summary.submitted}
+              value={formatDate(member.created_at, true) || copy.notProvided}
               icon={<CalendarDays className="h-4 w-4" />}
             />
             <SummaryItem
-              label="Reviewed"
+              label={copy.summary.reviewed}
               value={
                 formatDate(member.reviewed_at || member.approved_at, true) ||
-                'Not reviewed'
+                copy.notReviewed
               }
               icon={<Clock className="h-4 w-4" />}
             />
@@ -550,15 +450,6 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           </AlertBox>
         ) : null}
 
-        <MembershipFeeAdminPanel
-          payment={membershipPayment}
-          receiptUrl={receiptUrl}
-          adminNote={paymentAdminNote}
-          onAdminNoteChange={setPaymentAdminNote}
-          onStatusUpdate={handlePaymentStatusUpdate}
-          loading={paymentActionLoading}
-        />
-
         <StatusPanel member={member} />
 
         <section className="grid gap-6 md:grid-cols-3">
@@ -567,7 +458,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
             <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                Quick Contact
+                {copy.sidebar.quickContact}
               </p>
               <p className="mt-2 break-all text-sm font-black text-slate-950">
                 {formatMobile(member.mobile)}
@@ -582,8 +473,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
                 <p className="leading-6">
-                  Admin verification view shows full CNIC and contact details
-                  for review purposes.
+                  {copy.sidebar.verificationNotice}
                 </p>
               </div>
             </div>
@@ -593,10 +483,10 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-lg font-black text-slate-950">
-                  Member Details
+                  {copy.details.title}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Personal and membership information submitted by the member.
+                  {copy.details.subtitle}
                 </p>
               </div>
 
@@ -609,7 +499,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     style={{ color: '#ffffff' }}
                   >
                     <CreditCard className="h-4 w-4" />
-                    Open Card
+                    {copy.openCard}
                   </Link>
 
                   <Link
@@ -619,69 +509,69 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     style={{ color: '#ffffff' }}
                   >
                     <BadgeCheck className="h-4 w-4 text-amber-300" />
-                    Office Card
+                    {copy.officeCard}
                   </Link>
                 </div>
               ) : null}
             </div>
 
             <div className="mt-6 space-y-5">
-              <DetailGroup title="Identity">
-                <InfoItem label="Full Name" value={member.full_name} />
-                <InfoItem label="Father Name" value={member.father_name} />
-                <InfoItem label="CNIC" value={formatCnic(member.cnic)} />
-                <InfoItem label="Mobile" value={formatMobile(member.mobile)} />
+              <DetailGroup title={copy.details.identity}>
+                <InfoItem label={copy.details.fullName} value={member.full_name} />
+                <InfoItem label={copy.details.fatherName} value={member.father_name} />
+                <InfoItem label={copy.cnic} value={formatCnic(member.cnic)} />
+                <InfoItem label={copy.details.mobile} value={formatMobile(member.mobile)} />
               </DetailGroup>
 
-              <DetailGroup title="Location">
-                <InfoItem label="District" value={member.district} />
-                <InfoItem label="Taluka" value={member.taluka} />
-                <InfoItem label="Address" value={member.address} wide />
+              <DetailGroup title={copy.details.location}>
+                <InfoItem label={copy.district} value={member.district} />
+                <InfoItem label={copy.details.taluka} value={member.taluka} />
+                <InfoItem label={copy.details.address} value={member.address} wide />
               </DetailGroup>
 
-              <DetailGroup title="Profile">
+              <DetailGroup title={copy.details.profile}>
                 <InfoItem
-                  label="Date of Birth"
+                  label={copy.details.dateOfBirth}
                   value={formatDate(member.date_of_birth)}
                 />
-                <InfoItem label="Gender" value={member.gender} />
-                <InfoItem label="Education" value={member.education} />
-                <InfoItem label="Blood Group" value={member.blood_group} />
-                <InfoItem label="Profession" value={member.profession} />
-                <InfoItem label="Caste Branch" value={member.caste_branch} />
+                <InfoItem label={copy.details.gender} value={member.gender} />
+                <InfoItem label={copy.details.education} value={member.education} />
+                <InfoItem label={copy.details.bloodGroup} value={member.blood_group} />
+                <InfoItem label={copy.details.profession} value={member.profession} />
+                <InfoItem label={copy.details.casteBranch} value={member.caste_branch} />
               </DetailGroup>
 
-              <DetailGroup title="Emergency Contact">
+              <DetailGroup title={copy.details.emergencyContact}>
                 <InfoItem
-                  label="Emergency Contact Name"
+                  label={copy.details.emergencyContactName}
                   value={member.emergency_contact_name}
                 />
                 <InfoItem
-                  label="Emergency Contact Relation"
+                  label={copy.details.emergencyContactRelation}
                   value={member.emergency_contact_relation}
                 />
                 <InfoItem
-                  label="Emergency Contact Mobile"
+                  label={copy.details.emergencyContactMobile}
                   value={formatMobile(member.emergency_contact_mobile)}
                 />
                 <InfoItem
-                  label="Declaration Accepted"
-                  value={member.declaration_accepted ? 'Yes' : 'No'}
+                  label={copy.details.declarationAccepted}
+                  value={member.declaration_accepted ? copy.details.yes : copy.details.no}
                 />
               </DetailGroup>
 
-              <DetailGroup title="Review Record">
-                <InfoItem label="Member No" value={member.member_no} />
+              <DetailGroup title={copy.details.reviewRecord}>
+                <InfoItem label={copy.summary.memberNo} value={member.member_no} />
                 <InfoItem
-                  label="Submitted"
+                  label={copy.summary.submitted}
                   value={formatDate(member.created_at, true)}
                 />
                 <InfoItem
-                  label="Approved At"
+                  label={copy.details.approvedAt}
                   value={formatDate(member.approved_at, true)}
                 />
                 <InfoItem
-                  label="Reviewed At"
+                  label={copy.details.reviewedAt}
                   value={formatDate(member.reviewed_at, true)}
                 />
               </DetailGroup>
@@ -692,7 +582,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 <div className="flex items-start gap-3">
                   <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
                   <div>
-                    <p className="font-black">Rejection Reason</p>
+                    <p className="font-black">{copy.details.rejectionReason}</p>
                     <p className="mt-1 leading-6">{member.rejection_reason}</p>
                   </div>
                 </div>
@@ -706,11 +596,10 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <h2 className="text-lg font-black text-slate-950">
-                  Review Application
+                  {copy.review.title}
                 </h2>
                 <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-                  Approve this member if details are correct. Reject only with a
-                  clear reason so the member can update and resubmit.
+                  {copy.review.subtitle}
                 </p>
               </div>
 
@@ -725,21 +614,21 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                 ) : (
                   <UserCheck className="h-4 w-4" />
                 )}
-                {actionLoading ? 'Processing...' : 'Approve Member'}
+                {actionLoading ? copy.review.processing : copy.review.approve}
               </button>
             </div>
 
             <div className="mt-6 max-w-2xl rounded-2xl border border-red-100 bg-red-50/60 p-4">
               <label className="block">
                 <span className="mb-1 block text-sm font-bold text-red-900">
-                  Rejection Reason
+                  {copy.details.rejectionReason}
                 </span>
 
                 <textarea
                   value={rejectionReason}
                   onChange={(event) => setRejectionReason(event.target.value)}
                   className="min-h-28 w-full rounded-xl border border-red-200 bg-white px-3 py-2 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:ring-4 focus:ring-red-100 sm:text-sm"
-                  placeholder="Example: CNIC format/photo/address is unclear. Please update and resubmit."
+                  placeholder={copy.review.rejectionPlaceholder}
                 />
               </label>
 
@@ -749,8 +638,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     reasonTooShort ? 'text-red-700' : 'text-slate-500'
                   }`}
                 >
-                  Minimum {MIN_REJECTION_REASON_LENGTH} characters required.
-                  Current: {trimmedRejectionReason.length}
+                  {copy.review.minimum} {MIN_REJECTION_REASON_LENGTH} {copy.review.charactersRequired}
+                  {copy.review.current}: {trimmedRejectionReason.length}
                 </p>
 
                 <button
@@ -767,7 +656,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                   ) : (
                     <XCircle className="h-4 w-4" />
                   )}
-                  {actionLoading ? 'Processing...' : 'Reject Application'}
+                  {actionLoading ? copy.review.processing : copy.review.reject}
                 </button>
               </div>
             </div>
@@ -777,11 +666,11 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-black text-slate-950">
-                  Review Completed
+                  {copy.review.completedTitle}
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  This application is currently marked as{' '}
-                  <strong>{getStatusLabel(member.status)}</strong>.
+                  {copy.review.completedText}{' '}
+                  <strong>{getStatusLabel(member.status, copy)}</strong>.
                 </p>
               </div>
 
@@ -794,7 +683,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     style={{ color: '#ffffff' }}
                   >
                     <CreditCard className="h-4 w-4" />
-                    View Card
+                    {copy.viewCard}
                   </Link>
 
                   <Link
@@ -804,7 +693,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     style={{ color: '#ffffff' }}
                   >
                     <BadgeCheck className="h-4 w-4 text-amber-300" />
-                    Office Card
+                    {copy.officeCard}
                   </Link>
                 </div>
               ) : (
@@ -813,7 +702,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2 text-sm font-bold text-slate-800 no-underline shadow-sm transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Admin List
+                  {copy.review.backToAdminList}
                 </Link>
               )}
             </div>
@@ -825,24 +714,28 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 }
 
 function BackToAdmin() {
+  const { copy, iconBeforeClass } = useAdminMemberDetailCopy()
+
   return (
     <Link
       to="/admin"
       className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 no-underline hover:text-emerald-800"
     >
-      <ArrowLeft className="h-4 w-4" />
-      Back to Admin
+      <ArrowLeft className={`h-4 w-4 ${iconBeforeClass}`} />
+      {copy.backToAdmin}
     </Link>
   )
 }
 
 function MemberPhoto({ src, alt }: { src: string | null; alt: string }) {
+  const { copy } = useAdminMemberDetailCopy()
+
   if (!src) {
     return (
       <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-500 ring-1 ring-slate-200">
         <div className="text-center">
           <ImageOff className="mx-auto h-8 w-8 text-slate-400" />
-          <p className="mt-2">No photo</p>
+          <p className="mt-2">{copy.sidebar.noPhoto}</p>
         </div>
       </div>
     )
@@ -857,152 +750,9 @@ function MemberPhoto({ src, alt }: { src: string | null; alt: string }) {
   )
 }
 
-
-function MembershipFeeAdminPanel({
-  payment,
-  receiptUrl,
-  adminNote,
-  onAdminNoteChange,
-  onStatusUpdate,
-  loading,
-}: {
-  payment: MembershipPayment | null
-  receiptUrl: string | null
-  adminNote: string
-  onAdminNoteChange: (value: string) => void
-  onStatusUpdate: (status: MembershipPaymentStatus) => void
-  loading: boolean
-}) {
-  const status = getMembershipPaymentDisplayStatus(payment)
-
-  return (
-    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200/80 sm:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
-            Membership Fee
-          </p>
-          <h2 className="mt-2 text-xl font-black text-slate-950">
-            Application fee status
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-            Membership fee is separate from voluntary donations. Applicant must upload a manual bank payment receipt before submission.
-          </p>
-        </div>
-        <span
-          className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-black ${getMembershipPaymentStatusClass(
-            status,
-          )}`}
-        >
-          {getMembershipPaymentStatusLabel(status)}
-        </span>
-      </div>
-
-      <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="grid gap-4 md:grid-cols-3">
-          <InfoItem
-            label="Base Fee"
-            value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
-          />
-          <InfoItem
-            label="Tax/Charges"
-            value={payment ? formatMembershipMoney(payment.tax_amount) : 'Rs. 0'}
-          />
-          <InfoItem
-            label="Total"
-            value={formatMembershipMoney(payment?.total_amount ?? MEMBERSHIP_BASE_FEE)}
-          />
-          <InfoItem label="Method" value={payment?.payment_method ?? 'bank'} />
-          <InfoItem label="Payment Account" value={`${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName} · ${MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}`} />
-          <InfoItem label="Account Title" value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle} />
-          <InfoItem label="IBAN" value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban} />
-          <InfoItem label="Till ID" value={MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId} />
-          <InfoItem label="Receipt File" value={payment?.receipt_file_name || (payment?.receipt_path ? 'Uploaded' : 'Not uploaded')} />
-          <InfoItem label="Receipt Uploaded" value={formatDate(payment?.receipt_uploaded_at, true)} />
-          <InfoItem label="Paid At" value={formatDate(payment?.paid_at, true)} />
-          <InfoItem label="Updated At" value={formatDate(payment?.updated_at, true)} />
-          <InfoItem label="Charges Note" value={getMembershipFeeSubtext()} />
-        </div>
-
-        <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm">
-          <img
-            src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
-            alt="Membership fee payment QR code"
-            className="mx-auto w-full max-w-[240px] rounded-xl object-contain"
-            loading="lazy"
-          />
-          <p className="mt-3 text-xs font-bold leading-5 text-slate-800">
-            {getMembershipPaymentQrHelpText()}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">
-          Payment Receipt
-        </p>
-        {receiptUrl ? (
-          <a
-            href={receiptUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-black !text-white no-underline transition hover:bg-slate-800 hover:!text-white"
-            style={{ color: '#ffffff' }}
-          >
-            Open Receipt
-          </a>
-        ) : (
-          <p className="mt-2 text-sm font-semibold text-red-700">
-            No receipt uploaded. Application should not be accepted without manual verification.
-          </p>
-        )}
-      </div>
-
-      <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-slate-800">
-            Admin Note
-          </span>
-          <textarea
-            value={adminNote}
-            onChange={(event) => onAdminNoteChange(event.target.value)}
-            className="min-h-24 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-amber-500 focus:ring-4 focus:ring-amber-100 sm:text-sm"
-            placeholder="Optional note for manual payment, waiver, or pending follow-up."
-          />
-        </label>
-
-        <div className="grid gap-2 sm:grid-cols-3 lg:w-[360px]">
-          <button
-            type="button"
-            onClick={() => onStatusUpdate('paid')}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-emerald-700 px-4 text-sm font-black text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Mark Paid
-          </button>
-          <button
-            type="button"
-            onClick={() => onStatusUpdate('waived')}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-sky-700 px-4 text-sm font-black text-white transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Waive
-          </button>
-          <button
-            type="button"
-            onClick={() => onStatusUpdate('pending')}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-4 text-sm font-black text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Pending
-          </button>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function StatusPanel({ member }: { member: Member }) {
+  const { copy } = useAdminMemberDetailCopy()
+
   const config: Record<
     MemberStatus,
     {
@@ -1013,24 +763,24 @@ function StatusPanel({ member }: { member: Member }) {
     }
   > = {
     pending: {
-      title: 'Pending admin review',
-      text: 'Please verify CNIC, mobile, address, district/taluka, photo quality, and declaration before approval.',
+      title: copy.status.pendingTitle,
+      text: copy.status.pendingText,
       className: 'bg-amber-50 text-amber-900 ring-amber-100',
       icon: <Hourglass className="h-5 w-5 text-amber-700" />,
     },
     approved: {
-      title: 'Application approved',
+      title: copy.status.approvedTitle,
       text: member.member_no
-        ? `Membership number ${member.member_no} is issued. The digital card is available.`
-        : 'Application is approved, but member number is not available yet.',
+        ? copy.status.approvedTextIssued.replace('{{memberNo}}', member.member_no)
+        : copy.status.approvedTextMissing,
       className: 'bg-emerald-50 text-emerald-900 ring-emerald-100',
       icon: <BadgeCheck className="h-5 w-5 text-emerald-700" />,
     },
     rejected: {
-      title: 'Application rejected',
+      title: copy.status.rejectedTitle,
       text:
         member.rejection_reason ||
-        'Application was rejected. No rejection reason is available.',
+        copy.status.rejectedText,
       className: 'bg-red-50 text-red-900 ring-red-100',
       icon: <XCircle className="h-5 w-5 text-red-700" />,
     },
@@ -1131,6 +881,8 @@ function InfoItem({
   value: string | null | undefined
   wide?: boolean
 }) {
+  const { copy } = useAdminMemberDetailCopy()
+
   return (
     <div
       className={`rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 ${
@@ -1142,13 +894,15 @@ function InfoItem({
       </p>
 
       <p className="mt-1 break-words text-sm font-semibold text-slate-950">
-        {value || <span className="font-medium text-slate-400">Not provided</span>}
+        {value || <span className="font-medium text-slate-400">{copy.notProvided}</span>}
       </p>
     </div>
   )
 }
 
 function StatusBadge({ status }: { status: MemberStatus }) {
+  const { copy } = useAdminMemberDetailCopy()
+
   const config: Record<
     MemberStatus,
     {
@@ -1160,17 +914,17 @@ function StatusBadge({ status }: { status: MemberStatus }) {
     pending: {
       icon: <Hourglass className="h-3.5 w-3.5" />,
       className: 'bg-amber-50 text-amber-700 ring-amber-200',
-      text: 'Pending',
+      text: copy.status.pending,
     },
     approved: {
       icon: <BadgeCheck className="h-3.5 w-3.5" />,
       className: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-      text: 'Approved',
+      text: copy.status.approved,
     },
     rejected: {
       icon: <XCircle className="h-3.5 w-3.5" />,
       className: 'bg-red-50 text-red-700 ring-red-200',
-      text: 'Rejected',
+      text: copy.status.rejected,
     },
   }
 
@@ -1235,35 +989,6 @@ async function createSignedPhotoUrl(photoPath: string | null) {
   return data.signedUrl
 }
 
-async function createSignedReceiptUrl(receiptPath: string | null | undefined) {
-  if (!receiptPath) return null
-
-  const { data, error } = await supabase.storage
-    .from(MEMBERSHIP_RECEIPT_BUCKET)
-    .createSignedUrl(receiptPath, SIGNED_URL_TTL_SECONDS)
-
-  if (error || !data?.signedUrl) return null
-
-  return data.signedUrl
-}
-
-
-async function fetchMembershipPaymentByMemberId(memberId: string) {
-  const { data, error } = await supabase
-    .from('membership_payments')
-    .select('*')
-    .eq('member_id', memberId)
-    .maybeSingle()
-    .returns<MembershipPayment | null>()
-
-  if (error) {
-    console.warn('Membership payment status could not be loaded:', error.message)
-    return null
-  }
-
-  return data
-}
-
 async function fetchMemberById(id: string) {
   const { data, error } = await supabase
     .from('members')
@@ -1276,14 +1001,17 @@ async function fetchMemberById(id: string) {
   return data as Member | null
 }
 
-function getStatusLabel(status: MemberStatus) {
+function getStatusLabel(
+  status: MemberStatus,
+  copy?: ReturnType<typeof useAdminMemberDetailCopy>['copy'],
+) {
   switch (status) {
     case 'approved':
-      return 'Approved'
+      return copy?.status.approved ?? 'Approved'
     case 'rejected':
-      return 'Rejected'
+      return copy?.status.rejected ?? 'Rejected'
     default:
-      return 'Pending'
+      return copy?.status.pending ?? 'Pending'
   }
 }
 
