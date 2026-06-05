@@ -1105,6 +1105,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // Keep the app shell layout stable LTR; individual text blocks can opt into RTL.
     // This avoids reversing dashboards/cards while still exposing the selected direction.
     document.documentElement.dir = 'ltr'
+    document.documentElement.dataset.language = language
+    document.documentElement.dataset.direction = direction
     document.body.dataset.language = language
     document.body.dataset.direction = direction
   }, [direction, language])

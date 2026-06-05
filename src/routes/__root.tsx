@@ -143,7 +143,7 @@ const publicPageItems: PublicPageItem[] = [
     to: '/committees',
     label: 'Committees',
     icon: <Network size={16} />,
-    description: 'Central, district and taluka committee office bearers',
+    description: 'Central, divisional, district and taluka committee office bearers',
   },
   {
     to: '/gallery',

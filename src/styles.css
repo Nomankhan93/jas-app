@@ -1154,99 +1154,58 @@ canvas {
   }
 }
 
-/* ─── Mobile Overflow + Touch Polish ─────────────────── */
-html,
-body,
-#main-content {
-  max-width: 100%;
+/* ─── Multilingual Final QA Polish ───────────────────── */
+html[data-language="ur"],
+html[data-language="sd"],
+body[data-language="ur"],
+body[data-language="sd"] {
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  overflow-x: clip;
+body[data-direction="rtl"] [dir="rtl"] {
+  unicode-bidi: isolate;
 }
 
-@supports not (overflow-x: clip) {
-  body {
-    overflow-x: hidden;
+body[data-direction="rtl"] [dir="rtl"] input,
+body[data-direction="rtl"] [dir="rtl"] textarea,
+body[data-direction="rtl"] [dir="rtl"] select {
+  text-align: right;
+}
+
+body[data-direction="rtl"] [dir="rtl"] input[type="email"],
+body[data-direction="rtl"] [dir="rtl"] input[type="url"],
+body[data-direction="rtl"] [dir="rtl"] input[type="tel"],
+body[data-direction="rtl"] [dir="rtl"] input[type="number"],
+body[data-direction="rtl"] [dir="rtl"] input[type="date"] {
+  direction: ltr;
+  text-align: left;
+}
+
+body[data-direction="rtl"] [data-keep-ltr],
+body[data-direction="rtl"] .membership-card,
+body[data-direction="rtl"] [data-card-preview] {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+[dir="rtl"] .section-eyebrow,
+[dir="rtl"] .section-title,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] p {
+  letter-spacing: normal;
+}
+
+@media (max-width: 640px) {
+  [dir="rtl"] .primary-btn,
+  [dir="rtl"] .secondary-btn,
+  [dir="rtl"] .jas-dark-action-link {
+    justify-content: center;
+  }
+
+  [dir="rtl"] .page-wrap {
+    padding-inline: 1rem;
   }
 }
 
-button,
-a,
-input,
-select,
-textarea {
-  touch-action: manipulation;
-}
-
-button,
-a,
-[role='button'] {
-  -webkit-tap-highlight-color: transparent;
-}
-
-.break-anywhere {
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.mobile-scroll-x {
-  max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-.card-preview-fit {
-  max-width: 100%;
-  overflow: hidden;
-}
-
-@media (max-width: 767px) {
-  .page-wrap {
-    padding-inline: 0.85rem;
-  }
-
-  main {
-    max-width: 100vw;
-    overflow-x: clip;
-  }
-
-  input,
-  select,
-  textarea {
-    font-size: 16px !important;
-  }
-
-  .primary-btn,
-  .secondary-btn,
-  .ghost-btn,
-  .gold-btn {
-    min-height: 2.85rem;
-  }
-
-  table {
-    font-size: 0.875rem;
-  }
-
-  .rounded-\[2rem\] {
-    border-radius: 1.45rem;
-  }
-
-  .rounded-3xl {
-    border-radius: 1.35rem;
-  }
-}
-
-@media (max-width: 420px) {
-  .page-wrap {
-    padding-inline: 0.65rem;
-  }
-
-  .primary-btn,
-  .secondary-btn,
-  .ghost-btn,
-  .gold-btn {
-    width: 100%;
-  }
-}
