@@ -51,14 +51,16 @@ export function AccountMenuPanel({
   onLogout: () => void
   isActive: (path: string) => boolean
 }) {
-  const { t } = useI18n()
+  const { direction, t } = useI18n()
+  const textAlignClass = direction === 'rtl' ? 'text-right' : 'text-left'
 
   if (!accountOpen) return null
 
   return (
     <div
+      dir={direction}
       onClick={onClose}
-      className={`${mobile ? 'absolute right-0 top-full z-[80] mt-3 w-[min(18rem,calc(100vw-1.5rem))]' : 'absolute right-0 top-full z-[70] mt-3 w-72'} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
+      className={`${mobile ? 'site-account-menu-mobile absolute right-0 top-full z-[80] mt-3 w-[min(19rem,calc(100vw-1rem))]' : 'absolute right-0 top-full z-[70] mt-3 w-72'} ${textAlignClass} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
     >
       {accountItems.map((item) => (
         <CompactDropdownItem key={`${item.to}-${item.label}`} item={item} active={isActive(item.to)} />
@@ -80,15 +82,18 @@ export function AccountMenuPanel({
 }
 
 function CompactDropdownItem({ item, active }: { item: NavItem; active: boolean }) {
+  const { direction } = useI18n()
+  const textAlignClass = direction === 'rtl' ? 'text-right' : 'text-left'
+
   return (
     <Link
       to={item.to}
-      className={`group flex items-center gap-3 rounded-2xl p-3 no-underline transition ${active ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-white hover:text-emerald-900'}`}
+      className={`group flex items-center gap-3 rounded-2xl p-3 no-underline transition ${textAlignClass} ${active ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-white hover:text-emerald-900'}`}
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm ring-1 ring-slate-100">
         {item.icon}
       </span>
-      <span className="min-w-0 text-sm font-black leading-tight">{item.label}</span>
+      <span className="min-w-0 break-words text-sm font-black leading-tight">{item.label}</span>
     </Link>
   )
 }

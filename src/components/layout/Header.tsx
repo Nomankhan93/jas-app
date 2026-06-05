@@ -223,7 +223,7 @@ export function Header({ compact }: { compact: boolean }) {
           />
         </nav>
 
-        <div className="ml-auto hidden items-center gap-2 xl:gap-3 lg:flex">
+        <div className="site-header-desktop-actions ml-auto hidden items-center gap-2 xl:gap-3 lg:flex">
           <LanguageSwitcher />
 
           {authLoading ? (
@@ -267,7 +267,7 @@ export function Header({ compact }: { compact: boolean }) {
           )}
         </div>
 
-        <div className="ml-auto flex items-center gap-2 lg:hidden">
+        <div className="site-header-mobile-actions ml-auto flex items-center gap-2 lg:hidden">
           <LanguageSwitcher compact />
 
           {authLoading ? (

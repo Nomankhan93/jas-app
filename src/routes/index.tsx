@@ -40,8 +40,8 @@ function HomePage() {
   const { textDir } = useHomeCopy()
 
   return (
-    <main className="overflow-hidden" dir={textDir}>
-      <div className="page-wrap flex flex-col gap-16 pb-24 pt-10 lg:gap-20 lg:pt-12">
+    <main className="home-page overflow-hidden" dir={textDir}>
+      <div className="home-page-wrap page-wrap flex flex-col gap-14 pb-20 pt-8 sm:gap-16 sm:pb-24 sm:pt-10 lg:gap-20 lg:pt-12">
         <HeroSection />
         <MembershipFlow />
         <ProgramGateway />
@@ -56,7 +56,7 @@ function HeroSection() {
   const { copy, textDir, textAlignClass, arrowClass } = useHomeCopy()
 
   return (
-    <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.5rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
+    <section className="home-hero soft-panel animate-fade-up relative overflow-hidden rounded-[2rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.35rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(196,145,44,0.16),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(11,42,29,0.10),transparent_30%)]"
         aria-hidden="true"
@@ -76,7 +76,7 @@ function HeroSection() {
             {copy.brandLine}
           </p>
 
-          <h1 className="animate-fade-up delay-2 mt-4 max-w-[760px] text-[clamp(2.8rem,5.8vw,5.6rem)] font-black uppercase leading-[0.94] tracking-[-0.06em] text-stone-950">
+          <h1 className="home-hero-title animate-fade-up delay-2 mt-4 max-w-[760px] text-[clamp(2.35rem,12vw,5.6rem)] font-black uppercase leading-[0.94] tracking-[-0.06em] text-stone-950 sm:text-[clamp(2.8rem,5.8vw,5.6rem)]">
             {copy.heroTitleLine1}
             <br />
             <span className="text-[var(--forest)]">{copy.heroTitleLine2}</span>
@@ -88,7 +88,7 @@ function HeroSection() {
             {copy.heroDescription}
           </p>
 
-          <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
+          <div className="home-hero-actions animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
             <Link to="/signup" className="primary-btn pressable lift-hover">
               {copy.actions.apply}
               <ArrowRight size={16} className={arrowClass} />
@@ -101,7 +101,7 @@ function HeroSection() {
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="home-stat-grid mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {copy.portalStats.map((item, index) => (
               <div
                 key={item.label}
@@ -131,7 +131,7 @@ function PortalCardPreview() {
   const preview = copy.preview
 
   return (
-    <div className="lift-hover w-full max-w-[430px]" dir="ltr">
+    <div className="home-card-preview lift-hover w-full max-w-[430px]" dir="ltr">
       <div className="overflow-hidden rounded-[1.75rem] border border-emerald-950/15 bg-white shadow-[0_36px_90px_rgba(11,42,29,0.22)]">
         <div className="relative overflow-hidden bg-[linear-gradient(135deg,#06281b,#0b3a28,#115d46)] px-5 pb-6 pt-5 text-white">
           <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
@@ -171,7 +171,7 @@ function PortalCardPreview() {
             className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full object-cover opacity-[0.04]"
           />
 
-          <div className="relative grid grid-cols-[96px_1fr] gap-4">
+          <div className="home-card-preview-body relative grid grid-cols-[96px_1fr] gap-4">
             <div>
               <div className="flex h-24 w-24 items-center justify-center rounded-[1.35rem] border-4 border-white bg-slate-100 shadow-lg ring-2 ring-[#f2d48f]/70">
                 <Users size={36} className="text-slate-300" />
@@ -193,7 +193,7 @@ function PortalCardPreview() {
               <h3 className="mt-1 text-2xl font-black text-slate-950">
                 {preview.memberNameValue}
               </h3>
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="home-card-preview-info mt-4 grid grid-cols-2 gap-2">
                 <PreviewInfo label={preview.status} value={preview.approved} />
                 <PreviewInfo label={preview.district} value={preview.sindh} />
                 <PreviewInfo label={preview.card} value={preview.qrVerified} />
@@ -240,7 +240,7 @@ function MembershipFlow() {
   ]
 
   return (
-    <section className="animate-fade-up">
+    <section className="home-section animate-fade-up">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div className={textAlignClass} dir={textDir}>
           <p className="section-eyebrow mb-3">{copy.membershipFlow.eyebrow}</p>
