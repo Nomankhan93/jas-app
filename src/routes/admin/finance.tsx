@@ -54,6 +54,8 @@ import {
   type FinanceStatus,
 } from "../../lib/finance";
 
+import { useAdminManagementCopy } from '../../lib/admin-management-i18n'
+
 export const Route = createFileRoute("/admin/finance")({
   component: FinanceAdminPage,
 });
@@ -120,6 +122,7 @@ const statusFilterOptions = ["all", "pending", "approved", "rejected", "paid"];
 const monthFilterOptions = ["all", "this_month", "last_month", "this_year"];
 
 function FinanceAdminPage() {
+  const { copy } = useAdminManagementCopy('finance')
   const [donations, setDonations] = useState<FinanceDonation[]>([]);
   const [expenses, setExpenses] = useState<FinanceExpense[]>([]);
   const [auditLogs, setAuditLogs] = useState<FinanceAuditLog[]>([]);
@@ -652,14 +655,13 @@ function FinanceAdminPage() {
             to="/admin"
             className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200"
           >
-            ← Back to Admin
+            {copy.common.backToAdmin}
           </Link>
 
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
-                <BadgeIndianRupee className="h-4 w-4 text-amber-300" /> Finance
-                Admin
+                <BadgeIndianRupee className="h-4 w-4 text-amber-300" /> {copy.page.badge}
               </div>
 
               <h1 className="mt-5 text-4xl font-black md:text-6xl">
@@ -682,7 +684,7 @@ function FinanceAdminPage() {
                 disabled={loading}
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:opacity-60"
               >
-                <Download className="mr-2 h-4 w-4" /> Export CSV
+                <Download className="mr-2 h-4 w-4" /> {copy.common.exportCsv}
               </button>
               <button
                 type="button"
@@ -695,7 +697,7 @@ function FinanceAdminPage() {
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}{" "}
-                Refresh
+                {copy.common.refresh}
               </button>
             </div>
           </div>
@@ -737,7 +739,7 @@ function FinanceAdminPage() {
               icon={<BadgeIndianRupee className="h-5 w-5" />}
             />
             <StatCard
-              title="Total Expenses"
+              title={copy.page.totalExpenses}
               value={formatFinanceMoney(dashboard.totalExpenses)}
               icon={<FileText className="h-5 w-5" />}
             />
@@ -768,7 +770,7 @@ function FinanceAdminPage() {
                       ? "Donations"
                       : panel === "expenses"
                         ? "Expenses"
-                        : "Audit Log"}
+                        : copy.page.auditLog}
                 </button>
               ),
             )}
@@ -781,7 +783,7 @@ function FinanceAdminPage() {
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search donor, receipt, paid to, district..."
+                  placeholder={copy.page.searchPlaceholder}
                   className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 font-semibold outline-none transition focus:border-amber-500"
                 />
               </label>
@@ -1448,11 +1450,12 @@ function ActionButtons({
 }
 
 function AuditLogPanel({ items }: { items: FinanceAuditLog[] }) {
-  if (!items.length) return <EmptyPanel title="No audit logs yet" />;
+  const { copy } = useAdminManagementCopy('finance')
+  if (!items.length) return <EmptyPanel title={copy.page.noAuditLogs} />;
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="text-xl font-black text-slate-950">Recent Audit Logs</h2>
+      <h2 className="text-xl font-black text-slate-950">Recent {copy.page.auditLog}s</h2>
       <div className="mt-5 grid gap-3">
         {items.map((item) => (
           <div

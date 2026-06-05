@@ -32,6 +32,8 @@ import {
   type AreaPermissionUser,
 } from '../../lib/area-permissions'
 
+import { useAdminManagementCopy } from '../../lib/admin-management-i18n'
+
 export const Route = createFileRoute('/admin/area-permissions')({
   component: AdminAreaPermissionsPage,
 })
@@ -63,6 +65,7 @@ const emptyForm: FormState = {
 }
 
 function AdminAreaPermissionsPage() {
+  const { copy } = useAdminManagementCopy('areaPermissions')
   const [allowed, setAllowed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
@@ -217,7 +220,7 @@ function AdminAreaPermissionsPage() {
     return (
       <main className="px-3 py-6 sm:px-4 sm:py-10">
         <div className="page-wrap rounded-3xl bg-white p-5 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200">
-          Loading area permissions...
+          {copy.common.loading}
         </div>
       </main>
     )
@@ -227,7 +230,7 @@ function AdminAreaPermissionsPage() {
     <main className="px-3 py-6 sm:px-4 sm:py-10">
       <div className="page-wrap space-y-6">
         <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline">
-          <ArrowLeft size={16} /> Back to Admin
+          <ArrowLeft size={16} /> {copy.common.backToAdmin}
         </Link>
 
         <header className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200/70">
@@ -235,23 +238,23 @@ function AdminAreaPermissionsPage() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-200">
-                  Super Admin Control
+                  {copy.page.badge}
                 </p>
-                <h1 className="mt-2 text-3xl font-black tracking-tight">Area-based Permissions</h1>
+                <h1 className="mt-2 text-3xl font-black tracking-tight">{copy.page.title}</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-7 text-white/70">
-                  Assign district and taluka restrictions for module admins. This creates the permission foundation for district/taluka scoped workflows.
+                  {copy.page.subtitle}
                 </p>
               </div>
               <button type="button" onClick={() => void boot()} className="secondary-btn bg-white text-slate-900 hover:bg-slate-100">
-                <RefreshCw size={16} /> Refresh
+                <RefreshCw size={16} /> {copy.common.refresh}
               </button>
             </div>
           </div>
 
           <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
-            <SummaryCard label="Users listed" value={users.length} />
-            <SummaryCard label="Selected active permissions" value={activePermissions.length} />
-            <SummaryCard label="Access level" value={allowed ? 'Super Admin' : 'Restricted'} text />
+            <SummaryCard label={copy.page.usersListed} value={users.length} />
+            <SummaryCard label={copy.page.selectedActivePermissions} value={activePermissions.length} />
+            <SummaryCard label={copy.common.accessLevel} value={allowed ? copy.common.superAdmin : copy.common.restricted} text />
           </div>
         </header>
 
@@ -343,7 +346,7 @@ function AdminAreaPermissionsPage() {
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700">
-                          {form.id ? 'Edit permission' : 'New permission'}
+                          {form.id ? copy.page.editPermission : copy.page.newPermission}
                         </p>
                         <h3 className="mt-2 text-xl font-black text-slate-950">Area access rule</h3>
                       </div>
@@ -385,7 +388,7 @@ function AdminAreaPermissionsPage() {
                     </div>
 
                     <div className="mt-4">
-                      <CheckBox label="Permission active" checked={form.isActive} onChange={(value) => setForm((current) => ({ ...current, isActive: value }))} />
+                      <CheckBox label={copy.page.permissionActive} checked={form.isActive} onChange={(value) => setForm((current) => ({ ...current, isActive: value }))} />
                     </div>
 
                     <Field label="Notes" className="mt-4">
@@ -394,7 +397,7 @@ function AdminAreaPermissionsPage() {
 
                     <button type="submit" disabled={saving} className="primary-btn mt-5 disabled:opacity-60">
                       {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                      {saving ? 'Saving...' : 'Save Area Permission'}
+                      {saving ? copy.common.saving : copy.page.saveAreaPermission}
                     </button>
                   </form>
 

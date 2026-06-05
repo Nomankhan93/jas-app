@@ -23,11 +23,14 @@ import {
   type ReportsCenterData,
 } from '../../lib/reports'
 
+import { useAdminManagementCopy } from '../../lib/admin-management-i18n'
+
 export const Route = createFileRoute('/admin/reports')({
   component: AdminReportsPage,
 })
 
 function AdminReportsPage() {
+  const { copy } = useAdminManagementCopy('reports')
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -117,19 +120,17 @@ function AdminReportsPage() {
                   className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline hover:text-emerald-900"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to admin
+                  {copy.common.backToAdmin}
                 </Link>
 
                 <p className="mt-5 text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-                  JAS Reports Center
+                  {copy.page.badge}
                 </p>
                 <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-                  Organization-wide reports
+                  {copy.page.title}
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  Review membership, programs, finance, district activity and
-                  recent operational records from one place. Phase 1 is read-only
-                  and uses approved/paid finance records for financial totals.
+                  {copy.page.subtitle}
                 </p>
               </div>
 
@@ -140,7 +141,7 @@ function AdminReportsPage() {
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
+                {copy.common.refresh}
               </button>
             </div>
           </div>
@@ -174,7 +175,7 @@ function AdminReportsPage() {
                         `jas-program-summary-${today()}.csv`,
                         [
                           'Program',
-                          'Total',
+                          copy.page.total,
                           'Pending',
                           'Under Review',
                           'Approved',
@@ -205,7 +206,7 @@ function AdminReportsPage() {
               </Panel>
 
               <Panel
-                title="Finance Snapshot"
+                title={copy.page.financeSnapshot}
                 subtitle="Approved donations, paid expenses and available balance"
                 action={
                   <ExportButton

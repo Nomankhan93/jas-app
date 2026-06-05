@@ -31,11 +31,14 @@ import {
 } from '../../lib/audit-logs'
 import { supabase } from '../../lib/supabase/client'
 
+import { useAdminManagementCopy } from '../../lib/admin-management-i18n'
+
 export const Route = createFileRoute('/admin/audit-logs')({
   component: AdminAuditLogsPage,
 })
 
 function AdminAuditLogsPage() {
+  const { copy } = useAdminManagementCopy('auditLogs')
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -112,7 +115,7 @@ function AdminAuditLogsPage() {
           className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline hover:text-emerald-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Admin
+          {copy.common.backToAdmin}
         </Link>
 
         <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
@@ -121,17 +124,15 @@ function AdminAuditLogsPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-amber-200">
                   <ShieldCheck className="h-4 w-4" />
-                  Super Admin Control
+                  {copy.page.badge}
                 </div>
 
                 <h1 className="mt-5 text-3xl font-black tracking-tight md:text-5xl">
-                  Database Audit Logs
+                  {copy.page.title}
                 </h1>
 
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-white/70 md:text-base">
-                  Track sensitive admin actions for roles, area permissions,
-                  membership review, finance records, committees, designations,
-                  programs and public content changes.
+                  {copy.page.subtitle}
                 </p>
               </div>
 
@@ -143,7 +144,7 @@ function AdminAuditLogsPage() {
                   className="inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Download className="h-4 w-4" />
-                  Export CSV
+                  {copy.common.exportCsv}
                 </button>
 
                 <button
@@ -153,7 +154,7 @@ function AdminAuditLogsPage() {
                   className="inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  Refresh
+                  {copy.common.refresh}
                 </button>
               </div>
             </div>
@@ -161,25 +162,25 @@ function AdminAuditLogsPage() {
 
           <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 lg:p-6">
             <MetricCard
-              label="Logs Loaded"
+              label={copy.page.logsLoaded}
               value={logs.length}
               icon={<FileClock className="h-5 w-5" />}
               tone="slate"
             />
             <MetricCard
-              label="Updates"
+              label={copy.page.updates}
               value={stats.updates}
               icon={<Activity className="h-5 w-5" />}
               tone="amber"
             />
             <MetricCard
-              label="Created"
+              label={copy.page.created}
               value={stats.inserts}
               icon={<Database className="h-5 w-5" />}
               tone="emerald"
             />
             <MetricCard
-              label="Sensitive Modules"
+              label={copy.page.sensitiveModules}
               value={stats.sensitive}
               icon={<ShieldAlert className="h-5 w-5" />}
               tone="red"
@@ -198,7 +199,7 @@ function AdminAuditLogsPage() {
                   if (event.key === 'Enter') void loadLogs({ silent: true })
                 }}
                 className="min-h-[3.25rem] w-full rounded-2xl border border-slate-200 bg-white px-12 text-base font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 sm:text-sm"
-                placeholder="Search actor, table, label, ID..."
+                placeholder={copy.page.searchPlaceholder}
               />
             </label>
 

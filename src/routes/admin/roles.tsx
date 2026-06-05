@@ -26,6 +26,8 @@ import {
   type RoleUser,
 } from '../../lib/roles'
 
+import { useAdminManagementCopy } from '../../lib/admin-management-i18n'
+
 export const Route = createFileRoute('/admin/roles')({
   component: AdminRolesPage,
 })
@@ -37,6 +39,7 @@ type RoleAction = {
 }
 
 function AdminRolesPage() {
+  const { copy } = useAdminManagementCopy('roles')
   const [allowed, setAllowed] = useState(false)
   const [checkingAccess, setCheckingAccess] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -161,7 +164,7 @@ function AdminRolesPage() {
         <div className="page-wrap rounded-[2rem] bg-white p-6 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-            Checking super admin access...
+            {copy.common.loading}
           </div>
         </div>
       </main>
@@ -176,7 +179,7 @@ function AdminRolesPage() {
           className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Admin Control Center
+          {copy.common.backToAdminCenter}
         </Link>
 
         <header className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200/70">
@@ -185,17 +188,15 @@ function AdminRolesPage() {
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800 ring-1 ring-emerald-100">
                   <LockKeyhole className="h-3.5 w-3.5" />
-                  Super Admin Tool
+                  {copy.page.badge}
                 </div>
 
                 <h1 className="mt-4 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
-                  Roles & Permissions
+                  {copy.page.title}
                 </h1>
 
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  Search users, assign module admin roles, remove incorrect
-                  access and keep super admin controls restricted to owner-level
-                  accounts only.
+                  {copy.page.subtitle}
                 </p>
               </div>
 
@@ -206,25 +207,25 @@ function AdminRolesPage() {
                 className="secondary-btn disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
+                {copy.common.refresh}
               </button>
             </div>
           </div>
 
           <div className="grid gap-3 border-t border-slate-100 p-4 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard label="Users shown" value={users.length} icon={<UserCog />} />
+            <SummaryCard label={copy.page.usersShown} value={users.length} icon={<UserCog />} />
             <SummaryCard
-              label="Super admins"
+              label={copy.page.superAdmins}
               value={roleCounts.super_admin ?? 0}
               icon={<ShieldCheck />}
             />
             <SummaryCard
-              label="Central admins"
+              label={copy.page.centralAdmins}
               value={roleCounts.admin ?? 0}
               icon={<BadgeCheck />}
             />
             <SummaryCard
-              label="Module admins"
+              label={copy.page.moduleAdmins}
               value={countModuleAdmins(roleCounts)}
               icon={<LockKeyhole />}
             />

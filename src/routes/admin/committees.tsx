@@ -11,11 +11,12 @@ import {
   getCommitteeStatusClass,
   getCommitteeStatusLabel,
   getCommitteeTypeLabel,
-  getCommitteeLocationLabel,
   type CommitteeRecord,
   type CommitteeStatus,
   type CommitteeType,
 } from '../../lib/committees'
+
+import { useAdminManagementCopy } from '../../lib/admin-management-i18n'
 
 export const Route = createFileRoute('/admin/committees')({
   component: AdminCommitteesPage,
@@ -24,7 +25,6 @@ export const Route = createFileRoute('/admin/committees')({
 type FormState = {
   committeeType: CommitteeType
   name: string
-  division: string
   district: string
   taluka: string
   tenureStart: string
@@ -37,7 +37,6 @@ type FormState = {
 const emptyForm: FormState = {
   committeeType: 'central',
   name: '',
-  division: '',
   district: '',
   taluka: '',
   tenureStart: '',
@@ -48,6 +47,7 @@ const emptyForm: FormState = {
 }
 
 function AdminCommitteesPage() {
+  const { copy } = useAdminManagementCopy('committees')
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
@@ -96,10 +96,6 @@ function AdminCommitteesPage() {
         throw new Error('Committee name is required.')
       }
 
-      if (form.committeeType === 'divisional' && !form.division.trim()) {
-        throw new Error('Division is required for divisional committee.')
-      }
-
       if (form.committeeType === 'district' && !form.district.trim()) {
         throw new Error('District is required for district committee.')
       }
@@ -111,9 +107,9 @@ function AdminCommitteesPage() {
       const id = await createCommittee({
         committee_type: form.committeeType,
         name: form.name.trim(),
-        division: form.committeeType === 'divisional' ? form.division.trim() : null,
-        district: form.committeeType === 'district' || form.committeeType === 'taluka' ? form.district.trim() : null,
-        taluka: form.committeeType === 'taluka' ? form.taluka.trim() : null,
+        division: null,
+        district: form.district.trim() || null,
+        taluka: form.taluka.trim() || null,
         tenure_start: form.tenureStart || null,
         tenure_end: form.tenureEnd || null,
         status: form.status,
@@ -138,7 +134,7 @@ function AdminCommitteesPage() {
       const matchesStatus = statusFilter === 'all' || committee.status === statusFilter
       const matchesSearch =
         query.length === 0 ||
-        [committee.name, committee.division ?? '', committee.district ?? '', committee.taluka ?? '', committee.notes ?? '']
+        [committee.name, committee.district ?? '', committee.taluka ?? '', committee.notes ?? '']
           .join(' ')
           .toLowerCase()
           .includes(query)
@@ -171,23 +167,22 @@ function AdminCommitteesPage() {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-                  Organization Structure
+                  {copy.page.badge}
                 </p>
                 <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-                  Committees & Designations
+                  {copy.page.title}
                 </h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  Manage Central, Divisional, District and Taluka committees, office bearers,
-                  tenure records and designation assignments for Jatt Alliance Sindh.
+                  {copy.page.subtitle}
                 </p>
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <Link to="/admin/designations" className="secondary-btn no-underline">
-                  Manage Designations
+                  {copy.page.manageDesignations}
                 </Link>
                 <button type="button" onClick={() => void loadCommittees()} className="secondary-btn">
-                  <RefreshCw size={16} /> Refresh
+                  <RefreshCw size={16} /> {copy.common.refresh}
                 </button>
               </div>
             </div>
@@ -195,12 +190,12 @@ function AdminCommitteesPage() {
         </header>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <SummaryCard label="Total Committees" value={stats.total} />
-          <SummaryCard label="Central" value={stats.central} />
-          <SummaryCard label="Divisional" value={stats.divisional} />
-          <SummaryCard label="District" value={stats.district} />
-          <SummaryCard label="Taluka" value={stats.taluka} />
-          <SummaryCard label="Active" value={stats.active} tone="emerald" />
+          <SummaryCard label={copy.page.totalCommittees} value={stats.total} />
+          <SummaryCard label={copy.page.central} value={stats.central} />
+          <SummaryCard label={copy.page.divisional} value={stats.divisional} />
+          <SummaryCard label={copy.page.district} value={stats.district} />
+          <SummaryCard label={copy.page.taluka} value={stats.taluka} />
+          <SummaryCard label={copy.page.active} value={stats.active} tone="emerald" />
         </section>
 
         {message ? <StateCard message={message} tone="error" /> : null}
@@ -212,66 +207,38 @@ function AdminCommitteesPage() {
                 <Plus size={22} />
               </span>
               <div>
-                <h2 className="text-xl font-black text-slate-950">Create Committee</h2>
-                <p className="text-sm text-slate-500">Add central, divisional, district or taluka unit.</p>
+                <h2 className="text-xl font-black text-slate-950">{copy.page.createCommittee}</h2>
+                <p className="text-sm text-slate-500">{copy.page.createCommitteeText}</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <Field label="Committee Type">
-                <select
-                  value={form.committeeType}
-                  onChange={(event) => {
-                    const committeeType = event.target.value as CommitteeType
-                    setForm((current) => ({
-                      ...current,
-                      committeeType,
-                      division: committeeType === 'divisional' ? current.division : '',
-                      district: committeeType === 'district' || committeeType === 'taluka' ? current.district : '',
-                      taluka: committeeType === 'taluka' ? current.taluka : '',
-                    }))
-                  }}
-                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                >
+              <Field label={copy.page.committeeType}>
+                <select value={form.committeeType} onChange={(event) => setForm((current) => ({ ...current, committeeType: event.target.value as CommitteeType }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
                   {committeeTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </Field>
 
-              <Field label="Committee Name">
+              <Field label={copy.page.committeeName}>
                 <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Central Working Committee" />
               </Field>
 
-              {form.committeeType === 'divisional' ? (
-                <Field label="Division">
-                  <input
-                    value={form.division}
-                    onChange={(event) => setForm((current) => ({ ...current, division: event.target.value }))}
-                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                    placeholder="Mirpur Khas Division"
-                  />
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <Field label={copy.page.district}>
+                  <input value={form.district} onChange={(event) => setForm((current) => ({ ...current, district: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Umerkot" />
                 </Field>
-              ) : null}
 
-              {form.committeeType === 'district' || form.committeeType === 'taluka' ? (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <Field label="District">
-                    <input value={form.district} onChange={(event) => setForm((current) => ({ ...current, district: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Umerkot" />
-                  </Field>
-
-                  {form.committeeType === 'taluka' ? (
-                    <Field label="Taluka">
-                      <input value={form.taluka} onChange={(event) => setForm((current) => ({ ...current, taluka: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Kunri" />
-                    </Field>
-                  ) : null}
-                </div>
-              ) : null}
+                <Field label={copy.page.taluka}>
+                  <input value={form.taluka} onChange={(event) => setForm((current) => ({ ...current, taluka: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Kunri" />
+                </Field>
+              </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <Field label="Tenure Start">
+                <Field label={copy.page.tenureStart}>
                   <input type="date" value={form.tenureStart} onChange={(event) => setForm((current) => ({ ...current, tenureStart: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
                 </Field>
 
-                <Field label="Tenure End">
+                <Field label={copy.page.tenureEnd}>
                   <input type="date" value={form.tenureEnd} onChange={(event) => setForm((current) => ({ ...current, tenureEnd: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" />
                 </Field>
               </div>
@@ -292,7 +259,7 @@ function AdminCommitteesPage() {
               </Field>
 
               <button type="submit" disabled={saving} className="primary-btn w-full disabled:cursor-not-allowed disabled:opacity-60">
-                {saving ? 'Creating...' : 'Create Committee'}
+                {saving ? 'Creating...' : copy.page.createCommittee}
               </button>
             </div>
           </form>
@@ -320,10 +287,10 @@ function AdminCommitteesPage() {
               </div>
             </div>
 
-            {loading ? <StateCard message="Loading committees..." /> : null}
+            {loading ? <StateCard message={copy.page.loading} /> : null}
 
             {!loading && filteredCommittees.length === 0 ? (
-              <StateCard message="No committees found yet." />
+              <StateCard message={copy.page.empty} />
             ) : null}
 
             <div className="grid gap-4 lg:grid-cols-2">
@@ -346,7 +313,8 @@ function AdminCommitteesPage() {
                   </div>
 
                   <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                    <Info label="Location" value={getCommitteeLocationLabel(committee)} />
+                    <Info label={copy.page.district} value={committee.district ?? 'N/A'} />
+                    <Info label={copy.page.taluka} value={committee.taluka ?? 'N/A'} />
                     <Info label="Tenure" value={`${formatCommitteeDate(committee.tenure_start)} → ${formatCommitteeDate(committee.tenure_end)}`} />
                     <Info label="Members" value={String(committee.member_count ?? 0)} />
                   </div>
