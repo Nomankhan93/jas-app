@@ -14,6 +14,7 @@ import {
   type ContentStatus,
   type NewsCategory,
 } from '../../../lib/media'
+import { AdminShell } from '../../../components/admin/AdminShell'
 
 export const Route = createFileRoute('/admin/news/$id')({
   component: AdminNewsEditorPage,
@@ -157,12 +158,22 @@ function AdminNewsEditorPage() {
   }
 
   if (loading) {
-    return <main className="page-wrap py-10"><StateCard message="Loading news editor..." /></main>
+    return (
+      <AdminShell title="News Editor" subtitle="Create or update a public news post.">
+        <div className="admin-nested-page">
+          <div className="page-wrap py-10">
+            <StateCard message="Loading news editor..." />
+          </div>
+        </div>
+      </AdminShell>
+    )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
-      <div className="page-wrap max-w-5xl space-y-6">
+    <AdminShell title="News Editor" subtitle="Create or update a public news post.">
+      <div className="admin-nested-page">
+        <div className="px-3 py-6 sm:px-4 sm:py-10">
+          <div className="page-wrap max-w-5xl space-y-6">
         <Link to="/admin/news" className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline">
           <ArrowLeft size={16} /> Back to News Admin
         </Link>
@@ -219,8 +230,10 @@ function AdminNewsEditorPage() {
             </aside>
           </div>
         </form>
+          </div>
+        </div>
       </div>
-    </main>
+    </AdminShell>
   )
 }
 

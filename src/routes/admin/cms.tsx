@@ -1,5 +1,5 @@
 // src/routes/admin/cms.tsx
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Outlet, useRouterState } from '@tanstack/react-router'
 import {
   ArrowRight,
   Edit3,
@@ -20,6 +20,7 @@ import {
   type CmsPage,
   type CmsPageSlug,
 } from '../../lib/cms'
+import { AdminShell } from '../../components/admin/AdminShell'
 
 export const Route = createFileRoute('/admin/cms')({
   component: AdminCmsPage,
@@ -27,6 +28,14 @@ export const Route = createFileRoute('/admin/cms')({
 
 function AdminCmsPage() {
   const navigate = useNavigate()
+  // Determine if this route is nested (e.g. /admin/cms/$slug) so we can delegate rendering to child routes
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+  // Normalize pathname by removing trailing slashes (to detect exact '/admin/cms' route)
+  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
+  const isNestedCmsPage = normalizedPathname !== '/admin/cms'
+
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [pages, setPages] = useState<CmsPage[]>([])
@@ -55,8 +64,10 @@ function AdminCmsPage() {
   }, [navigate])
 
   useEffect(() => {
+    // Only load CMS pages when on the root /admin/cms route. Nested routes should rely on their own loaders.
+    if (isNestedCmsPage) return
     void loadPages()
-  }, [loadPages])
+  }, [loadPages, isNestedCmsPage])
 
   const pagesBySlugLanguage = useMemo(() => {
     const map = new Map<string, CmsPage>()
@@ -81,22 +92,30 @@ function AdminCmsPage() {
     )
   }, [pages])
 
+  // If this is a nested CMS route, render the child route outlet instead of the CMS list
+  if (isNestedCmsPage) {
+    return <Outlet />
+  }
+
   if (loading) {
     return (
-      <main className="px-3 py-8 sm:px-4 sm:py-10">
-        <div className="page-wrap rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
-            <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-            Loading CMS pages...
+      <AdminShell title="CMS Pages" subtitle="Manage multilingual public website pages.">
+        <div className="admin-nested-page">
+          <div className="page-wrap rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
+              Loading CMS pages...
+            </div>
           </div>
         </div>
-      </main>
+      </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-8 sm:px-4 sm:py-10">
-      <div className="page-wrap space-y-6">
+    <AdminShell title="CMS Pages" subtitle="Manage multilingual public website pages.">
+      <div className="admin-nested-page">
+        <div className="page-wrap space-y-6">
         <section className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -174,8 +193,9 @@ function AdminCmsPage() {
             </div>
           ) : null}
         </section>
+        </div>
       </div>
-    </main>
+    </AdminShell>
   )
 }
 

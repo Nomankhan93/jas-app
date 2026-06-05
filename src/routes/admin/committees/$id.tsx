@@ -36,6 +36,7 @@ import {
   type MemberSearchFilters,
   type MemberSearchResult,
 } from '../../../lib/committees'
+import { AdminShell } from '../../../components/admin/AdminShell'
 
 export const Route = createFileRoute('/admin/committees/$id')({
   component: AdminCommitteeDetailPage,
@@ -478,23 +479,33 @@ function AdminCommitteeDetailPage() {
 
   if (loading) {
     return (
-      <main className="page-wrap py-10">
-        <StateCard message="Loading committee details..." />
-      </main>
+      <AdminShell title="Committee Detail" subtitle="Manage committee information, members and designations.">
+        <div className="admin-nested-page">
+          <div className="page-wrap py-10">
+            <StateCard message="Loading committee details..." />
+          </div>
+        </div>
+      </AdminShell>
     )
   }
 
   if (!committee) {
     return (
-      <main className="page-wrap py-10">
-        <StateCard message={message || 'Committee not found.'} tone="error" />
-      </main>
+      <AdminShell title="Committee Detail" subtitle="Manage committee information, members and designations.">
+        <div className="admin-nested-page">
+          <div className="page-wrap py-10">
+            <StateCard message={message || 'Committee not found.'} tone="error" />
+          </div>
+        </div>
+      </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
-      <div className="page-wrap space-y-6">
+    <AdminShell title="Committee Detail" subtitle="Manage committee information, members and designations.">
+      <div className="admin-nested-page">
+        <div className="px-3 py-6 sm:px-4 sm:py-10">
+          <div className="page-wrap space-y-6">
         <Link
           to="/admin/committees"
           className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline"
@@ -823,8 +834,10 @@ function AdminCommitteeDetailPage() {
             </div>
           </section>
         </section>
+          </div>
+        </div>
       </div>
-    </main>
+    </AdminShell>
   )
 }
 

@@ -10,6 +10,7 @@ import {
   getNewsCategoryLabel,
   type NewsPost,
 } from '../../lib/media'
+import { AdminShell } from '../../components/admin/AdminShell'
 
 export const Route = createFileRoute('/admin/news')({
   component: AdminNewsPage,
@@ -57,8 +58,10 @@ function AdminNewsPage() {
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
-      <div className="page-wrap space-y-6">
+    <AdminShell title="News Management" subtitle="Create, edit and publish public news posts.">
+      <div className="admin-nested-page">
+        <div className="px-3 py-6 sm:px-4 sm:py-10">
+          <div className="page-wrap space-y-6">
         <header className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -126,8 +129,10 @@ function AdminNewsPage() {
             )}
           </section>
         ) : null}
+          </div>
+        </div>
       </div>
-    </main>
+    </AdminShell>
   )
 }
 

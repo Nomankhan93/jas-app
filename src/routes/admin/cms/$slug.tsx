@@ -15,6 +15,7 @@ import {
   type CmsPageStatus,
 } from '../../../lib/cms'
 import { getPublicCmsFallback } from '../../../lib/public-page-i18n'
+import { AdminShell } from '../../../components/admin/AdminShell'
 
 export const Route = createFileRoute('/admin/cms/$slug')({
   component: AdminCmsEditPage,
@@ -125,20 +126,23 @@ function AdminCmsEditPage() {
 
   if (loading) {
     return (
-      <main className="px-3 py-8 sm:px-4 sm:py-10">
-        <div className="page-wrap rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
-            <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
-            Loading CMS editor...
+      <AdminShell title="CMS Editor" subtitle="Edit English, Urdu and Sindhi page content.">
+        <div className="admin-nested-page">
+          <div className="page-wrap rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+            <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
+              <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
+              Loading CMS editor...
+            </div>
           </div>
         </div>
-      </main>
+      </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-8 sm:px-4 sm:py-10">
-      <div className="page-wrap space-y-6">
+    <AdminShell title="CMS Editor" subtitle="Edit English, Urdu and Sindhi page content.">
+      <div className="admin-nested-page">
+        <div className="page-wrap space-y-6">
         <div>
           <Link to="/admin/cms" className="secondary-btn w-fit px-4 py-3 text-sm">
             <ArrowLeft className="h-4 w-4" />
@@ -273,8 +277,9 @@ function AdminCmsEditPage() {
             </a>
           </div>
         </form>
+        </div>
       </div>
-    </main>
+    </AdminShell>
   )
 }
 
