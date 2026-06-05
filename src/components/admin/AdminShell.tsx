@@ -66,7 +66,9 @@ export function AdminShell({
               </button>
             </div>
 
-            <AdminSidebar mobile onNavigate={() => setMobileOpen(false)} />
+            <div className="admin-mobile-drawer-scroll">
+              <AdminSidebar mobile onNavigate={() => setMobileOpen(false)} />
+            </div>
           </div>
         </div>
       ) : null}

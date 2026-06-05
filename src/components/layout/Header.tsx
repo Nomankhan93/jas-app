@@ -132,6 +132,8 @@ export function Header({ compact }: { compact: boolean }) {
 
     if (!isAdmin) return memberItems
 
+    const memberOnlyItems = memberItems.filter((item) => item.to !== '/admin')
+
     return [
       ...getAdminAccountItems({
         adminPanel: t('nav.adminPanel'),
@@ -140,7 +142,7 @@ export function Header({ compact }: { compact: boolean }) {
         donations: 'Donations',
         reports: 'Reports',
       }),
-      ...memberItems,
+      ...memberOnlyItems,
     ]
   }, [authLoading, dashboardLabel, isAdmin, isLoggedIn, t])
 

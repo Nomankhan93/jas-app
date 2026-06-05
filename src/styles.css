@@ -2639,3 +2639,54 @@ button.admin-quick-action {
   }
 }
 
+/* ─── Admin Mobile Menu Duplicate + Sidebar Scroll Fix ───────────────── */
+.admin-mobile-drawer {
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.admin-mobile-drawer-panel {
+  height: 100dvh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.admin-mobile-drawer-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  padding-bottom: 0.75rem;
+}
+
+.admin-mobile-drawer-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
+}
+
+.admin-mobile-drawer-scroll .admin-sidebar-mobile {
+  min-height: auto;
+  padding-bottom: 1.5rem;
+}
+
+.admin-mobile-drawer-scroll .admin-sidebar-nav {
+  padding-bottom: 2rem;
+}
+
+@media (max-width: 640px) {
+  .admin-mobile-drawer-panel {
+    width: min(92vw, 330px);
+  }
+
+  .admin-mobile-drawer-scroll {
+    padding-right: 0.15rem;
+  }
+}
+
