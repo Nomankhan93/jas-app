@@ -166,7 +166,7 @@ function getLocalizedMemberStatusLabel(
 
 function DashboardPage() {
   const navigate = useNavigate()
-  const { t } = useI18n()
+  const { t, direction } = useI18n()
   const [loading, setLoading] = useState(true)
   const [, setRefreshing] = useState(false)
   const [showSensitive, setShowSensitive] = useState(false)
@@ -315,7 +315,7 @@ function DashboardPage() {
 
   if (loading) {
     return (
-      <main dir="ltr" className="min-h-screen px-4 py-10">
+      <main dir={direction} className="dashboard-page min-h-screen px-3 py-6 sm:px-4 sm:py-8 md:py-10">
         <div className="page-wrap rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
@@ -328,7 +328,7 @@ function DashboardPage() {
 
   if (!member) {
     return (
-      <main dir="ltr" className="min-h-screen px-4 py-10">
+      <main dir={direction} className="dashboard-page min-h-screen px-3 py-6 sm:px-4 sm:py-8 md:py-10">
         <div className="page-wrap rounded-3xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
           <ShieldCheck className="h-10 w-10 text-amber-700" />
           <h1 className="mt-4 text-3xl font-black text-slate-950">
@@ -352,8 +352,8 @@ function DashboardPage() {
   }
 
   return (
-    <main dir="ltr" className="min-h-screen px-4 py-8 md:py-10">
-      <div className="page-wrap space-y-8">
+    <main dir={direction} className="dashboard-page min-h-screen px-3 py-6 sm:px-4 sm:py-8 md:py-10">
+      <div className="dashboard-wrap page-wrap space-y-6 sm:space-y-8">
         {error ? (
           <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
             <AlertCircle className="mt-0.5 h-5 w-5" />
@@ -361,16 +361,16 @@ function DashboardPage() {
           </div>
         ) : null}
 
-        <section className="overflow-hidden rounded-[2rem] border border-emerald-900/10 bg-white shadow-sm">
-          <div className="bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-6 text-white md:p-8">
-            <div className="grid gap-6 lg:grid-cols-[1fr_360px] lg:items-end">
+        <section className="dashboard-hero overflow-hidden rounded-[1.5rem] border border-emerald-900/10 bg-white shadow-sm sm:rounded-[2rem]">
+          <div className="dashboard-hero-inner bg-gradient-to-br from-slate-950 via-emerald-950 to-slate-900 p-5 text-white sm:p-6 md:p-8">
+            <div className="dashboard-hero-grid grid gap-5 lg:grid-cols-[1fr_360px] lg:items-end">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-200">
+                <div className="dashboard-kicker inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-amber-200">
                   <LayoutIcon />
                   {t('dashboard.unified')}
                 </div>
 
-                <h1 className="mt-5 text-3xl font-black md:text-5xl">
+                <h1 className="dashboard-title mt-5 text-2xl font-black leading-tight sm:text-3xl md:text-5xl">
                   {t('dashboard.welcome')}, <span dir="auto">{member.full_name}</span>
                 </h1>
 
@@ -378,7 +378,7 @@ function DashboardPage() {
                   {t('dashboard.subtitle')}
                 </p>
 
-                <div className="mt-5 flex flex-wrap gap-2">
+                <div className="dashboard-info-chips mt-5 flex flex-wrap gap-2">
                   <InfoChip icon={<IdCard className="h-4 w-4" />}>
                     <span dir="ltr">{member.member_no || t('dashboard.memberIdPending')}</span>
                   </InfoChip>
@@ -393,8 +393,8 @@ function DashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur">
-                <div className="flex items-center gap-4">
+              <div className="dashboard-profile-card rounded-3xl border border-white/10 bg-white/10 p-4 backdrop-blur sm:p-5">
+                <div className="dashboard-profile-row flex items-center gap-3 sm:gap-4">
                   {data.photoSignedUrl ? (
                     <img
                       src={data.photoSignedUrl}
@@ -418,7 +418,7 @@ function DashboardPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3">
+                <div className="dashboard-mini-grid mt-5 grid grid-cols-2 gap-3">
                   <MiniMetric label={t('dashboard.notifications')} value={summaries.unreadNotifications} />
                   <MiniMetric
                     label={t('dashboard.donorRank')}
@@ -429,7 +429,7 @@ function DashboardPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5 lg:p-6">
+          <div className="dashboard-overview-grid grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5 lg:p-6">
             <OverviewCard
               label={t('dashboard.membership')}
               value={getLocalizedMemberStatusLabel(member.status, t)}
@@ -463,9 +463,9 @@ function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
+        <section className="dashboard-content-grid grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-5">
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <section className="dashboard-card rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 md:p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
@@ -491,7 +491,7 @@ function DashboardPage() {
               </div>
             </section>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+            <section className="dashboard-card rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 md:p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
@@ -547,7 +547,7 @@ function DashboardPage() {
             </section>
           </div>
 
-          <aside className="space-y-5">
+          <aside className="dashboard-sidebar space-y-5">
             <QuickActions member={member} />
             <MembershipFeePanel payment={data.membershipPayment} />
             <DonationPanel
@@ -701,8 +701,8 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
   const status = getMembershipPaymentDisplayStatus(payment)
 
   return (
-    <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <section className="dashboard-fee-panel rounded-3xl border border-amber-200 bg-amber-50 p-4 shadow-sm sm:p-5">
+      <div className="dashboard-fee-header flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-700">
             {t('dashboard.membershipFee')}
@@ -720,8 +720,8 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
         </span>
       </div>
 
-      <div className="mt-4 grid gap-4">
-        <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
+      <div className="dashboard-fee-body mt-4 grid gap-4">
+        <div className="dashboard-fee-details grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-1">
           <InfoBox
             label={t('dashboard.baseFee')}
             value={formatMembershipMoney(payment?.base_amount ?? MEMBERSHIP_BASE_FEE)}
@@ -756,7 +756,7 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
           />
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm">
+        <div className="dashboard-fee-qr overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 text-center shadow-sm">
           <img
             src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
             alt="Membership fee payment QR code"
@@ -780,7 +780,7 @@ function QuickActions({ member }: { member: Member }) {
   const { t } = useI18n()
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="dashboard-quick-actions rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
         {t('dashboard.quickActions')}
       </p>
@@ -835,7 +835,7 @@ function DonationPanel({
   const { t } = useI18n()
 
   return (
-    <section className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+    <section className="dashboard-donation-panel rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm sm:p-5">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
         {t('dashboard.myDonations')}
       </p>
@@ -883,7 +883,7 @@ function NotificationsPreview({
   const { t } = useI18n()
 
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="dashboard-notifications-panel rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
@@ -924,7 +924,7 @@ function NotificationsPreview({
 
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <div className="dashboard-info-box rounded-2xl border border-slate-200 bg-slate-50 p-4">
       <p className="text-[0.68rem] font-black uppercase tracking-[0.16em] text-slate-400">
         {label}
       </p>

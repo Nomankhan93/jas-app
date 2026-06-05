@@ -1325,45 +1325,45 @@ function RegisterPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
-          <p className="font-black">{t('register.fee.notice').replace('{amount}', formatMembershipMoney(MEMBERSHIP_BASE_FEE)).replace('{charges}', t('signup.fee.processingCharges'))}</p>
-          <p className="mt-1 text-amber-800">
+        <div className="reg-payment-panel rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          <p className="reg-payment-title font-black">{t('register.fee.notice').replace('{amount}', formatMembershipMoney(MEMBERSHIP_BASE_FEE)).replace('{charges}', t('signup.fee.processingCharges'))}</p>
+          <p className="reg-payment-instruction mt-1 text-amber-800">
             {t('register.fee.manualInstruction').replace('{bank}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName).replace('{account}', MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber)}
           </p>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,340px)]">
-            <div className="grid gap-3 rounded-2xl bg-white/80 p-4 text-slate-900 ring-1 ring-amber-100 sm:grid-cols-2">
-              <div>
+          <div className="reg-payment-layout mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,340px)]">
+            <div className="reg-payment-details grid gap-3 rounded-2xl bg-white/80 p-4 text-slate-900 ring-1 ring-amber-100 sm:grid-cols-2">
+              <div className="reg-payment-detail">
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
                   {t('register.payment.bankName')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName}</p>
               </div>
-              <div>
+              <div className="reg-payment-detail">
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
                   {t('register.payment.accountTitle')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}</p>
               </div>
-              <div>
+              <div className="reg-payment-detail">
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
                   {t('register.payment.accountNo')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}</p>
               </div>
-              <div>
+              <div className="reg-payment-detail">
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
                   {t('register.payment.iban')}
                 </p>
                 <p className="mt-1 break-all font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}</p>
               </div>
-              <div>
+              <div className="reg-payment-detail">
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
                   {t('register.payment.network')}
                 </p>
                 <p className="mt-1 font-black">{MEMBERSHIP_MANUAL_PAYMENT_DETAILS.paymentNetwork}</p>
               </div>
-              <div>
+              <div className="reg-payment-detail">
                 <p className="text-[0.68rem] font-black uppercase tracking-wide text-slate-500">
                   {t('register.payment.tillId')}
                 </p>
@@ -1371,11 +1371,11 @@ function RegisterPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 shadow-sm">
+            <div className="reg-payment-qr overflow-hidden rounded-2xl border border-amber-200 bg-white p-3 text-center shadow-sm">
               <img
                 src={MEMBERSHIP_PAYMENT_QR_IMAGE_PATH}
                 alt="Membership fee payment QR code"
-                className="mx-auto w-full max-w-[300px] rounded-xl object-contain"
+                className="reg-payment-qr-img mx-auto w-full max-w-[300px] rounded-xl object-contain"
                 loading="lazy"
               />
               <p className="mt-3 text-sm font-bold text-slate-900">
@@ -1389,7 +1389,7 @@ function RegisterPage() {
 
           <div className="mt-4">
             <label
-              className={`reg-upload-btn ${
+              className={`reg-upload-btn reg-payment-upload ${
                 locked ? 'is-disabled' : 'cursor-pointer'
               }`}
               htmlFor="paymentReceipt"
@@ -2488,4 +2488,186 @@ const styles = `
       flex-direction: column;
     }
   }
+  /* Final Dashboard + Register Mobile Polish */
+  .reg-page {
+    overflow-x: clip;
+  }
+
+  .reg-card,
+  .reg-section,
+  .reg-payment-panel {
+    min-width: 0;
+  }
+
+  .reg-payment-panel {
+    overflow: hidden;
+  }
+
+  .reg-payment-title,
+  .reg-payment-instruction,
+  .reg-payment-detail p,
+  .reg-payment-qr p {
+    overflow-wrap: anywhere;
+  }
+
+  .reg-payment-details {
+    min-width: 0;
+  }
+
+  .reg-payment-detail {
+    min-width: 0;
+    border-radius: 0.9rem;
+  }
+
+  .reg-payment-detail p:last-child {
+    unicode-bidi: plaintext;
+  }
+
+  .reg-payment-qr {
+    min-width: 0;
+  }
+
+  .reg-payment-qr-img {
+    max-height: 320px;
+  }
+
+  .reg-payment-upload {
+    width: min(100%, 340px);
+    max-width: 100%;
+    justify-content: center;
+  }
+
+  .reg-page[dir="rtl"] {
+    text-align: right;
+  }
+
+  .reg-page[dir="rtl"] .reg-header,
+  .reg-page[dir="rtl"] .reg-section-header,
+  .reg-page[dir="rtl"] .reg-field,
+  .reg-page[dir="rtl"] .reg-banner,
+  .reg-page[dir="rtl"] .reg-payment-panel {
+    text-align: right;
+  }
+
+  .reg-page[dir="rtl"] .reg-title-line {
+    margin-right: 0;
+    margin-left: auto;
+  }
+
+  .reg-page[dir="rtl"] .reg-select {
+    background-position: left 0.75rem center;
+    padding-right: 0.9rem;
+    padding-left: 2.25rem;
+  }
+
+  .reg-page[dir="rtl"] .reg-declaration {
+    text-align: right;
+  }
+
+  .reg-page[dir="rtl"] .reg-actions {
+    direction: rtl;
+  }
+
+  .reg-page[dir="rtl"] .reg-btn-primary,
+  .reg-page[dir="rtl"] .reg-btn-secondary,
+  .reg-page[dir="rtl"] .reg-btn-soft,
+  .reg-page[dir="rtl"] .reg-upload-btn {
+    direction: rtl;
+  }
+
+  @media (max-width: 760px) {
+    .reg-payment-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .reg-payment-details {
+      grid-template-columns: 1fr;
+      padding: 0.85rem;
+    }
+
+    .reg-payment-detail {
+      background: rgba(255,255,255,0.7);
+      padding: 0.75rem;
+      border: 1px solid rgba(245,158,11,0.14);
+    }
+
+    .reg-payment-qr {
+      padding: 0.85rem;
+    }
+
+    .reg-payment-qr-img {
+      max-width: 230px;
+    }
+
+    .reg-payment-upload {
+      width: 100%;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.35;
+      padding: 0.85rem 1rem;
+    }
+
+    .reg-progress-top {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .reg-step-tab {
+      min-height: 3rem;
+      white-space: normal;
+      line-height: 1.25;
+      padding: 0.45rem;
+    }
+
+    .reg-declaration {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .reg-page {
+      padding-inline: 0.55rem;
+    }
+
+    .reg-card {
+      border-radius: 1rem;
+    }
+
+    .reg-header {
+      padding: 1.35rem 1rem 1.15rem;
+    }
+
+    .reg-progress-wrap,
+    .reg-form {
+      padding-left: 0.9rem;
+      padding-right: 0.9rem;
+    }
+
+    .reg-banner {
+      margin-left: 0.9rem;
+      margin-right: 0.9rem;
+    }
+
+    .reg-section-header,
+    .reg-section-body {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .reg-title {
+      font-size: clamp(1.55rem, 10vw, 2.05rem);
+      line-height: 1.16;
+    }
+
+    .reg-subtitle {
+      font-size: 0.88rem;
+    }
+
+    .reg-photo-preview {
+      width: 92px;
+      height: 112px;
+    }
+  }
+
 `
