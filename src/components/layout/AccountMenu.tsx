@@ -22,7 +22,7 @@ export function AccountMenuButton({
     <button
       type="button"
       onClick={onToggle}
-      className={`animate-fade-up flex items-center justify-center rounded-full bg-emerald-900 text-sm font-black text-white shadow-sm ring-1 ring-white/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 ${mobile ? 'h-11 w-11' : 'h-12 w-12'}`}
+      className={`animate-fade-up flex items-center justify-center rounded-full bg-emerald-900 text-sm font-black text-white shadow-sm ring-1 ring-white/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 ${mobile ? 'site-account-trigger-mobile h-10 w-10 text-xs' : 'h-12 w-12'}`}
       aria-label={t('account.open')}
       aria-expanded={accountOpen}
       aria-haspopup="menu"
@@ -60,7 +60,7 @@ export function AccountMenuPanel({
     <div
       dir={direction}
       onClick={onClose}
-      className={`${mobile ? 'site-account-menu-mobile absolute right-0 top-full z-[80] mt-3 w-[min(19rem,calc(100vw-1rem))]' : 'absolute right-0 top-full z-[70] mt-3 w-72'} ${textAlignClass} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
+      className={`${mobile ? 'site-account-menu-mobile absolute right-0 top-full z-[80] mt-3 w-[min(17.75rem,calc(100vw-1rem))]' : 'absolute right-0 top-full z-[70] mt-3 w-72'} ${textAlignClass} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
     >
       {accountItems.map((item) => (
         <CompactDropdownItem key={`${item.to}-${item.label}`} item={item} active={isActive(item.to)} />
@@ -71,7 +71,7 @@ export function AccountMenuPanel({
           type="button"
           onClick={onLogout}
           disabled={logoutLoading}
-          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="site-account-logout mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <LogOut size={16} aria-hidden="true" />
           {logoutLoading ? t('auth.loggingOut') : t('auth.logout')}
@@ -88,12 +88,12 @@ function CompactDropdownItem({ item, active }: { item: NavItem; active: boolean 
   return (
     <Link
       to={item.to}
-      className={`group flex items-center gap-3 rounded-2xl p-3 no-underline transition ${textAlignClass} ${active ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-white hover:text-emerald-900'}`}
+      className={`site-account-menu-item group flex items-center gap-3 rounded-2xl p-3 no-underline transition ${textAlignClass} ${active ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-white hover:text-emerald-900'}`}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm ring-1 ring-slate-100">
+      <span className="site-account-menu-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm ring-1 ring-slate-100">
         {item.icon}
       </span>
-      <span className="min-w-0 break-words text-sm font-black leading-tight">{item.label}</span>
+      <span className="site-account-menu-label min-w-0 break-words text-sm font-black leading-tight">{item.label}</span>
     </Link>
   )
 }

@@ -108,6 +108,7 @@ export function Header({ compact }: { compact: boolean }) {
   const dashboardLabel = isAdmin ? t('nav.adminPanel') : t('nav.dashboard')
   const programsActive = pathname.startsWith('/programs/')
   const moreActive = localizedPublicPageItems.some((item) => isActive(item.to))
+  const brandCompactName = language === 'en' ? 'Jatt Alliance' : t('brand.name')
 
   const accountItems = useMemo(() => {
     if (authLoading) return []
@@ -182,8 +183,11 @@ export function Header({ compact }: { compact: boolean }) {
               <ShieldCheck size={18} className="text-[#d8a949]" aria-hidden="true" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-[Manrope,Inter,sans-serif] text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+              <span className="hidden truncate font-[Manrope,Inter,sans-serif] text-xl font-extrabold tracking-tight text-white sm:block sm:text-2xl">
                 {t('brand.name')}
+              </span>
+              <span className="block truncate font-[Manrope,Inter,sans-serif] text-lg font-extrabold tracking-tight text-white sm:hidden">
+                {brandCompactName}
               </span>
               <span className="mt-0.5 block truncate text-[0.65rem] font-extrabold uppercase tracking-[0.22em] text-white/60">
                 {t('brand.platform')}
@@ -294,6 +298,36 @@ export function Header({ compact }: { compact: boolean }) {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="site-mobile-main-nav-wrap lg:hidden">
+        <nav className="site-mobile-main-nav page-wrap" aria-label="Mobile main navigation">
+          <NavLink to="/" label={t('nav.home')} active={isActive('/')} delayClass="delay-1" />
+
+          <ProgramsDropdown
+            label={t('nav.programs')}
+            items={localizedProgramItems}
+            open={programsOpen}
+            active={programsActive}
+            onToggle={() => toggleMenu('programs')}
+            onClose={closeMenus}
+            isActive={isActive}
+          />
+
+          <NavLink to="/donate" label={t('nav.donate')} active={isActive('/donate')} delayClass="delay-3" />
+          <NavLink to="/news" label={t('nav.news')} active={isActive('/news')} delayClass="delay-4" />
+
+          <MoreDropdown
+            label={t('nav.more')}
+            groupTitle={t('nav.organization')}
+            items={localizedPublicPageItems}
+            open={moreOpen}
+            active={moreActive}
+            onToggle={() => toggleMenu('more')}
+            onClose={closeMenus}
+            isActive={isActive}
+          />
+        </nav>
       </div>
     </header>
   )
