@@ -1,5 +1,6 @@
 // src/routes/admin/finance.tsx
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { AdminShell } from '../../components/admin/AdminShell'
 import {
   BadgeIndianRupee,
   Download,
@@ -648,7 +649,8 @@ function FinanceAdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <AdminShell title="Finance" subtitle="Track donations, expenses, receipts, approvals and finance audit logs.">
+      <div className="admin-nested-page">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
           <Link
@@ -901,7 +903,8 @@ function FinanceAdminPage() {
           )}
         </div>
       </section>
-    </main>
+    </div>
+    </AdminShell>
   );
 }
 

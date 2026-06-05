@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { AdminShell } from '../../components/admin/AdminShell'
 import {
   Activity,
   AlertCircle,
@@ -108,7 +109,8 @@ function AdminAuditLogsPage() {
   }
 
   return (
-    <main className="min-h-screen px-3 py-6 sm:px-4 sm:py-10">
+    <AdminShell title="Audit Logs" subtitle="Review sensitive admin activity and database changes.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <Link
           to="/admin"
@@ -311,7 +313,8 @@ function AdminAuditLogsPage() {
           </div>
         </section>
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

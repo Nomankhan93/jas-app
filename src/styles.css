@@ -2690,3 +2690,33 @@ button.admin-quick-action {
   }
 }
 
+/* ─── Admin Sidebar Layout Phase 2 nested pages ───────────────── */
+.admin-nested-page {
+  min-width: 0;
+}
+
+.admin-nested-page > .page-wrap {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.admin-nested-page > .min-h-screen,
+.admin-nested-page .min-h-screen {
+  min-height: auto;
+}
+
+.admin-nested-page .page-wrap > :first-child {
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .admin-nested-page > .page-wrap {
+    width: 100%;
+  }
+
+  .admin-nested-page .rounded-\[2rem\] {
+    border-radius: 1.35rem;
+  }
+}
+

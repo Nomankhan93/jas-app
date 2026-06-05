@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { AdminShell } from '../../components/admin/AdminShell'
 import {
   ArrowLeft,
   BadgeCheck,
@@ -13,7 +14,7 @@ import {
   Trash2,
   UserCog,
 } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
   areaPermissionModuleOptions,
   areaPermissionScopeOptions,
@@ -218,16 +219,19 @@ function AdminAreaPermissionsPage() {
 
   if (loading) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <AdminShell title="Area Permissions" subtitle="Assign district, taluka and module-level admin access.">
+      <div className="admin-nested-page">
         <div className="page-wrap rounded-3xl bg-white p-5 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200">
           {copy.common.loading}
         </div>
-      </main>
+      </div>
+    </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
+    <AdminShell title="Area Permissions" subtitle="Assign district, taluka and module-level admin access.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline">
           <ArrowLeft size={16} /> {copy.common.backToAdmin}
@@ -451,7 +455,8 @@ function AdminAreaPermissionsPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 
@@ -464,7 +469,7 @@ function SummaryCard({ label, value, text = false }: { label: string; value: str
   )
 }
 
-function Field({ label, children, className = '' }: { label: string; children: React.ReactNode; className?: string }) {
+function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }) {
   return (
     <label className={`block ${className}`}>
       <span className="mb-2 block text-sm font-black text-slate-800">{label}</span>

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { AdminShell } from '../../components/admin/AdminShell'
 import { ArrowLeft, Edit3, Plus, RefreshCw, ShieldAlert } from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
@@ -115,7 +116,8 @@ function AdminDesignationsPage() {
   }, [designations, scopeFilter])
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
+    <AdminShell title="Designations" subtitle="Manage office bearer designations and display order.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <Link to="/admin/committees" className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline">
           <ArrowLeft size={16} /> {copy.common.backToCommittees}
@@ -215,7 +217,8 @@ function AdminDesignationsPage() {
           </section>
         </section>
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

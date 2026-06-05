@@ -6,6 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
+import { AdminShell } from '../../../components/admin/AdminShell'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
@@ -289,20 +290,23 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
   if (loading) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
+      <AdminShell title="Member Detail" subtitle="Review membership application, payment receipt, profile data and digital card status.">
+      <div className="admin-nested-page">
         <div className="page-wrap rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
             {copy.loading}
           </div>
         </div>
-      </main>
+      </div>
+    </AdminShell>
     )
   }
 
   if (!member) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
+      <AdminShell title="Member Detail" subtitle="Review membership application, payment receipt, profile data and digital card status.">
+      <div className="admin-nested-page">
         <div className="page-wrap space-y-4 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <BackToAdmin />
 
@@ -320,12 +324,14 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             </div>
           </div>
         </div>
-      </main>
+      </div>
+    </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
+    <AdminShell title="Member Detail" subtitle="Review membership application, payment receipt, profile data and digital card status.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
@@ -709,7 +715,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           </section>
         )}
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

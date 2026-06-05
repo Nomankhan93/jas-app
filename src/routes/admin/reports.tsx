@@ -1,5 +1,6 @@
 // src/routes/admin/reports.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { AdminShell } from '../../components/admin/AdminShell'
 import {
   ArrowLeft,
   BadgeIndianRupee,
@@ -97,19 +98,22 @@ function AdminReportsPage() {
 
   if (loading) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <AdminShell title="Reports" subtitle="View organization summaries, exports and review reports.">
+      <div className="admin-nested-page">
         <div className="page-wrap rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
             Loading reports center...
           </div>
         </div>
-      </main>
+      </div>
+    </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
+    <AdminShell title="Reports" subtitle="View organization summaries, exports and review reports.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
@@ -417,7 +421,8 @@ function AdminReportsPage() {
           </>
         )}
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

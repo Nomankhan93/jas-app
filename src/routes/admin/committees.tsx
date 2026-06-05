@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from '@tanstack/react-router'
+import { AdminShell } from '../../components/admin/AdminShell'
 import { ArrowRight, CheckCircle2, Network, Plus, RefreshCw, Search, ShieldAlert } from 'lucide-react'
 import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
@@ -160,7 +161,8 @@ function AdminCommitteesPage() {
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
+    <AdminShell title="Committees" subtitle="Manage central, divisional, district and taluka committees.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <header className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-5 sm:p-7">
@@ -335,7 +337,8 @@ function AdminCommitteesPage() {
           </section>
         </section>
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

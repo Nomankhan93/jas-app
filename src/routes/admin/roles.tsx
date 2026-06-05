@@ -1,5 +1,6 @@
 // src/routes/admin/roles.tsx
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { AdminShell } from '../../components/admin/AdminShell'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -13,7 +14,7 @@ import {
   Trash2,
   UserCog,
 } from 'lucide-react'
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react'
 import {
   assignUserRole,
   currentUserIsSuperAdmin,
@@ -160,19 +161,22 @@ function AdminRolesPage() {
 
   if (checkingAccess) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <AdminShell title="Roles & Permissions" subtitle="Assign and review administrator roles.">
+      <div className="admin-nested-page">
         <div className="page-wrap rounded-[2rem] bg-white p-6 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
             {copy.common.loading}
           </div>
         </div>
-      </main>
+      </div>
+    </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
+    <AdminShell title="Roles & Permissions" subtitle="Assign and review administrator roles.">
+      <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <Link
           to="/admin"
@@ -296,7 +300,8 @@ function AdminRolesPage() {
           </>
         )}
       </div>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 
@@ -422,7 +427,7 @@ function SummaryCard({
 }: {
   label: string
   value: number
-  icon: React.ReactNode
+  icon: ReactNode
 }) {
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
