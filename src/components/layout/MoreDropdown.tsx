@@ -43,7 +43,7 @@ export function MoreDropdown({
         <div
           onClick={onClose}
           dir={direction}
-          className={`absolute right-0 top-full z-[60] mt-4 w-[min(420px,calc(100vw-1rem))] rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ${textAlignClass}`}
+          className={`site-more-menu absolute right-0 top-full z-[60] mt-4 w-[min(420px,calc(100vw-1rem))] rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_24px_70px_rgba(15,23,42,0.18)] ${textAlignClass}`}
         >
           <DropdownGroup title={groupTitle}>
             <div className="grid gap-1 sm:grid-cols-2">

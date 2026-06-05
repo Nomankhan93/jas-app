@@ -2025,3 +2025,74 @@ body {
   }
 }
 
+/* ─── Mobile More Dropdown Scroll Fix ───────────────── */
+.site-more-menu {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1023px) {
+  .site-mobile-main-nav .site-more-menu {
+    max-height: min(68vh, calc(100dvh - 10.25rem));
+    scrollbar-width: thin;
+  }
+
+  .site-mobile-main-nav .site-more-menu > div {
+    min-width: 0;
+  }
+
+  .site-mobile-main-nav .site-more-menu a {
+    min-width: 0;
+  }
+
+  .site-mobile-main-nav .site-more-menu a span:last-child {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .site-mobile-main-nav .site-more-menu {
+    right: 0;
+    left: auto;
+    max-height: min(64vh, calc(100dvh - 9.75rem));
+    padding: 0.75rem;
+  }
+
+  .site-mobile-main-nav .site-more-menu .grid {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .site-mobile-main-nav .site-more-menu a {
+    padding: 0.7rem;
+    border-radius: 1rem;
+  }
+
+  .site-mobile-main-nav .site-more-menu a > span:first-child {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.85rem;
+  }
+
+  .site-mobile-main-nav .site-more-menu a .text-sm {
+    font-size: 0.88rem;
+    line-height: 1.18;
+  }
+
+  .site-mobile-main-nav .site-more-menu a .text-xs {
+    font-size: 0.74rem;
+    line-height: 1.35;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-mobile-main-nav .site-more-menu {
+    max-height: min(62vh, calc(100dvh - 9.5rem));
+  }
+
+  .site-mobile-main-nav .site-more-menu a {
+    padding: 0.62rem;
+  }
+}
+
