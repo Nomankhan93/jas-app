@@ -12,18 +12,13 @@ import {
   BadgeCheck,
   BadgeIndianRupee,
   BarChart3,
-  BookOpenCheck,
-  BriefcaseBusiness,
   Download,
   Eye,
   EyeOff,
   FileText,
   Filter,
-  HeartPulse,
-  HandHeart,
   IdCard,
   ImageOff,
-  KeyRound,
   ListChecks,
   MapPin,
   Network,
@@ -46,6 +41,8 @@ import {
   uniqueSorted,
 } from '../lib/shared/formatters'
 import { useAdminDashboardCopy } from '../lib/admin-dashboard-i18n'
+import { AdminShell } from '../components/admin/AdminShell'
+import { useI18n } from '../lib/i18n'
 import {
   filterRowsByAreaAccess,
   getAreaAccessSummaryText,
@@ -107,48 +104,164 @@ type AdminAccessResult =
   | { ok: false; redirectTo: '/login' | '/dashboard' }
 
 type AdminRouteTo =
-  | '/admin/programs/education'
-  | '/admin/programs/health'
-  | '/admin/programs/welfare'
-  | '/admin/programs/employment'
   | '/admin/finance'
   | '/admin/cms'
   | '/admin/news'
   | '/admin/reports'
+  | '/admin/committees'
   | '/admin/roles'
   | '/admin/area-permissions'
   | '/admin/audit-logs'
-  | '/admin/committees'
 
-type ModuleCardConfig = {
+type AdminQuickActionConfig = {
   key: AdminModuleKey
   title: string
   description: string
   to?: AdminRouteTo
-  actionLabel: string
   icon: LucideIcon
-  tone:
-    | 'membership'
-    | 'education'
-    | 'health'
-    | 'welfare'
-    | 'employment'
-    | 'finance'
-    | 'cms'
-    | 'media'
-    | 'reports'
-    | 'roles'
-    | 'area'
-    | 'audit'
-    | 'committees'
+  tone: 'emerald' | 'amber' | 'sky' | 'violet' | 'slate' | 'rose'
   metric?: string
   metricLabel?: string
-  badgeLabel?: string
-  comingSoon?: boolean
+  onClick?: () => void
 }
 
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+
+const adminDashboardDedupeCopy = {
+  en: {
+    priorityWork: 'Priority Work',
+    workQueueTitle: 'Admin work queue',
+    workQueueDescription:
+      'Sidebar is now the main navigation. This dashboard shows only important pending work and daily shortcuts.',
+    pendingApplications: 'Pending applications',
+    approvedMembers: 'Approved members',
+    cardsIssued: 'Cards issued',
+    cleanerFlow: 'Cleaner admin flow',
+    navigationMoved: 'Navigation moved to sidebar',
+    navigationMovedDescription:
+      'Large duplicate module cards were removed from the dashboard. Use the left sidebar for full navigation, and use these compact actions for frequent tasks.',
+    total: 'Total',
+    rejected: 'Rejected',
+    quickActions: 'Quick actions',
+    frequentTasks: 'Frequent admin tasks',
+    actions: {
+      reviewPending: {
+        title: 'Review pending members',
+        description: 'Open the member table with pending applications selected.',
+        metricLabel: 'Pending',
+      },
+      finance: {
+        title: 'Finance',
+        description: 'Track donations, expenses, receipts and finance audit logs.',
+      },
+      reports: {
+        title: 'Reports',
+        description: 'View organization summaries, exports and review reports.',
+      },
+      news: {
+        title: 'News',
+        description: 'Create or update public announcements and news posts.',
+      },
+      cms: {
+        title: 'CMS',
+        description: 'Edit public website pages and multilingual content.',
+      },
+      committees: {
+        title: 'Committees',
+        description: 'Manage central, divisional, district and taluka committees.',
+      },
+    },
+  },
+  ur: {
+    priorityWork: 'اہم کام',
+    workQueueTitle: 'ایڈمن ورک کیو',
+    workQueueDescription:
+      'سائیڈبار اب مین نیویگیشن ہے۔ یہ ڈیش بورڈ صرف اہم زیر التواء کام اور روزمرہ شارٹ کٹس دکھاتا ہے۔',
+    pendingApplications: 'زیر التواء درخواستیں',
+    approvedMembers: 'منظور شدہ ممبرز',
+    cardsIssued: 'جاری شدہ کارڈز',
+    cleanerFlow: 'صاف ایڈمن فلو',
+    navigationMoved: 'نیویگیشن سائیڈبار میں منتقل',
+    navigationMovedDescription:
+      'ڈیش بورڈ سے بڑے ڈپلیکیٹ ماڈیول کارڈز ہٹا دیے گئے ہیں۔ مکمل نیویگیشن کے لیے بائیں سائیڈبار اور عام کاموں کے لیے یہ شارٹ کٹس استعمال کریں۔',
+    total: 'کل',
+    rejected: 'رد شدہ',
+    quickActions: 'فوری ایکشنز',
+    frequentTasks: 'عام ایڈمن کام',
+    actions: {
+      reviewPending: {
+        title: 'زیر التواء ممبرز ریویو کریں',
+        description: 'ممبر ٹیبل کو زیر التواء درخواستوں کے فلٹر کے ساتھ کھولیں۔',
+        metricLabel: 'زیر التواء',
+      },
+      finance: {
+        title: 'فنانس',
+        description: 'ڈونیشنز، اخراجات، رسیدیں اور فنانس آڈٹ لاگز ٹریک کریں۔',
+      },
+      reports: {
+        title: 'رپورٹس',
+        description: 'تنظیمی خلاصے، ایکسپورٹس اور ریویو رپورٹس دیکھیں۔',
+      },
+      news: {
+        title: 'نیوز',
+        description: 'عوامی اعلانات اور نیوز پوسٹس بنائیں یا اپڈیٹ کریں۔',
+      },
+      cms: {
+        title: 'CMS',
+        description: 'پبلک ویب سائٹ صفحات اور ملٹی لنگول مواد ایڈٹ کریں۔',
+      },
+      committees: {
+        title: 'کمیٹیز',
+        description: 'مرکزی، ڈویژنل، ضلعی اور تعلقہ کمیٹیز مینیج کریں۔',
+      },
+    },
+  },
+  sd: {
+    priorityWork: 'اهم ڪم',
+    workQueueTitle: 'ايڊمن ورڪ ڪيو',
+    workQueueDescription:
+      'سائيڊبار هاڻي مين نيويگيشن آهي. هي ڊيش بورڊ صرف اهم زير التوا ڪم ۽ روزمره شارٽ ڪٽس ڏيکاري ٿو.',
+    pendingApplications: 'زير التوا درخواستون',
+    approvedMembers: 'منظور ٿيل ميمبر',
+    cardsIssued: 'جاري ٿيل ڪارڊ',
+    cleanerFlow: 'صاف ايڊمن فلو',
+    navigationMoved: 'نيويگيشن سائيڊبار ۾ منتقل',
+    navigationMovedDescription:
+      'ڊيش بورڊ مان وڏا ڊپليڪيٽ ماڊيول ڪارڊ هٽايا ويا آهن. مڪمل نيويگيشن لاءِ کاٻي سائيڊبار ۽ عام ڪمن لاءِ هي شارٽ ڪٽس استعمال ڪريو.',
+    total: 'ڪل',
+    rejected: 'رد ٿيل',
+    quickActions: 'جلدي عمل',
+    frequentTasks: 'عام ايڊمن ڪم',
+    actions: {
+      reviewPending: {
+        title: 'زير التوا ميمبر ريَويو ڪريو',
+        description: 'ميمبر ٽيبل کي زير التوا درخواستن جي فلٽر سان کوليو.',
+        metricLabel: 'زير التوا',
+      },
+      finance: {
+        title: 'فنانس',
+        description: 'ڊونيشنز، خرچ، رسيدون ۽ فنانس آڊٽ لاگز ٽريڪ ڪريو.',
+      },
+      reports: {
+        title: 'رپورٽس',
+        description: 'تنظيمي خلاصا، ايڪسپورٽس ۽ ريَويو رپورٽس ڏسو.',
+      },
+      news: {
+        title: 'نيوز',
+        description: 'عوامي اعلان ۽ نيوز پوسٽس ٺاهيو يا اپڊيٽ ڪريو.',
+      },
+      cms: {
+        title: 'CMS',
+        description: 'پبلڪ ويب سائيٽ صفحا ۽ ملٽي لنگول مواد ايڊٽ ڪريو.',
+      },
+      committees: {
+        title: 'ڪميٽيز',
+        description: 'مرڪزي، ڊويزنل، ضلعي ۽ تعلقي ڪميٽيز مينيج ڪريو.',
+      },
+    },
+  },
+} as const
 
 
 function AdminPage() {
@@ -407,21 +520,21 @@ function AdminPage() {
 
   if (loading) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
-        <div className="page-wrap rounded-3xl bg-white p-5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 sm:p-6">
+      <AdminShell title={adminCopy.title} subtitle={adminCopy.subtitle}>
+        <div className="rounded-3xl bg-white p-5 text-sm font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3">
             <RefreshCw className="h-5 w-5 animate-spin text-emerald-700" />
             {adminCopy.loading}
           </div>
         </div>
-      </main>
+      </AdminShell>
     )
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
-      <div className="page-wrap space-y-6">
-        <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
+    <AdminShell title={adminCopy.title} subtitle={adminCopy.subtitle}>
+      <div className="space-y-6">
+        <header className="admin-dashboard-hero overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
@@ -535,7 +648,11 @@ function AdminPage() {
           </div>
         </header>
 
-        <AdminProgramShortcuts roles={adminRoles} stats={stats} />
+        <AdminProgramShortcuts
+          roles={adminRoles}
+          stats={stats}
+          onReviewPending={() => setStatusFilter('pending')}
+        />
 
 
         {areaNotice ? (
@@ -552,7 +669,7 @@ function AdminPage() {
           </div>
         ) : null}
 
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+        <section className="admin-members-section rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-100">
@@ -798,13 +915,14 @@ function AdminPage() {
           </div>
         </section>
       </div>
-    </main>
+    </AdminShell>
   )
 }
 
 function AdminProgramShortcuts({
   roles,
   stats,
+  onReviewPending,
 }: {
   roles: readonly AdminRoleName[]
   stats: {
@@ -814,137 +932,11 @@ function AdminProgramShortcuts({
     rejected: number
     cards: number
   }
+  onReviewPending: () => void
 }) {
   const copy = useAdminDashboardCopy()
-  const moduleCopy = copy.modules.cards
-
-  const cards: ModuleCardConfig[] = [
-    {
-      key: 'membership',
-      title: moduleCopy.membership.title,
-      description: moduleCopy.membership.description,
-      actionLabel: moduleCopy.membership.actionLabel,
-      icon: ShieldCheck,
-      tone: 'membership',
-      metric: String(stats.pending),
-      metricLabel: moduleCopy.membership.metricLabel,
-    },
-    {
-      key: 'education',
-      title: moduleCopy.education.title,
-      description: moduleCopy.education.description,
-      to: '/admin/programs/education',
-      actionLabel: moduleCopy.education.actionLabel,
-      icon: BookOpenCheck,
-      tone: 'education',
-    },
-    {
-      key: 'health',
-      title: moduleCopy.health.title,
-      description: moduleCopy.health.description,
-      to: '/admin/programs/health',
-      actionLabel: moduleCopy.health.actionLabel,
-      icon: HeartPulse,
-      tone: 'health',
-    },
-    {
-      key: 'welfare',
-      title: moduleCopy.welfare.title,
-      description: moduleCopy.welfare.description,
-      to: '/admin/programs/welfare',
-      actionLabel: moduleCopy.welfare.actionLabel,
-      icon: HandHeart,
-      tone: 'welfare',
-    },
-    {
-      key: 'employment',
-      title: moduleCopy.employment.title,
-      description: moduleCopy.employment.description,
-      to: '/admin/programs/employment',
-      actionLabel: moduleCopy.employment.actionLabel,
-      icon: BriefcaseBusiness,
-      tone: 'employment',
-    },
-    {
-      key: 'finance',
-      title: moduleCopy.finance.title,
-      description: moduleCopy.finance.description,
-      to: '/admin/finance',
-      actionLabel: moduleCopy.finance.actionLabel,
-      icon: BadgeIndianRupee,
-      tone: 'finance',
-    },
-    {
-      key: 'cms',
-      title: moduleCopy.cms.title,
-      description: moduleCopy.cms.description,
-      to: '/admin/cms',
-      actionLabel: moduleCopy.cms.actionLabel,
-      icon: FileText,
-      tone: 'cms',
-    },
-    {
-      key: 'media',
-      title: moduleCopy.media.title,
-      description: moduleCopy.media.description,
-      to: '/admin/news',
-      actionLabel: moduleCopy.media.actionLabel,
-      icon: Newspaper,
-      tone: 'media',
-    },
-    {
-      key: 'reports',
-      title: moduleCopy.reports.title,
-      description: moduleCopy.reports.description,
-      to: '/admin/reports',
-      actionLabel: moduleCopy.reports.actionLabel,
-      icon: BarChart3,
-      tone: 'reports',
-      badgeLabel: moduleCopy.reports.badgeLabel,
-    },
-    {
-      key: 'roles',
-      title: moduleCopy.roles.title,
-      description: moduleCopy.roles.description,
-      to: '/admin/roles',
-      actionLabel: moduleCopy.roles.actionLabel,
-      icon: KeyRound,
-      tone: 'roles',
-      badgeLabel: moduleCopy.roles.badgeLabel,
-    },
-    {
-      key: 'area-permissions',
-      title: moduleCopy['area-permissions'].title,
-      description: moduleCopy['area-permissions'].description,
-      to: '/admin/area-permissions',
-      actionLabel: moduleCopy['area-permissions'].actionLabel,
-      icon: MapPin,
-      tone: 'area',
-      badgeLabel: moduleCopy.roles.badgeLabel,
-    },
-    {
-      key: 'audit-logs',
-      title: moduleCopy['audit-logs'].title,
-      description: moduleCopy['audit-logs'].description,
-      to: '/admin/audit-logs',
-      actionLabel: moduleCopy['audit-logs'].actionLabel,
-      icon: ListChecks,
-      tone: 'audit',
-      badgeLabel: moduleCopy.roles.badgeLabel,
-    },
-    {
-      key: 'committees',
-      title: moduleCopy.committees.title,
-      description: moduleCopy.committees.description,
-      to: '/admin/committees',
-      actionLabel: moduleCopy.committees.actionLabel,
-      icon: Network,
-      tone: 'committees',
-      badgeLabel: moduleCopy.committees.badgeLabel,
-    },
-  ]
-
-  const visibleCards = cards.filter((card) => canAccessAdminModule(roles, card.key))
+  const { language } = useI18n()
+  const localCopy = adminDashboardDedupeCopy[language]
   const isSuperAdmin = roles.includes('super_admin')
   const accessLabel = isSuperAdmin
     ? copy.access.superAdmin
@@ -952,208 +944,257 @@ function AdminProgramShortcuts({
       ? copy.access.centralAdmin
       : copy.access.roleBased
 
+  const quickActions: AdminQuickActionConfig[] = [
+    {
+      key: 'membership',
+      title: localCopy.actions.reviewPending.title,
+      description: localCopy.actions.reviewPending.description,
+      icon: ListChecks,
+      tone: 'emerald',
+      metric: String(stats.pending),
+      metricLabel: localCopy.actions.reviewPending.metricLabel,
+      onClick: onReviewPending,
+    },
+    {
+      key: 'finance',
+      title: localCopy.actions.finance.title,
+      description: localCopy.actions.finance.description,
+      to: '/admin/finance',
+      icon: BadgeIndianRupee,
+      tone: 'emerald',
+    },
+    {
+      key: 'reports',
+      title: localCopy.actions.reports.title,
+      description: localCopy.actions.reports.description,
+      to: '/admin/reports',
+      icon: BarChart3,
+      tone: 'sky',
+    },
+    {
+      key: 'media',
+      title: localCopy.actions.news.title,
+      description: localCopy.actions.news.description,
+      to: '/admin/news',
+      icon: Newspaper,
+      tone: 'amber',
+    },
+    {
+      key: 'cms',
+      title: localCopy.actions.cms.title,
+      description: localCopy.actions.cms.description,
+      to: '/admin/cms',
+      icon: FileText,
+      tone: 'violet',
+    },
+    {
+      key: 'committees',
+      title: localCopy.actions.committees.title,
+      description: localCopy.actions.committees.description,
+      to: '/admin/committees',
+      icon: Network,
+      tone: 'slate',
+    },
+  ]
+
+  const visibleQuickActions = quickActions.filter((action) =>
+    canAccessAdminModule(roles, action.key),
+  )
+
   return (
-    <section className="rounded-[2rem] bg-white/90 p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
-      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-            {copy.modules.eyebrow}
-          </p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-            {copy.modules.title}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            {copy.modules.description}
-          </p>
+    <section className="admin-overview-section rounded-[2rem] bg-white/90 p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)]">
+        <div className="admin-work-queue rounded-[1.5rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-white p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+                {localCopy.priorityWork}
+              </p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                {localCopy.workQueueTitle}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                {localCopy.workQueueDescription}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white px-4 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-emerald-100">
+              {accessLabel}
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <button
+              type="button"
+              onClick={onReviewPending}
+              className="admin-work-card text-left"
+            >
+              <span className="admin-work-card-icon bg-amber-100 text-amber-800">
+                <ListChecks className="h-5 w-5" />
+              </span>
+              <span className="admin-work-card-value">{stats.pending}</span>
+              <span className="admin-work-card-label">{localCopy.pendingApplications}</span>
+            </button>
+
+            <div className="admin-work-card">
+              <span className="admin-work-card-icon bg-emerald-100 text-emerald-800">
+                <UserCheck className="h-5 w-5" />
+              </span>
+              <span className="admin-work-card-value">{stats.approved}</span>
+              <span className="admin-work-card-label">{localCopy.approvedMembers}</span>
+            </div>
+
+            <div className="admin-work-card">
+              <span className="admin-work-card-icon bg-slate-100 text-slate-800">
+                <IdCard className="h-5 w-5" />
+              </span>
+              <span className="admin-work-card-value">{stats.cards}</span>
+              <span className="admin-work-card-label">{localCopy.cardsIssued}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
-            {copy.modules.available(visibleCards.length)}
-          </div>
-          <div className="rounded-2xl bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
-            {accessLabel}
+        <div className="admin-dashboard-note rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+            {localCopy.cleanerFlow}
+          </p>
+          <h3 className="mt-2 text-xl font-black text-slate-950">
+            {localCopy.navigationMoved}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            {localCopy.navigationMovedDescription}
+          </p>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+              <p className="text-xs font-black uppercase text-slate-500">{localCopy.total}</p>
+              <p className="mt-1 text-2xl font-black text-slate-950">{stats.total}</p>
+            </div>
+            <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+              <p className="text-xs font-black uppercase text-slate-500">{localCopy.rejected}</p>
+              <p className="mt-1 text-2xl font-black text-slate-950">{stats.rejected}</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {visibleCards.map((card) => (
-          <AdminModuleCard key={card.key} card={card} />
-        ))}
+      <div className="admin-quick-actions mt-5">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+              {localCopy.quickActions}
+            </p>
+            <h2 className="mt-1 text-xl font-black tracking-tight text-slate-950">
+              {localCopy.frequentTasks}
+            </h2>
+          </div>
+
+          <p className="text-sm font-bold text-slate-500">
+            {copy.modules.available(visibleQuickActions.length)}
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {visibleQuickActions.map((action) => (
+            <AdminQuickAction key={action.key} action={action} />
+          ))}
+        </div>
       </div>
     </section>
   )
 }
 
-function AdminModuleCard({ card }: { card: ModuleCardConfig }) {
-  const copy = useAdminDashboardCopy()
-  const Icon = card.icon
-  const tone = getModuleTone(card.tone)
+function AdminQuickAction({ action }: { action: AdminQuickActionConfig }) {
+  const Icon = action.icon
+  const tone = getQuickActionTone(action.tone)
+  const content = (
+    <>
+      <span className={`admin-quick-action-icon ${tone.icon}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block text-base font-black text-slate-950">
+          {action.title}
+        </span>
+        <span className="mt-1 block text-sm leading-5 text-slate-500">
+          {action.description}
+        </span>
+      </span>
+
+      {action.metric ? (
+        <span className="admin-quick-action-metric">
+          <strong>{action.metric}</strong>
+          <small>{action.metricLabel}</small>
+        </span>
+      ) : (
+        <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
+      )}
+    </>
+  )
+
+  if (action.onClick) {
+    return (
+      <button
+        type="button"
+        onClick={action.onClick}
+        className={`admin-quick-action ${tone.card}`}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  if (!action.to) {
+    return (
+      <div className={`admin-quick-action ${tone.card}`}>
+        {content}
+      </div>
+    )
+  }
 
   return (
-    <article
-      className={`group flex min-h-[270px] flex-col overflow-hidden rounded-[1.6rem] border p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl ${tone.card}`}
-    >
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm ring-1 ring-black/5 ${tone.icon}`}
-        >
-          <Icon className="h-6 w-6" />
-        </div>
-
-        {card.metric ? (
-          <div className="min-w-[76px] rounded-2xl bg-white/85 px-3 py-2 text-center shadow-sm ring-1 ring-black/5 backdrop-blur">
-            <p className="text-xl font-black leading-none text-slate-950">
-              {card.metric}
-            </p>
-            <p className="mt-1 text-[0.62rem] font-black uppercase tracking-wide text-slate-500">
-              {card.metricLabel}
-            </p>
-          </div>
-        ) : (
-          <span
-            className={`rounded-full px-3 py-1 text-[0.66rem] font-black uppercase tracking-[0.14em] ${tone.badge}`}
-          >
-            {card.badgeLabel ?? copy.modules.module}
-          </span>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <h3 className="text-2xl font-black tracking-tight text-slate-950">
-          {card.title}
-        </h3>
-
-        <p className="mt-3 text-[0.95rem] leading-7 text-slate-600">
-          {card.description}
-        </p>
-      </div>
-
-      <div className="mt-6">
-        {card.to ? (
-          <Link
-            to={card.to}
-            className={`inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-black !text-white no-underline shadow-sm transition ${tone.action}`}
-            style={{ color: '#ffffff' }}
-          >
-            {card.actionLabel}
-            <ArrowRight className={`h-4 w-4 transition group-hover:translate-x-0.5 ${copy.arrowClass}`} />
-          </Link>
-        ) : card.comingSoon ? (
-          <div className="inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-500 shadow-sm">
-            {card.actionLabel}
-          </div>
-        ) : (
-          <div className="inline-flex min-h-[2.85rem] w-full items-center justify-center gap-2 rounded-2xl bg-emerald-800 px-4 py-3 text-sm font-black text-white shadow-sm">
-            {card.actionLabel}
-            <CheckMini />
-          </div>
-        )}
-      </div>
-    </article>
+    <Link to={action.to} className={`admin-quick-action ${tone.card}`}>
+      {content}
+    </Link>
   )
 }
 
-function getModuleTone(tone: ModuleCardConfig['tone']) {
+function getQuickActionTone(tone: AdminQuickActionConfig['tone']) {
   const tones: Record<
-    ModuleCardConfig['tone'],
+    AdminQuickActionConfig['tone'],
     {
       card: string
       icon: string
-      badge: string
-      action: string
     }
   > = {
-    membership: {
-      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
+    emerald: {
+      card: 'border-emerald-200 hover:bg-emerald-50',
       icon: 'bg-emerald-100 text-emerald-800',
-      badge: 'bg-emerald-100 text-emerald-800',
-      action: 'bg-emerald-800 !text-white hover:bg-emerald-900 hover:!text-white',
     },
-    education: {
-      card: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white',
+    amber: {
+      card: 'border-amber-200 hover:bg-amber-50',
       icon: 'bg-amber-100 text-amber-800',
-      badge: 'bg-amber-100 text-amber-800',
-      action: 'bg-slate-950 !text-white hover:bg-amber-900 hover:!text-white',
     },
-    health: {
-      card: 'border-red-200 bg-gradient-to-br from-red-50 via-white to-white',
-      icon: 'bg-red-100 text-red-800',
-      badge: 'bg-red-100 text-red-800',
-      action: 'bg-slate-950 !text-white hover:bg-red-900 hover:!text-white',
-    },
-    welfare: {
-      card: 'border-orange-200 bg-gradient-to-br from-orange-50 via-white to-white',
-      icon: 'bg-orange-100 text-orange-800',
-      badge: 'bg-orange-100 text-orange-800',
-      action: 'bg-slate-950 !text-white hover:bg-orange-900 hover:!text-white',
-    },
-    employment: {
-      card: 'border-sky-200 bg-gradient-to-br from-sky-50 via-white to-white',
+    sky: {
+      card: 'border-sky-200 hover:bg-sky-50',
       icon: 'bg-sky-100 text-sky-800',
-      badge: 'bg-sky-100 text-sky-800',
-      action: 'bg-slate-950 !text-white hover:bg-sky-900 hover:!text-white',
     },
-    finance: {
-      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-white',
-      icon: 'bg-emerald-100 text-emerald-800',
-      badge: 'bg-emerald-100 text-emerald-800',
-      action: 'bg-slate-950 !text-white hover:bg-emerald-900 hover:!text-white',
-    },
-    cms: {
-      card: 'border-violet-200 bg-gradient-to-br from-violet-50 via-white to-white',
+    violet: {
+      card: 'border-violet-200 hover:bg-violet-50',
       icon: 'bg-violet-100 text-violet-800',
-      badge: 'bg-violet-100 text-violet-800',
-      action: 'bg-slate-950 !text-white hover:bg-violet-900 hover:!text-white',
     },
-    media: {
-      card: 'border-cyan-200 bg-gradient-to-br from-cyan-50 via-white to-white',
-      icon: 'bg-cyan-100 text-cyan-800',
-      badge: 'bg-cyan-100 text-cyan-800',
-      action: 'bg-slate-950 !text-white hover:bg-cyan-900 hover:!text-white',
+    slate: {
+      card: 'border-slate-200 hover:bg-slate-50',
+      icon: 'bg-slate-100 text-slate-800',
     },
-    reports: {
-      card: 'border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-white',
-      icon: 'bg-indigo-100 text-indigo-800',
-      badge: 'bg-indigo-100 text-indigo-800',
-      action: 'bg-slate-950 !text-white hover:bg-indigo-900 hover:!text-white',
-    },
-    roles: {
-      card: 'border-slate-300 bg-gradient-to-br from-slate-50 via-white to-white',
-      icon: 'bg-slate-900 text-white',
-      badge: 'bg-slate-900 text-white',
-      action: 'bg-slate-950 !text-white hover:bg-slate-800 hover:!text-white',
-    },
-    area: {
-      card: 'border-teal-200 bg-gradient-to-br from-teal-50 via-white to-white',
-      icon: 'bg-teal-100 text-teal-800',
-      badge: 'bg-teal-100 text-teal-800',
-      action: 'bg-slate-950 !text-white hover:bg-teal-900 hover:!text-white',
-    },
-    audit: {
-      card: 'border-rose-200 bg-gradient-to-br from-rose-50 via-white to-white',
+    rose: {
+      card: 'border-rose-200 hover:bg-rose-50',
       icon: 'bg-rose-100 text-rose-800',
-      badge: 'bg-rose-100 text-rose-800',
-      action: 'bg-slate-950 !text-white hover:bg-rose-900 hover:!text-white',
-    },
-    committees: {
-      card: 'border-lime-200 bg-gradient-to-br from-lime-50 via-white to-white',
-      icon: 'bg-lime-100 text-lime-800',
-      badge: 'bg-lime-100 text-lime-800',
-      action: 'bg-slate-950 !text-white hover:bg-lime-900 hover:!text-white',
     },
   }
 
   return tones[tone]
-}
-
-function CheckMini() {
-  return (
-    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
-      <BadgeCheck className="h-3.5 w-3.5" />
-    </span>
-  )
 }
 
 function MobileMemberCard({
