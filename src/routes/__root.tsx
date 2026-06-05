@@ -67,21 +67,19 @@ function RootComponent() {
 
   return (
     <RootDocument>
-      <I18nProvider>
-        <div className="min-h-screen bg-[linear-gradient(180deg,#fbf9f4_0%,#f6f2e9_55%,#f8f5ef_100%)] text-stone-950">
-          <div
-            className="animate-fade-in pointer-events-none fixed inset-x-0 top-0 z-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(196,145,44,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(11,42,29,0.10),transparent_35%)]"
-            aria-hidden="true"
-          />
+      <div className="min-h-screen bg-[linear-gradient(180deg,#fbf9f4_0%,#f6f2e9_55%,#f8f5ef_100%)] text-stone-950">
+        <div
+          className="animate-fade-in pointer-events-none fixed inset-x-0 top-0 z-0 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(196,145,44,0.14),transparent_40%),radial-gradient(circle_at_top_right,rgba(11,42,29,0.10),transparent_35%)]"
+          aria-hidden="true"
+        />
 
-          <PwaBootstrap />
-          {!isPublicVerifyPage ? <Header compact={isCardPreviewPage} /> : null}
+        <PwaBootstrap />
+        {!isPublicVerifyPage ? <Header compact={isCardPreviewPage} /> : null}
 
-          <div className="animate-fade-up relative z-10">
-            <Outlet />
-          </div>
+        <div className="animate-fade-up relative z-10">
+          <Outlet />
         </div>
-      </I18nProvider>
+      </div>
     </RootDocument>
   )
 }
@@ -89,9 +87,7 @@ function RootComponent() {
 function RootNotFoundPage() {
   return (
     <RootDocument>
-      <I18nProvider>
-        <NotFoundPage />
-      </I18nProvider>
+      <NotFoundPage />
     </RootDocument>
   )
 }
@@ -110,7 +106,9 @@ function RootDocument({ children }: { children: ReactNode }) {
           Skip to main content
         </a>
 
-        <div id="main-content">{children}</div>
+        <div id="main-content">
+          <I18nProvider>{children}</I18nProvider>
+        </div>
 
         <Scripts />
       </body>

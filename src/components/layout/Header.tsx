@@ -2,7 +2,6 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { ShieldCheck } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  getAdminAccountItems,
   getLoggedOutAccountItems,
   getMemberAccountItems,
   programItems,
@@ -76,6 +75,32 @@ export function Header({ compact }: { compact: boolean }) {
     }
   }, [openMenu])
 
+  useEffect(() => {
+    if (!openMenu) return
+
+    const isMobileViewport = window.matchMedia('(max-width: 1023px)').matches
+    if (!isMobileViewport) return
+
+    const scrollY = window.scrollY
+    const previousOverflow = document.body.style.overflow
+    const previousPosition = document.body.style.position
+    const previousTop = document.body.style.top
+    const previousWidth = document.body.style.width
+
+    document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.width = '100%'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.body.style.position = previousPosition
+      document.body.style.top = previousTop
+      document.body.style.width = previousWidth
+      window.scrollTo(0, scrollY)
+    }
+  }, [openMenu])
+
   const localizedPublicPageItems = useMemo(() => {
     return publicPageItems.map((item) => {
       const key = publicPageTranslationKeys[item.to]
@@ -122,7 +147,7 @@ export function Header({ compact }: { compact: boolean }) {
     }
 
     const memberItems = getMemberAccountItems({
-      dashboard: dashboardLabel,
+      dashboard: t('nav.dashboard'),
       digitalCard: t('nav.digitalCard'),
       officeBearerCard: t('nav.officeBearerCard'),
       updates: t('nav.updates'),
@@ -132,19 +157,19 @@ export function Header({ compact }: { compact: boolean }) {
 
     if (!isAdmin) return memberItems
 
-    const memberOnlyItems = memberItems.filter((item) => item.to !== '/admin')
+    const memberOnlyItems = memberItems.filter(
+      (item) => item.to !== '/admin' && item.to !== '/dashboard',
+    )
 
     return [
-      ...getAdminAccountItems({
-        adminPanel: t('nav.adminPanel'),
-        members: 'Members',
-        programs: t('nav.programs'),
-        donations: 'Donations',
-        reports: 'Reports',
-      }),
+      {
+        icon: <ShieldCheck size={17} />,
+        label: t('nav.adminPanel'),
+        to: '/admin',
+      },
       ...memberOnlyItems,
     ]
-  }, [authLoading, dashboardLabel, isAdmin, isLoggedIn, t])
+  }, [authLoading, isAdmin, isLoggedIn, t])
 
   function toggleMenu(menu: Exclude<HeaderMenuKey, null>) {
     setOpenMenu((current) => (current === menu ? null : menu))

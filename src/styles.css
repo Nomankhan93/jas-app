@@ -2720,3 +2720,37 @@ button.admin-quick-action {
   }
 }
 
+/* ─── Header Dropdown Internal Scroll + Admin Avatar Cleanup ───────────────── */
+.site-dropdown-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.site-account-menu-mobile.site-dropdown-scroll {
+  max-height: min(72vh, calc(100dvh - 8.5rem));
+  touch-action: pan-y;
+}
+
+@media (max-width: 1023px) {
+  .site-account-menu-mobile.site-dropdown-scroll {
+    max-height: min(70vh, calc(100dvh - 8rem));
+  }
+}
+
+@media (max-width: 640px) {
+  .site-account-menu-mobile.site-dropdown-scroll {
+    max-height: min(66vh, calc(100dvh - 7.75rem));
+  }
+
+  .site-account-menu-mobile .site-account-menu-item {
+    min-height: 3.15rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-account-menu-mobile.site-dropdown-scroll {
+    max-height: min(62vh, calc(100dvh - 7.5rem));
+  }
+}
+

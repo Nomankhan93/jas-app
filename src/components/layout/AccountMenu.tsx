@@ -38,7 +38,6 @@ export function AccountMenuPanel({
   isLoggedIn,
   logoutLoading,
   mobile = false,
-  onClose,
   onLogout,
   isActive,
 }: {
@@ -59,8 +58,10 @@ export function AccountMenuPanel({
   return (
     <div
       dir={direction}
-      onClick={onClose}
-      className={`${mobile ? 'site-account-menu-mobile absolute right-0 top-full z-[80] mt-3 w-[min(17.75rem,calc(100vw-1rem))]' : 'absolute right-0 top-full z-[70] mt-3 w-72'} ${textAlignClass} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
+      onClick={(event) => event.stopPropagation()}
+      onWheel={(event) => event.stopPropagation()}
+      onTouchMove={(event) => event.stopPropagation()}
+      className={`${mobile ? 'site-account-menu-mobile site-dropdown-scroll absolute right-0 top-full z-[80] mt-3 w-[min(17.75rem,calc(100vw-1rem))]' : 'site-dropdown-scroll absolute right-0 top-full z-[70] mt-3 w-72'} ${textAlignClass} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
     >
       {accountItems.map((item) => (
         <CompactDropdownItem key={`${item.to}-${item.label}`} item={item} active={isActive(item.to)} />
