@@ -17,6 +17,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { useHomeCopy } from '../lib/home-i18n'
 
 export const Route = createFileRoute('/')({ component: HomePage })
 
@@ -35,108 +36,11 @@ type PortalFeature = {
   icon: LucideIcon
 }
 
-const portalStats = [
-  { label: 'Core Focus', value: 'Membership Portal' },
-  { label: 'Verification', value: 'QR Digital Card' },
-  { label: 'Applications', value: 'Member Programs' },
-  { label: 'Payments', value: 'Manual Review' },
-]
-
-const membershipSteps: Array<{ title: string; text: string; icon: LucideIcon }> = [
-  {
-    title: 'Create Account',
-    text: 'Signup first so every membership application stays connected to a verified user account.',
-    icon: UserPlus,
-  },
-  {
-    title: 'Submit Application',
-    text: 'Fill member details, district, taluka, photo and required membership payment receipt.',
-    icon: FileCheck2,
-  },
-  {
-    title: 'Admin Review',
-    text: 'Admin verifies profile, payment receipt and documents before approval.',
-    icon: ClipboardCheck,
-  },
-  {
-    title: 'Digital Card',
-    text: 'Approved members receive a QR-based digital membership card and member dashboard.',
-    icon: IdCard,
-  },
-]
-
-const programModules: ProgramCard[] = [
-  {
-    title: 'Membership Portal',
-    text: 'Register as a JAS member, track approval status and access your digital membership card.',
-    to: '/signup',
-    badge: 'Active',
-    badgeTone: 'active',
-    icon: IdCard,
-  },
-  {
-    title: 'Education Support',
-    text: 'Apply for scholarship, fee support, books, exam fee, hostel, transport or skills support.',
-    to: '/programs/education',
-    badge: 'Active',
-    badgeTone: 'active',
-    icon: GraduationCap,
-  },
-  {
-    title: 'Health Assistance',
-    text: 'Submit medical support cases with patient details, treatment information and documents.',
-    to: '/programs/health',
-    badge: 'Active',
-    badgeTone: 'active',
-    icon: HeartPulse,
-  },
-  {
-    title: 'Welfare Cases',
-    text: 'Welfare requests remain connected with verified membership and admin review.',
-    to: '/programs/welfare',
-    badge: 'Phase 2',
-    badgeTone: 'soon',
-    icon: HandHeart,
-  },
-  {
-    title: 'Employment Program',
-    text: 'Job seekers can submit profile, skills and CV for future employment support review.',
-    to: '/programs/employment',
-    badge: 'Phase 2',
-    badgeTone: 'soon',
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: 'Donation Verification',
-    text: 'Submit donation details for manual finance verification and donor record updates.',
-    to: '/donate',
-    badge: 'Manual',
-    badgeTone: 'manual',
-    icon: BadgeIndianRupee,
-  },
-]
-
-const portalFeatures: PortalFeature[] = [
-  {
-    title: 'QR Verification',
-    text: 'Public verification page confirms approved membership through the member card QR code.',
-    icon: QrCode,
-  },
-  {
-    title: 'Admin Approval',
-    text: 'Membership applications and payment receipts are reviewed before card issuance.',
-    icon: ShieldCheck,
-  },
-  {
-    title: 'Member Dashboard',
-    text: 'Members can track membership, programs, donations, updates and card access in one place.',
-    icon: Users,
-  },
-]
-
 function HomePage() {
+  const { textDir } = useHomeCopy()
+
   return (
-    <main className="overflow-hidden">
+    <main className="overflow-hidden" dir={textDir}>
       <div className="page-wrap flex flex-col gap-16 pb-24 pt-10 lg:gap-20 lg:pt-12">
         <HeroSection />
         <MembershipFlow />
@@ -149,6 +53,8 @@ function HomePage() {
 }
 
 function HeroSection() {
+  const { copy, textDir, textAlignClass, arrowClass } = useHomeCopy()
+
   return (
     <section className="soft-panel animate-fade-up relative overflow-hidden rounded-[2rem] border-[#e8e0d1] bg-[linear-gradient(135deg,#fffdf8_0%,#f7f1e6_50%,#edf4ee_100%)] p-[clamp(1.5rem,4vw,3.5rem)] shadow-[0_30px_80px_rgba(11,42,29,0.10)]">
       <div
@@ -158,47 +64,45 @@ function HeroSection() {
       <AjrakPattern className="absolute right-[-2rem] top-[-2rem] h-64 w-64 opacity-[0.05]" />
 
       <div className="relative z-10 grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_430px]">
-        <div>
+        <div className={textAlignClass} dir={textDir}>
           <div className="animate-fade-up glass-strip inline-flex items-center gap-2.5 rounded-full border border-emerald-900/10 px-3.5 py-2 shadow-sm backdrop-blur">
             <span className="brand-dot" />
             <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-900">
-              Official Membership Portal
+              {copy.portalBadge}
             </span>
           </div>
 
           <p className="animate-fade-up delay-1 mt-7 text-[0.72rem] font-extrabold uppercase tracking-[0.24em] text-stone-500">
-            Jatt Alliance Sindh · JAS
+            {copy.brandLine}
           </p>
 
           <h1 className="animate-fade-up delay-2 mt-4 max-w-[760px] text-[clamp(2.8rem,5.8vw,5.6rem)] font-black uppercase leading-[0.94] tracking-[-0.06em] text-stone-950">
-            Member Portal
+            {copy.heroTitleLine1}
             <br />
-            <span className="text-[var(--forest)]">for JAS</span>
+            <span className="text-[var(--forest)]">{copy.heroTitleLine2}</span>
           </h1>
 
           <div className="ajrak-rule animate-fade-in delay-2 my-6" />
 
           <p className="text-pretty animate-fade-up delay-3 m-0 max-w-[650px] text-[1.08rem] font-medium leading-8 text-stone-600">
-            A focused digital system for JAS membership registration, manual
-            payment receipt verification, admin approval, QR-based digital cards
-            and member-linked support programs.
+            {copy.heroDescription}
           </p>
 
           <div className="animate-fade-up delay-4 mt-9 flex flex-wrap gap-3.5">
             <Link to="/signup" className="primary-btn pressable lift-hover">
-              Apply for Membership
-              <ArrowRight size={16} />
+              {copy.actions.apply}
+              <ArrowRight size={16} className={arrowClass} />
             </Link>
             <a href="#programs-gateway" className="secondary-btn pressable lift-hover">
-              View Programs
+              {copy.actions.viewPrograms}
             </a>
             <Link to="/donate" className="secondary-btn pressable lift-hover">
-              Donate
+              {copy.actions.donate}
             </Link>
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {portalStats.map((item, index) => (
+            {copy.portalStats.map((item, index) => (
               <div
                 key={item.label}
                 className={`soft-panel animate-fade-up ${getDelayClass(index)} rounded-[1.1rem] border-white/70 bg-white/72 px-4 py-3 shadow-sm backdrop-blur`}
@@ -214,7 +118,7 @@ function HeroSection() {
           </div>
         </div>
 
-        <div className="animate-scale-in delay-3 flex justify-center lg:justify-end">
+        <div className="animate-scale-in delay-3 flex justify-center lg:justify-end" dir="ltr">
           <PortalCardPreview />
         </div>
       </div>
@@ -223,8 +127,11 @@ function HeroSection() {
 }
 
 function PortalCardPreview() {
+  const { copy } = useHomeCopy()
+  const preview = copy.preview
+
   return (
-    <div className="lift-hover w-full max-w-[430px]">
+    <div className="lift-hover w-full max-w-[430px]" dir="ltr">
       <div className="overflow-hidden rounded-[1.75rem] border border-emerald-950/15 bg-white shadow-[0_36px_90px_rgba(11,42,29,0.22)]">
         <div className="relative overflow-hidden bg-[linear-gradient(135deg,#06281b,#0b3a28,#115d46)] px-5 pb-6 pt-5 text-white">
           <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
@@ -245,14 +152,14 @@ function PortalCardPreview() {
                   JATT ALLIANCE SINDH
                 </p>
                 <p className="mt-1 text-[0.72rem] font-medium text-emerald-50/80">
-                  Official verified membership card
+                  {preview.cardSubtitle}
                 </p>
               </div>
             </div>
 
             <span className="badge-soft rounded-full bg-[#f2d48f] px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-wide text-emerald-950">
               <CheckCircle2 size={11} />
-              Verified
+              {preview.verified}
             </span>
           </div>
         </div>
@@ -271,7 +178,7 @@ function PortalCardPreview() {
               </div>
               <div className="mt-3 rounded-[1rem] border border-[#f2d48f] bg-emerald-950 p-2.5 text-center">
                 <p className="text-[0.55rem] font-black uppercase tracking-wide text-[#f2d48f]">
-                  Member No
+                  {preview.memberNo}
                 </p>
                 <p className="mt-1 text-[0.74rem] font-black text-white">
                   JAS-2026-001
@@ -281,21 +188,21 @@ function PortalCardPreview() {
 
             <div>
               <p className="text-[0.62rem] font-bold uppercase tracking-wide text-slate-500">
-                Member Name
+                {preview.memberName}
               </p>
               <h3 className="mt-1 text-2xl font-black text-slate-950">
-                Verified Member
+                {preview.memberNameValue}
               </h3>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <PreviewInfo label="Status" value="Approved" />
-                <PreviewInfo label="District" value="Sindh" />
-                <PreviewInfo label="Card" value="QR Verified" />
-                <PreviewInfo label="Access" value="Programs" />
+                <PreviewInfo label={preview.status} value={preview.approved} />
+                <PreviewInfo label={preview.district} value={preview.sindh} />
+                <PreviewInfo label={preview.card} value={preview.qrVerified} />
+                <PreviewInfo label={preview.access} value={preview.programs} />
               </div>
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-3">
                 <QrCode size={42} className="text-emerald-950" />
                 <p className="m-0 text-[0.72rem] font-bold leading-5 text-emerald-950">
-                  Scan QR to verify approved membership.
+                  {preview.qrText}
                 </p>
               </div>
             </div>
@@ -304,18 +211,18 @@ function PortalCardPreview() {
 
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
           <p className="m-0 text-[0.72rem] leading-5 text-slate-500">
-            Digital ID is issued only after admin approval.
+            {preview.footer}
           </p>
         </div>
       </div>
 
       <div className="soft-panel animate-fade-up delay-4 relative z-10 mx-auto -mt-4 flex w-fit items-center gap-2 rounded-2xl bg-white px-4 py-2 shadow-[0_14px_28px_rgba(15,23,42,0.08)]">
-        <span className="text-[0.72rem] font-bold text-stone-600">Signup</span>
+        <span className="text-[0.72rem] font-bold text-stone-600">{preview.signup}</span>
         <ArrowRight size={10} className="text-stone-400" />
-        <span className="text-[0.72rem] font-bold text-stone-600">Review</span>
+        <span className="text-[0.72rem] font-bold text-stone-600">{preview.review}</span>
         <ArrowRight size={10} className="text-stone-400" />
         <span className="text-[0.72rem] font-bold text-emerald-900">
-          Digital Card
+          {preview.digitalCard}
         </span>
       </div>
     </div>
@@ -323,20 +230,31 @@ function PortalCardPreview() {
 }
 
 function MembershipFlow() {
+  const { copy, textDir, textAlignClass, isRtl, arrowClass } = useHomeCopy()
+
+  const membershipSteps = [
+    { ...copy.membershipFlow.steps[0], icon: UserPlus },
+    { ...copy.membershipFlow.steps[1], icon: FileCheck2 },
+    { ...copy.membershipFlow.steps[2], icon: ClipboardCheck },
+    { ...copy.membershipFlow.steps[3], icon: IdCard },
+  ]
+
   return (
     <section className="animate-fade-up">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <p className="section-eyebrow mb-3">Membership Flow</p>
+        <div className={textAlignClass} dir={textDir}>
+          <p className="section-eyebrow mb-3">{copy.membershipFlow.eyebrow}</p>
           <h2 className="section-title text-balance">
-            Membership process,
+            {copy.membershipFlow.titleLine1}
             <br />
-            simple and verified
+            {copy.membershipFlow.titleLine2}
           </h2>
         </div>
-        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          The landing page now focuses on the actual portal flow: application,
-          payment receipt, review, approval and QR card access.
+        <p
+          className={`text-pretty m-0 max-w-md text-sm leading-7 text-stone-600 ${textAlignClass}`}
+          dir={textDir}
+        >
+          {copy.membershipFlow.description}
         </p>
       </div>
 
@@ -346,7 +264,8 @@ function MembershipFlow() {
           return (
             <article
               key={step.title}
-              className={`soft-panel animate-fade-up ${getDelayClass(index)} relative overflow-hidden rounded-[1.35rem] border border-[#e8e0d1] bg-white/90 p-5 shadow-sm`}
+              className={`soft-panel animate-fade-up ${getDelayClass(index)} relative overflow-hidden rounded-[1.35rem] border border-[#e8e0d1] bg-white/90 p-5 shadow-sm ${textAlignClass}`}
+              dir={textDir}
             >
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
@@ -365,7 +284,9 @@ function MembershipFlow() {
               {index < membershipSteps.length - 1 ? (
                 <ArrowRight
                   size={18}
-                  className="absolute right-4 top-1/2 hidden -translate-y-1/2 text-stone-300 md:block"
+                  className={`absolute top-1/2 hidden -translate-y-1/2 text-stone-300 md:block ${
+                    isRtl ? 'left-4' : 'right-4'
+                  } ${arrowClass}`}
                 />
               ) : null}
             </article>
@@ -377,20 +298,63 @@ function MembershipFlow() {
 }
 
 function ProgramGateway() {
+  const { copy, textDir, textAlignClass, arrowClass } = useHomeCopy()
+
+  const programModules: ProgramCard[] = [
+    {
+      ...copy.programs.membership,
+      to: '/signup',
+      badgeTone: 'active',
+      icon: IdCard,
+    },
+    {
+      ...copy.programs.education,
+      to: '/programs/education',
+      badgeTone: 'active',
+      icon: GraduationCap,
+    },
+    {
+      ...copy.programs.health,
+      to: '/programs/health',
+      badgeTone: 'active',
+      icon: HeartPulse,
+    },
+    {
+      ...copy.programs.welfare,
+      to: '/programs/welfare',
+      badgeTone: 'soon',
+      icon: HandHeart,
+    },
+    {
+      ...copy.programs.employment,
+      to: '/programs/employment',
+      badgeTone: 'soon',
+      icon: BriefcaseBusiness,
+    },
+    {
+      ...copy.programs.donation,
+      to: '/donate',
+      badgeTone: 'manual',
+      icon: BadgeIndianRupee,
+    },
+  ]
+
   return (
     <section id="programs-gateway" className="animate-fade-up scroll-mt-28">
       <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <p className="section-eyebrow mb-3">Program Gateway</p>
+        <div className={textAlignClass} dir={textDir}>
+          <p className="section-eyebrow mb-3">{copy.programs.eyebrow}</p>
           <h2 className="section-title text-balance">
-            Member verified
+            {copy.programs.titleLine1}
             <br />
-            support programs
+            {copy.programs.titleLine2}
           </h2>
         </div>
-        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          Program cards are now cleaned and status badges reflect the current
-          portal rollout instead of marking every module as fully active.
+        <p
+          className={`text-pretty m-0 max-w-md text-sm leading-7 text-stone-600 ${textAlignClass}`}
+          dir={textDir}
+        >
+          {copy.programs.description}
         </p>
       </div>
 
@@ -400,7 +364,8 @@ function ProgramGateway() {
           return (
             <article
               key={program.title}
-              className={`feature-card group animate-fade-up ${getDelayClass(index)} p-7`}
+              className={`feature-card group animate-fade-up ${getDelayClass(index)} p-7 ${textAlignClass}`}
+              dir={textDir}
             >
               <div className="mb-5 flex items-start justify-between gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-[#9a6a12]">
@@ -420,8 +385,8 @@ function ProgramGateway() {
                 to={program.to}
                 className="jas-dark-action-link mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline transition"
               >
-                Open
-                <ArrowRight size={15} />
+                {copy.actions.open}
+                <ArrowRight size={15} className={arrowClass} />
               </Link>
             </article>
           )
@@ -432,20 +397,39 @@ function ProgramGateway() {
 }
 
 function PortalFeatures() {
+  const { copy, textDir, textAlignClass } = useHomeCopy()
+
+  const portalFeatures: PortalFeature[] = [
+    {
+      ...copy.features.qr,
+      icon: QrCode,
+    },
+    {
+      ...copy.features.admin,
+      icon: ShieldCheck,
+    },
+    {
+      ...copy.features.dashboard,
+      icon: Users,
+    },
+  ]
+
   return (
     <section className="animate-fade-up rounded-[2rem] border border-[#e8e0d1] bg-white/80 p-6 shadow-sm sm:p-8">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <p className="section-eyebrow mb-3">Portal Features</p>
+        <div className={textAlignClass} dir={textDir}>
+          <p className="section-eyebrow mb-3">{copy.features.eyebrow}</p>
           <h2 className="section-title text-balance">
-            Digital tools
+            {copy.features.titleLine1}
             <br />
-            without duplicated content
+            {copy.features.titleLine2}
           </h2>
         </div>
-        <p className="text-pretty m-0 max-w-md text-sm leading-7 text-stone-600">
-          This section now lists only system features, not the same programs
-          already shown in the program gateway.
+        <p
+          className={`text-pretty m-0 max-w-md text-sm leading-7 text-stone-600 ${textAlignClass}`}
+          dir={textDir}
+        >
+          {copy.features.description}
         </p>
       </div>
 
@@ -455,7 +439,8 @@ function PortalFeatures() {
           return (
             <article
               key={feature.title}
-              className={`soft-panel animate-fade-up ${getDelayClass(index)} rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-sm`}
+              className={`soft-panel animate-fade-up ${getDelayClass(index)} rounded-[1.35rem] border border-slate-200 bg-white p-6 shadow-sm ${textAlignClass}`}
+              dir={textDir}
             >
               <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-800">
                 <Icon size={22} strokeWidth={1.75} />
@@ -475,6 +460,8 @@ function PortalFeatures() {
 }
 
 function FinalCTA() {
+  const { copy, arrowClass } = useHomeCopy()
+
   return (
     <section className="animate-fade-up relative overflow-hidden rounded-[2rem] bg-[linear-gradient(140deg,#0b1f14_0%,#14321e_50%,#0e2a1a_100%)] p-[clamp(2.5rem,6vw,5rem)] text-center shadow-[0_40px_100px_rgba(10,28,18,0.35)]">
       <AjrakPattern className="absolute inset-0 h-full w-full opacity-[0.05]" />
@@ -482,31 +469,30 @@ function FinalCTA() {
         <div className="badge-soft mb-5 border border-white/10 bg-white/5 px-3 py-1.5 text-[#f2d48f]">
           <ShieldCheck size={14} />
           <span className="text-[0.72rem] font-extrabold uppercase tracking-[0.24em]">
-            Member Verified Portal
+            {copy.finalCta.badge}
           </span>
         </div>
         <h2 className="display-title text-balance mx-auto mb-6 max-w-3xl text-[clamp(2.2rem,5vw,4rem)] leading-tight text-white">
-          Apply, get approved,
+          {copy.finalCta.titleLine1}
           <br />
-          <em className="text-[#d8a949]">access member services</em>
+          <em className="text-[#d8a949]">{copy.finalCta.titleLine2}</em>
         </h2>
         <p className="text-pretty mx-auto mb-10 max-w-2xl text-base leading-8 text-white/70">
-          Create your account, submit membership form, upload payment receipt
-          and receive a verified digital member ID after admin approval.
+          {copy.finalCta.description}
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Link
             to="/signup"
             className="pressable lift-hover inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-[var(--r-lg)] bg-[linear-gradient(135deg,#c4912c,#ddb75d)] px-8 py-4 text-sm font-extrabold text-[#0B1F14] shadow-[0_10px_30px_rgba(176,125,42,0.4)]"
           >
-            Apply for Membership
-            <ArrowRight size={16} />
+            {copy.actions.apply}
+            <ArrowRight size={16} className={arrowClass} />
           </Link>
           <a href="#programs-gateway" className="ghost-btn pressable lift-hover">
-            View Programs
+            {copy.actions.viewPrograms}
           </a>
           <Link to="/donate" className="ghost-btn pressable lift-hover">
-            Donate
+            {copy.actions.donate}
           </Link>
         </div>
       </div>
