@@ -1,5 +1,6 @@
 // src/routes/admin/programs/welfare.tsx
 import { Link, Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
+import { AdminShell } from '../../../components/admin/AdminShell'
 import {
   ArrowRight,
   BadgeIndianRupee,
@@ -206,7 +207,8 @@ function AdminWelfareApplicationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <AdminShell title="Welfare Program" subtitle="Review welfare cases, committee decisions and support status.">
+      <div className="admin-nested-page admin-program-admin-page">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
           <Link to="/admin" className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200">{copy.common.backToAdmin}</Link>
@@ -279,7 +281,8 @@ function AdminWelfareApplicationsPage() {
           )}
         </div>
       </section>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

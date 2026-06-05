@@ -9,7 +9,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react'
-import { type ChangeEvent, type FormEvent, useState } from 'react'
+import { type ChangeEvent, type FormEvent, type ReactNode, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
 import { useProgramApplyCopy } from '../../../lib/program-apply-i18n'
 import {
@@ -316,7 +316,7 @@ function WelfareApplyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50" dir="ltr">
+    <main className="program-apply-page min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
           <div className={`max-w-3xl space-y-5 ${textAlignClass}`} dir={textDir}>
@@ -333,7 +333,7 @@ function WelfareApplyPage() {
       </section>
 
       <section className="px-4 py-10 md:py-16">
-        <form onSubmit={handleSubmit} className="mx-auto grid max-w-6xl gap-6">
+        <form onSubmit={handleSubmit} className="program-apply-form mx-auto grid max-w-6xl gap-6">
           <FormCard title={copy.common.membershipVerification}>
             <p className="text-sm leading-7 text-slate-600">
               {copy.common.verifyMembershipText}
@@ -475,7 +475,7 @@ function WelfareApplyPage() {
   )
 }
 
-function FormCard({ title, children }: { title: string; children: React.ReactNode }) {
+function FormCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h2 className="text-xl font-black text-slate-950">{title}</h2>

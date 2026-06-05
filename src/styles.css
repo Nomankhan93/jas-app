@@ -2720,37 +2720,198 @@ button.admin-quick-action {
   }
 }
 
-/* ─── Header Dropdown Internal Scroll + Admin Avatar Cleanup ───────────────── */
-.site-dropdown-scroll {
-  overflow-y: auto;
-  overscroll-behavior: contain;
+/* ─── Remaining UI Polish Pack ───────────────── */
+.admin-program-admin-page,
+.admin-member-review-panel,
+.admin-member-checklist,
+.card-page-shell,
+.card-page-wrap,
+.program-apply-page,
+.program-apply-form {
+  min-width: 0;
+}
+
+.admin-program-admin-page > section:first-child {
+  border-radius: 1.75rem;
+  overflow: hidden;
+}
+
+.admin-program-admin-page > section > div {
+  max-width: 100%;
+}
+
+.admin-member-checklist {
+  overflow: hidden;
+}
+
+.admin-member-payment-note {
+  overflow-wrap: anywhere;
+}
+
+.admin-member-review-panel button,
+.admin-member-review-panel textarea {
+  max-width: 100%;
+}
+
+.card-page-shell {
+  overflow-x: clip;
+}
+
+.card-page-wrap {
+  min-width: 0;
+}
+
+.card-preview-layout {
+  align-items: start;
+}
+
+.card-visible-panel {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.card-scroll-stage {
+  overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;
 }
 
-.site-account-menu-mobile.site-dropdown-scroll {
-  max-height: min(72vh, calc(100dvh - 8.5rem));
-  touch-action: pan-y;
+.card-scroll-stage > div {
+  max-width: none;
+}
+
+.card-action-sidebar,
+.card-download-panel,
+.card-download-actions {
+  min-width: 0;
+}
+
+.card-action-sidebar button,
+.card-action-sidebar a {
+  min-width: 0;
+  white-space: normal;
+  text-align: center;
+}
+
+.program-apply-page {
+  overflow-x: clip;
+}
+
+.program-apply-page input,
+.program-apply-page select,
+.program-apply-page textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.program-apply-form {
+  min-width: 0;
+}
+
+.program-apply-card,
+.program-apply-form > section,
+.program-apply-form > div {
+  min-width: 0;
+}
+
+.program-apply-page [type="submit"],
+.program-apply-page button {
+  min-width: 0;
+}
+
+.program-apply-page label {
+  min-width: 0;
+}
+
+.program-apply-page [dir="rtl"] input,
+.program-apply-page [dir="rtl"] select,
+.program-apply-page [dir="rtl"] textarea {
+  text-align: right;
 }
 
 @media (max-width: 1023px) {
-  .site-account-menu-mobile.site-dropdown-scroll {
-    max-height: min(70vh, calc(100dvh - 8rem));
+  .admin-program-admin-page > section:first-child {
+    border-radius: 1.35rem;
+  }
+
+  .card-preview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .card-action-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 640px) {
-  .site-account-menu-mobile.site-dropdown-scroll {
-    max-height: min(66vh, calc(100dvh - 7.75rem));
+  .admin-program-admin-page > section:first-child {
+    border-radius: 1.15rem;
   }
 
-  .site-account-menu-mobile .site-account-menu-item {
-    min-height: 3.15rem;
+  .admin-member-review-panel,
+  .admin-member-checklist,
+  .card-visible-panel,
+  .card-download-panel,
+  .program-apply-card,
+  .program-apply-form > section,
+  .program-apply-form > div {
+    border-radius: 1.25rem;
+  }
+
+  .admin-member-review-panel {
+    padding: 1rem;
+  }
+
+  .admin-member-review-panel button {
+    width: 100%;
+  }
+
+  .card-page-shell {
+    padding-inline: 0.75rem;
+  }
+
+  .card-action-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .card-download-actions button {
+    width: 100%;
+  }
+
+  .program-apply-page section.bg-slate-950 {
+    padding-top: 2.2rem;
+    padding-bottom: 2.2rem;
+  }
+
+  .program-apply-page h1 {
+    font-size: clamp(2rem, 10vw, 3rem);
+    line-height: 1.05;
+  }
+
+  .program-apply-form {
+    gap: 1rem;
+  }
+
+  .program-apply-form input,
+  .program-apply-form select,
+  .program-apply-form textarea,
+  .program-apply-form button {
+    font-size: 0.95rem;
+  }
+
+  .program-apply-page [type="submit"] {
+    width: 100%;
+    justify-content: center;
   }
 }
 
 @media (max-width: 380px) {
-  .site-account-menu-mobile.site-dropdown-scroll {
-    max-height: min(62vh, calc(100dvh - 7.5rem));
+  .card-page-shell,
+  .program-apply-page {
+    padding-inline: 0.55rem;
+  }
+
+  .admin-member-checklist {
+    padding: 0.85rem;
   }
 }
 

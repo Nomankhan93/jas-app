@@ -63,6 +63,7 @@ type CardPageText = {
   copyLink: string
   openVerification: string
   downloadCard: string
+  downloadGuidance: string
   downloadFront: string
   downloadBack: string
   downloadBoth: string
@@ -117,6 +118,7 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     copyLink: 'Copy Link',
     openVerification: 'Open Verification',
     downloadCard: 'Download Card',
+    downloadGuidance: 'Use front/back PNG downloads for printing or sharing. The official card design remains unchanged.',
     downloadFront: 'Download Front PNG',
     downloadBack: 'Download Back PNG',
     downloadBoth: 'Download Both Sides',
@@ -169,6 +171,7 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     copyLink: 'لنک کاپی کریں',
     openVerification: 'تصدیق کھولیں',
     downloadCard: 'کارڈ ڈاؤن لوڈ کریں',
+    downloadGuidance: 'پرنٹنگ یا شیئرنگ کے لیے فرنٹ/بیک PNG ڈاؤن لوڈ استعمال کریں۔ سرکاری کارڈ ڈیزائن تبدیل نہیں کیا گیا۔',
     downloadFront: 'فرنٹ PNG ڈاؤن لوڈ کریں',
     downloadBack: 'بیک PNG ڈاؤن لوڈ کریں',
     downloadBoth: 'دونوں سائیڈز ڈاؤن لوڈ کریں',
@@ -221,6 +224,7 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     copyLink: 'لنڪ ڪاپي ڪريو',
     openVerification: 'تصديق کوليو',
     downloadCard: 'ڪارڊ ڊائون لوڊ ڪريو',
+    downloadGuidance: 'پرنٽنگ يا شيئرنگ لاءِ فرنٽ/بئڪ PNG ڊائون لوڊ استعمال ڪريو. سرڪاري ڪارڊ ڊيزائن تبديل ناهي ڪيو ويو.',
     downloadFront: 'فرنٽ PNG ڊائون لوڊ ڪريو',
     downloadBack: 'بئڪ PNG ڊائون لوڊ ڪريو',
     downloadBoth: 'ٻئي پاسا ڊائون لوڊ ڪريو',
@@ -511,7 +515,7 @@ function CardPage() {
 
   if (loading) {
     return (
-      <main className="px-3 py-6 sm:px-4 sm:py-10">
+      <main className="card-page-shell px-3 py-6 sm:px-4 sm:py-10">
         <div className="page-wrap rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
@@ -523,8 +527,8 @@ function CardPage() {
   }
 
   return (
-    <main className="px-3 py-6 sm:px-4 sm:py-10">
-      <div className="page-wrap space-y-5 sm:space-y-6">
+    <main className="card-page-shell px-3 py-6 sm:px-4 sm:py-10">
+      <div className="card-page-wrap page-wrap space-y-5 sm:space-y-6">
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
             <BackToDashboard />
@@ -622,13 +626,13 @@ function CardPage() {
           />
         ) : cardReady ? (
           <>
-            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
-              <div className="rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+            <section className="card-preview-layout grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
+              <div className="card-visible-panel rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
                 <p className="mb-3 text-center text-xs font-semibold text-slate-500 sm:hidden">
                   {text.swipeHint}
                 </p>
 
-                <div ref={visibleStageRef} className="w-full overflow-x-auto pb-2">
+                <div ref={visibleStageRef} className="card-scroll-stage w-full overflow-x-auto pb-2">
                   <ScaledCardShell scale={cardScale}>
                     <MembershipCard
                       side={selectedSide}
@@ -691,12 +695,14 @@ function CardPage() {
                   </div>
                 </div>
 
-                <div className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
+                <div className="card-download-panel rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
                   <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
                     {text.downloadCard}
                   </p>
 
-                  <div className="mt-3 grid gap-2">
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{text.downloadGuidance}</p>
+
+                  <div className="card-download-actions mt-3 grid gap-2">
                     <button
                       type="button"
                       onClick={() => void handleDownload('front')}

@@ -8,7 +8,7 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react'
-import { type ChangeEvent, type FormEvent, useState } from 'react'
+import { type ChangeEvent, type FormEvent, type ReactNode, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
 import { useProgramApplyCopy } from '../../../lib/program-apply-i18n'
 import type { Database } from '../../../lib/supabase/database.types'
@@ -283,7 +283,7 @@ function EmploymentApplyPage() {
   const member = membership?.verified ? membership.member : null
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10" dir="ltr">
+    <main className="program-apply-page min-h-screen bg-slate-50 px-3 py-6 sm:px-4 sm:py-10" dir="ltr">
       <div className="mx-auto max-w-5xl">
         <Link to="/programs/employment" className="text-sm font-black text-emerald-700 no-underline">
           ← {copy.program.back}
@@ -312,7 +312,7 @@ function EmploymentApplyPage() {
             </div>
           ) : null}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="program-apply-form space-y-8">
             <section className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
               <h2 className="text-xl font-black text-slate-950">{copy.program.verifyMembership}</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
@@ -445,7 +445,7 @@ function EmploymentApplyPage() {
   )
 }
 
-function Field({ label, children, required, full }: { label: string; children: React.ReactNode; required?: boolean; full?: boolean }) {
+function Field({ label, children, required, full }: { label: string; children: ReactNode; required?: boolean; full?: boolean }) {
   return (
     <label className={full ? 'md:col-span-2' : ''}>
       <span className="mb-2 block text-sm font-black text-slate-800">

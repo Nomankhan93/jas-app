@@ -5,6 +5,7 @@ import {
   createFileRoute,
   useRouterState,
 } from '@tanstack/react-router'
+import { AdminShell } from '../../../components/admin/AdminShell'
 import {
   AlertTriangle,
   ArrowRight,
@@ -310,7 +311,8 @@ function AdminHealthApplicationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <AdminShell title="Health Program" subtitle="Review medical assistance, emergency cases and treatment support records.">
+      <div className="admin-nested-page admin-program-admin-page">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
           <Link
@@ -502,7 +504,8 @@ function AdminHealthApplicationsPage() {
           )}
         </div>
       </section>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 

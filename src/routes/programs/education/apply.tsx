@@ -375,7 +375,7 @@ function EducationApplyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50" dir="ltr">
+    <main className="program-apply-page min-h-screen bg-slate-50" dir="ltr">
       <section className="bg-slate-950 px-4 py-14 text-white md:py-20">
         <div className="mx-auto max-w-6xl">
           <div className={`max-w-3xl space-y-5 ${textAlignClass}`} dir={textDir}>
@@ -398,9 +398,9 @@ function EducationApplyPage() {
       <section className="px-4 py-10 md:py-16">
         <form
           onSubmit={handleSubmit}
-          className="mx-auto grid max-w-6xl gap-6"
+          className="program-apply-form mx-auto grid max-w-6xl gap-6"
         >
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="program-apply-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
               {copy.common.membershipVerification}
             </h2>
@@ -443,7 +443,7 @@ function EducationApplyPage() {
             ) : null}
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="program-apply-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
               {copy.program.applicantDetails}
             </h2>
@@ -533,7 +533,7 @@ function EducationApplyPage() {
             />
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="program-apply-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
               {copy.program.academicDetails}
             </h2>
@@ -627,7 +627,7 @@ function EducationApplyPage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="program-apply-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <h2 className="text-2xl font-black text-slate-950">
               {copy.program.supportRequest}
             </h2>
@@ -667,7 +667,7 @@ function EducationApplyPage() {
             />
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+          <div className="program-apply-card rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
               <div>
                 <h2 className="text-2xl font-black text-slate-950">

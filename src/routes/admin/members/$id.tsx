@@ -598,7 +598,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         </section>
 
         {member.status === 'pending' ? (
-          <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
+          <section className="admin-member-review-panel rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <h2 className="text-lg font-black text-slate-950">
@@ -624,7 +624,9 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               </button>
             </div>
 
-            <div className="mt-6 max-w-2xl rounded-2xl border border-red-100 bg-red-50/60 p-4">
+            <ReviewChecklist member={member} />
+
+            <div className="admin-member-rejection-box mt-6 max-w-2xl rounded-2xl border border-red-100 bg-red-50/60 p-4">
               <label className="block">
                 <span className="mb-1 block text-sm font-bold text-red-900">
                   {copy.details.rejectionReason}
@@ -807,6 +809,95 @@ function StatusPanel({ member }: { member: Member }) {
     </section>
   )
 }
+
+
+function ReviewChecklist({ member }: { member: Member }) {
+  const checks = [
+    {
+      label: 'Photo',
+      ready: Boolean(member.photo_url),
+      text: member.photo_url ? 'Photo uploaded.' : 'Photo is missing.',
+    },
+    {
+      label: 'CNIC & mobile',
+      ready: Boolean(member.cnic && member.mobile),
+      text: 'CNIC and mobile number should be verified before approval.',
+    },
+    {
+      label: 'Area',
+      ready: Boolean(member.district && member.taluka),
+      text: member.taluka
+        ? `${member.district} / ${member.taluka}`
+        : 'Taluka is missing or not selected.',
+    },
+    {
+      label: 'Declaration',
+      ready: member.declaration_accepted,
+      text: member.declaration_accepted
+        ? 'Member accepted declaration.'
+        : 'Declaration is not accepted.',
+    },
+  ]
+
+  return (
+    <div className="admin-member-checklist mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-sm font-black text-emerald-950">
+            Approval verification checklist
+          </p>
+          <p className="mt-1 text-sm leading-6 text-emerald-900/75">
+            Review profile details, payment receipt and identity information before approval.
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-white px-3 py-2 text-xs font-black uppercase tracking-wide text-emerald-800 shadow-sm ring-1 ring-emerald-100">
+          Manual Review
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {checks.map((check) => (
+          <div
+            key={check.label}
+            className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-emerald-100"
+          >
+            <div className="flex items-start gap-3">
+              <span
+                className={`mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl ${
+                  check.ready
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}
+              >
+                {check.ready ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+              </span>
+
+              <div className="min-w-0">
+                <p className="text-sm font-black text-slate-950">{check.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{check.text}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="admin-member-payment-note mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
+        <div className="flex items-start gap-3">
+          <CreditCard className="mt-0.5 h-5 w-5 shrink-0" />
+          <p>
+            Payment receipt/status should be confirmed from the membership payment record before final approval.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 
 function AlertBox({
   tone,

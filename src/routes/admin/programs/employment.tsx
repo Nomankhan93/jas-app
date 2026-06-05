@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
+import { AdminShell } from '../../../components/admin/AdminShell'
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -210,7 +211,8 @@ function AdminEmploymentApplicationsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <AdminShell title="Employment Program" subtitle="Review employment support, skills, shortlist and placement applications.">
+      <div className="admin-nested-page admin-program-admin-page">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
           <Link to="/admin" className="inline-flex items-center text-sm font-bold text-emerald-300 no-underline hover:text-emerald-200">{copy.common.backToAdmin}</Link>
@@ -254,7 +256,8 @@ function AdminEmploymentApplicationsPage() {
           {loading ? <div className="flex justify-center rounded-3xl border border-slate-200 bg-white p-12 shadow-sm"><Loader2 className="h-10 w-10 animate-spin text-emerald-500" /></div> : message ? <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-800 shadow-sm">{message}</div> : filteredApplications.length === 0 ? <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">No employment profiles found.</div> : <div className="grid gap-5">{filteredApplications.map((item) => <CandidateCard key={item.id} item={item} />)}</div>}
         </div>
       </section>
-    </main>
+    </div>
+    </AdminShell>
   )
 }
 
