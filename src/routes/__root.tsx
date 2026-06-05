@@ -11,30 +11,24 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  BadgeIndianRupee,
   Bell,
   BookOpenText,
   BriefcaseBusiness,
   ChevronDown,
-  ChevronRight,
   FileText,
   GraduationCap,
   HeartPulse,
   HandHeart,
-  Home,
   Landmark,
   CalendarDays,
   IdCard,
   Images,
   LogOut,
-  Menu,
   Network,
-  Newspaper,
   ScrollText,
   ShieldCheck,
   Trophy,
   UserPlus,
-  X,
 } from 'lucide-react'
 import {
   I18nProvider,
@@ -355,7 +349,7 @@ function Header({ compact }: { compact: boolean }) {
   const [logoutLoading, setLogoutLoading] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [accountEmail, setAccountEmail] = useState('')
   const [openMenu, setOpenMenu] = useState<HeaderMenuKey>(null)
   const headerRef = useRef<HTMLElement | null>(null)
 
@@ -380,17 +374,21 @@ function Header({ compact }: { compact: boolean }) {
   }, [])
 
   const syncAuthState = useCallback(
-    async (userId?: string | null) => {
+    async (user?: { id: string; email?: string | null } | null) => {
+      const userId = user?.id ?? null
+
       setIsLoggedIn(Boolean(userId))
+      setAccountEmail(user?.email ?? '')
+
       if (userId) setIsAdmin(await checkAdmin(userId))
       else setIsAdmin(false)
+
       setAuthLoading(false)
     },
     [checkAdmin],
   )
 
   useEffect(() => {
-    setMobileOpen(false)
     setOpenMenu(null)
   }, [pathname])
 
@@ -434,16 +432,17 @@ function Header({ compact }: { compact: boolean }) {
         console.error('Session load failed:', error.message)
         setIsLoggedIn(false)
         setIsAdmin(false)
+        setAccountEmail('')
         setAuthLoading(false)
         return
       }
-      await syncAuthState(data.session?.user?.id ?? null)
+      await syncAuthState(data.session?.user ?? null)
     }
 
     void loadSession()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
-      void syncAuthState(session?.user?.id ?? null)
+      void syncAuthState(session?.user ?? null)
     })
 
     return () => {
@@ -480,46 +479,34 @@ function Header({ compact }: { compact: boolean }) {
     })
   }, [language, t])
 
-  const memberItems = useMemo(() => {
-    const items: NavItem[] = []
-
-    if (authLoading) return items
-
-    if (!isLoggedIn) {
-      items.push({ to: '/signup', label: t('nav.membership'), icon: <IdCard size={16} /> })
-      return items
-    }
-
-    items.push(
-      { to: '/donors', label: t('nav.donors'), icon: <Trophy size={16} /> },
-      { to: '/notifications', label: t('nav.updates'), icon: <Bell size={16} /> },
-      { to: '/register', label: t('nav.register'), icon: <UserPlus size={16} /> },
-      { to: '/card', label: t('nav.digitalCard'), icon: <IdCard size={16} /> },
-      { to: '/designation-card', label: t('nav.officeBearerCard'), icon: <ShieldCheck size={16} /> },
-    )
-
-    return items
-  }, [authLoading, isLoggedIn, language, t])
-
-  const mobileNavItems = useMemo(() => {
-    const items: NavItem[] = [
-      { to: '/news', label: t('nav.news'), icon: <Newspaper size={16} /> },
-      { to: '/donate', label: t('nav.donate'), icon: <BadgeIndianRupee size={16} /> },
-      ...memberItems,
-    ]
-
-    if (isAdmin) items.push({ to: '/admin', label: t('nav.adminPanel'), icon: <ShieldCheck size={16} /> })
-
-    return items
-  }, [isAdmin, language, memberItems, t])
-
-  const moreActive =
-    localizedPublicPageItems.some((item) => isActive(item.to)) ||
-    memberItems.some((item) => isActive(item.to))
+  const moreActive = localizedPublicPageItems.some((item) => isActive(item.to))
   const programsActive = pathname.startsWith('/programs/')
   const dashboardPath = isAdmin ? '/admin' : '/dashboard'
   const dashboardLabel = isAdmin ? t('nav.adminPanel') : t('nav.dashboard')
-  const accountInitial = isAdmin ? 'A' : 'N'
+  const accountInitial = (
+    accountEmail.split('@')[0]?.trim().charAt(0) ||
+    (isAdmin ? 'A' : 'U')
+  ).toUpperCase()
+
+  const accountItems = useMemo(() => {
+    if (authLoading) return []
+
+    if (!isLoggedIn) {
+      return [
+        { to: '/login', label: t('auth.login'), icon: <UserPlus size={16} /> },
+        { to: '/signup', label: t('auth.joinNow'), icon: <IdCard size={16} /> },
+      ] satisfies NavItem[]
+    }
+
+    return [
+      { to: dashboardPath, label: dashboardLabel, icon: <ShieldCheck size={16} /> },
+      { to: '/card', label: t('nav.digitalCard'), icon: <IdCard size={16} /> },
+      { to: '/designation-card', label: t('nav.officeBearerCard'), icon: <ShieldCheck size={16} /> },
+      { to: '/notifications', label: t('nav.updates'), icon: <Bell size={16} /> },
+      { to: '/donors', label: t('nav.donors'), icon: <Trophy size={16} /> },
+      { to: '/register', label: t('nav.register'), icon: <UserPlus size={16} /> },
+    ] satisfies NavItem[]
+  }, [accountEmail, authLoading, dashboardLabel, dashboardPath, isLoggedIn, t])
 
   function toggleMenu(menu: Exclude<HeaderMenuKey, null>) {
     setOpenMenu((current) => (current === menu ? null : menu))
@@ -537,10 +524,10 @@ function Header({ compact }: { compact: boolean }) {
       setLogoutLoading(false)
       return
     }
-    setMobileOpen(false)
     setOpenMenu(null)
     setIsLoggedIn(false)
     setIsAdmin(false)
+    setAccountEmail('')
     setLogoutLoading(false)
     await navigate({ to: '/login', replace: true })
   }
@@ -548,6 +535,48 @@ function Header({ compact }: { compact: boolean }) {
   function isActive(path: string) {
     if (path === '/') return pathname === '/'
     return pathname === path || pathname.startsWith(`${path}/`)
+  }
+
+  function AccountMenuPanel({ mobile = false }: { mobile?: boolean }) {
+    if (!accountOpen) return null
+
+    return (
+      <div
+        onClick={closeMenus}
+        className={`${mobile ? 'absolute right-0 top-full z-[80] mt-3 w-[min(18rem,calc(100vw-1.5rem))]' : 'absolute right-0 top-full z-[70] mt-3 w-72'} rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]`}
+      >
+        {accountItems.map((item) => (
+          <CompactDropdownItem key={item.to} item={item} active={isActive(item.to)} />
+        ))}
+
+        {isLoggedIn ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={logoutLoading}
+            className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <LogOut size={16} aria-hidden="true" />
+            {logoutLoading ? t('auth.loggingOut') : t('auth.logout')}
+          </button>
+        ) : null}
+      </div>
+    )
+  }
+
+  function AccountMenuButton({ mobile = false }: { mobile?: boolean }) {
+    return (
+      <button
+        type="button"
+        onClick={() => toggleMenu('account')}
+        className={`animate-fade-up flex items-center justify-center rounded-full bg-emerald-900 text-sm font-black text-white shadow-sm ring-1 ring-white/25 transition hover:-translate-y-0.5 hover:bg-emerald-800 ${mobile ? 'h-11 w-11' : 'h-12 w-12'}`}
+        aria-label={t('account.open')}
+        aria-expanded={accountOpen}
+        aria-haspopup="menu"
+      >
+        {isLoggedIn ? accountInitial : <UserPlus size={18} aria-hidden="true" />}
+      </button>
+    )
   }
 
   return (
@@ -599,29 +628,11 @@ function Header({ compact }: { compact: boolean }) {
 
             {moreOpen ? (
               <div onClick={closeMenus} className="absolute right-0 top-full z-[60] mt-4 w-[420px] rounded-3xl border border-slate-200 bg-white p-3 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
-                <div className="grid gap-3">
-                  <DropdownGroup title={t('nav.organization')}>
-                    <div className="grid gap-1 sm:grid-cols-2">
-                      {localizedPublicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
-                    </div>
-                  </DropdownGroup>
-
-                  {memberItems.length ? (
-                    <DropdownGroup title={isLoggedIn ? t('nav.memberAccess') : t('nav.membership')}>
-                      <div className="grid gap-1 sm:grid-cols-2">
-                        {memberItems.map((item) => <CompactDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
-                      </div>
-                    </DropdownGroup>
-                  ) : null}
-
-                  {isAdmin ? (
-                    <DropdownGroup title={t('nav.admin')}>
-                      <div className="grid gap-1 sm:grid-cols-2">
-                        <CompactDropdownItem item={{ to: '/admin', label: t('nav.adminPanel'), icon: <ShieldCheck size={16} /> }} active={isActive('/admin')} />
-                      </div>
-                    </DropdownGroup>
-                  ) : null}
-                </div>
+                <DropdownGroup title={t('nav.organization')}>
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    {localizedPublicPageItems.map((item) => <PublicPageDropdownItem key={item.to} item={item} active={isActive(item.to)} />)}
+                  </div>
+                </DropdownGroup>
               </div>
             ) : null}
           </div>
@@ -639,33 +650,8 @@ function Header({ compact }: { compact: boolean }) {
               </Link>
 
               <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => toggleMenu('account')}
-                  className="animate-fade-up flex h-12 w-12 items-center justify-center rounded-full bg-emerald-900 text-sm font-black text-white shadow-sm ring-1 ring-white/25 transition hover:-translate-y-0.5 hover:bg-emerald-800"
-                  aria-label={t('account.open')}
-                  aria-expanded={accountOpen}
-                >
-                  {accountInitial}
-                </button>
-
-                {accountOpen ? (
-                  <div onClick={closeMenus} className="absolute right-0 top-full z-[70] mt-3 w-64 rounded-3xl border border-slate-200 bg-white p-2 shadow-[0_24px_70px_rgba(15,23,42,0.18)]">
-                    <CompactDropdownItem item={{ to: dashboardPath, label: dashboardLabel, icon: <ShieldCheck size={16} /> }} active={isActive(dashboardPath)} />
-                    <CompactDropdownItem item={{ to: '/card', label: t('nav.digitalCard'), icon: <IdCard size={16} /> }} active={isActive('/card')} />
-                    <CompactDropdownItem item={{ to: '/designation-card', label: t('nav.officeBearerCard'), icon: <ShieldCheck size={16} /> }} active={isActive('/designation-card')} />
-                    <CompactDropdownItem item={{ to: '/notifications', label: t('nav.updates'), icon: <Bell size={16} /> }} active={isActive('/notifications')} />
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      disabled={logoutLoading}
-                      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-black text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <LogOut size={16} aria-hidden="true" />
-                      {logoutLoading ? t('auth.loggingOut') : t('auth.logout')}
-                    </button>
-                  </div>
-                ) : null}
+                <AccountMenuButton />
+                <AccountMenuPanel />
               </div>
             </>
           ) : (
@@ -676,43 +662,19 @@ function Header({ compact }: { compact: boolean }) {
           )}
         </div>
 
-        <button
-          type="button"
-          className="site-mobile-menu-button animate-fade-up pressable lg:hidden"
-          onClick={() => {
-            setOpenMenu(null)
-            setMobileOpen((open) => !open)
-          }}
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-navigation"
-          aria-label={mobileOpen ? t('menu.close') : t('menu.open')}
-        >
-          {mobileOpen ? <X size={21} /> : <Menu size={21} />}
-        </button>
-      </div>
+        <div className="ml-auto flex items-center gap-2 lg:hidden">
+          <LanguageSwitcher compact />
 
-      {mobileOpen ? (
-        <div id="mobile-navigation" className="mobile-navigation-panel border-t border-[var(--line)] bg-[#fbf8f2] px-3 pt-3 shadow-[0_18px_40px_rgba(15,23,42,0.08)] lg:hidden">
-          <div className="mobile-navigation-card soft-panel animate-slide-down page-wrap max-w-7xl rounded-[1.5rem] bg-white/90 p-2 backdrop-blur">
-            <nav className="grid gap-1" aria-label="Mobile navigation">
-              <MobileNavLink to="/" label={t('nav.home')} icon={<Home size={16} />} active={isActive('/')} delayClass="delay-1" />
-              <div className="my-1 rounded-[1rem] bg-amber-50/70 p-2">
-                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-amber-800">{t('nav.organization')}</p>
-                {localizedPublicPageItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
-              </div>
-              <div className="my-1 rounded-[1rem] bg-emerald-50/60 p-2">
-                <p className="px-2 py-1 text-[0.68rem] font-black uppercase tracking-[0.18em] text-emerald-800">{t('nav.programs')}</p>
-                {localizedProgramItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 1)} />)}
-              </div>
-              {mobileNavItems.map((item, index) => <MobileNavLink key={item.to} to={item.to} label={item.label} icon={item.icon} active={isActive(item.to)} delayClass={getDelayClass(index + 3)} />)}
-            </nav>
-            <div className="mt-3 border-t border-[var(--line)] pt-3">
-              <LanguageSwitcher compact />
+          {authLoading ? (
+            <div className="h-11 w-11 animate-pulse rounded-full bg-emerald-900/25" />
+          ) : (
+            <div className="relative">
+              <AccountMenuButton mobile />
+              <AccountMenuPanel mobile />
             </div>
-            {!authLoading ? <div className="mt-3 border-t border-[var(--line)] pt-3">{isLoggedIn ? <button type="button" onClick={handleLogout} disabled={logoutLoading} className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"><LogOut size={16} aria-hidden="true" />{logoutLoading ? t('auth.loggingOut') : t('auth.logout')}</button> : <div className="grid grid-cols-2 gap-2"><Link to="/login" className="secondary-btn pressable px-4">{t('auth.login')}</Link><Link to="/signup" className="primary-btn pressable px-4">{t('auth.joinNow')}</Link></div>}</div> : null}
-          </div>
+          )}
         </div>
-      ) : null}
+      </div>
     </header>
   )
 }
@@ -754,11 +716,3 @@ function NavLink({ to, label, active, delayClass }: { to: string; label: string;
   return <Link to={to} className={`nav-link animate-fade-up ${delayClass} ${active ? 'is-active' : ''}`} aria-current={active ? 'page' : undefined}>{label}</Link>
 }
 
-function MobileNavLink({ to, label, icon, active, delayClass }: { to: string; label: string; icon: ReactNode; active: boolean; delayClass: string }) {
-  return <Link to={to} className={`animate-fade-up ${delayClass} inline-flex items-center justify-between rounded-[1rem] px-4 py-3 text-sm font-bold transition ${active ? 'bg-emerald-50 text-emerald-900' : 'text-stone-700 hover:bg-stone-50 hover:text-emerald-900'}`} aria-current={active ? 'page' : undefined}><span className="inline-flex items-center gap-2">{icon}{label}</span><ChevronRight size={16} /></Link>
-}
-
-function getDelayClass(index: number) {
-  const delays = ['delay-1', 'delay-2', 'delay-3', 'delay-4', 'delay-5']
-  return delays[index] ?? 'delay-5'
-}
