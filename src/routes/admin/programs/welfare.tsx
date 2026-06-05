@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useAdminProgramsCopy } from '../../../lib/admin-programs-i18n'
 import {
   formatWelfareMoney,
   getWelfareCasePriorityClass,
@@ -76,6 +77,7 @@ function AdminWelfareRoute() {
 }
 
 function AdminWelfareApplicationsPage() {
+  const { copy } = useAdminProgramsCopy('welfare')
   const [applications, setApplications] = useState<WelfareApplicationListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
@@ -207,21 +209,21 @@ function AdminWelfareApplicationsPage() {
     <main className="min-h-screen bg-slate-50">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
-          <Link to="/admin" className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200">← Back to Admin</Link>
+          <Link to="/admin" className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200">{copy.common.backToAdmin}</Link>
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
-                <HandHeart className="h-4 w-4 text-amber-300" /> Welfare Admin
+                <HandHeart className="h-4 w-4 text-amber-300" /> {copy.program.adminBadge}
               </div>
-              <h1 className="mt-5 text-4xl font-black md:text-6xl">Welfare Cases</h1>
-              <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">Financial help, ration, widow/orphan, emergency, marriage, disaster, legal and family support cases ko manage karen.</p>
+              <h1 className="mt-5 text-4xl font-black md:text-6xl">{copy.program.listTitle}</h1>
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">{copy.program.listSubtitle}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
               <button type="button" onClick={() => exportWelfareCsv(filteredApplications)} disabled={loading || filteredApplications.length === 0} className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60">
-                <Download className="mr-2 h-4 w-4" /> Export CSV
+                <Download className="mr-2 h-4 w-4" /> {copy.common.exportCsv}
               </button>
               <button type="button" onClick={loadApplications} disabled={loading} className="inline-flex items-center justify-center rounded-xl bg-amber-400 px-5 py-3 font-black text-slate-950 transition hover:bg-amber-300 disabled:opacity-60">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />} Refresh
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />} {copy.common.refresh}
               </button>
             </div>
           </div>
@@ -231,24 +233,24 @@ function AdminWelfareApplicationsPage() {
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto max-w-7xl space-y-8">
           <div className="grid gap-4 md:grid-cols-7">
-            <StatCard title="Total" value={stats.total} icon={<HandHeart className="h-5 w-5" />} />
-            <StatCard title="Filtered" value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
-            <StatCard title="New" value={stats.newCases} icon={<ShieldCheck className="h-5 w-5" />} />
-            <StatCard title="Verify" value={stats.underReview} icon={<UserCheck className="h-5 w-5" />} />
-            <StatCard title="Approved" value={stats.approved} icon={<BadgeIndianRupee className="h-5 w-5" />} />
-            <StatCard title="Released" value={stats.released} icon={<BadgeIndianRupee className="h-5 w-5" />} />
-            <StatCard title="Emergency" value={stats.emergency} icon={<ShieldCheck className="h-5 w-5" />} />
+            <StatCard title={copy.common.total} value={stats.total} icon={<HandHeart className="h-5 w-5" />} />
+            <StatCard title={copy.common.filtered} value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
+            <StatCard title={copy.common.new} value={stats.newCases} icon={<ShieldCheck className="h-5 w-5" />} />
+            <StatCard title={copy.common.verify} value={stats.underReview} icon={<UserCheck className="h-5 w-5" />} />
+            <StatCard title={copy.common.approved} value={stats.approved} icon={<BadgeIndianRupee className="h-5 w-5" />} />
+            <StatCard title={copy.common.released} value={stats.released} icon={<BadgeIndianRupee className="h-5 w-5" />} />
+            <StatCard title={copy.common.emergency} value={stats.emergency} icon={<ShieldCheck className="h-5 w-5" />} />
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="grid gap-4 xl:grid-cols-[1fr_170px_170px_170px_150px_150px_170px_auto]">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search by name, membership no, phone, case type..." className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 font-semibold outline-none transition focus:border-amber-500" />
+                <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={copy.program.searchPlaceholder} className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 font-semibold outline-none transition focus:border-amber-500" />
               </label>
-              <Select value={statusFilter} onChange={setStatusFilter} options={statusOptions.map((status) => ({ value: status, label: status === 'all' ? 'All Status' : getWelfareStatusLabel(status) }))} />
-              <Select value={districtFilter} onChange={setDistrictFilter} options={[{ value: 'all', label: 'All Districts' }, ...districtOptions]} />
-              <Select value={talukaFilter} onChange={setTalukaFilter} options={[{ value: 'all', label: 'All Talukas' }, ...talukaOptions]} />
+              <Select value={statusFilter} onChange={setStatusFilter} options={statusOptions.map((status) => ({ value: status, label: status === 'all' ? copy.common.allStatuses : getWelfareStatusLabel(status) }))} />
+              <Select value={districtFilter} onChange={setDistrictFilter} options={[{ value: 'all', label: copy.common.allDistricts }, ...districtOptions]} />
+              <Select value={talukaFilter} onChange={setTalukaFilter} options={[{ value: 'all', label: copy.common.allTalukas }, ...talukaOptions]} />
               <Select value={emergencyFilter} onChange={setEmergencyFilter} options={[{ value: 'all', label: 'All Cases' }, { value: 'emergency', label: 'Emergency' }, { value: 'normal', label: 'Normal' }]} />
               <Select value={priorityFilter} onChange={setPriorityFilter} options={priorityOptions.map((value) => ({ value, label: value === 'all' ? 'Priority' : value }))} />
               <Select value={paymentFilter} onChange={setPaymentFilter} options={paymentOptions.map((value) => ({ value, label: value === 'all' ? 'Fund Status' : getWelfarePaymentStatusLabel(value) }))} />
@@ -282,6 +284,7 @@ function AdminWelfareApplicationsPage() {
 }
 
 function ApplicationListCard({ item }: { item: WelfareApplicationListItem }) {
+  const { copy } = useAdminProgramsCopy('welfare')
   const details = item.details || {}
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -309,7 +312,7 @@ function ApplicationListCard({ item }: { item: WelfareApplicationListItem }) {
         </div>
         <div className="flex flex-col justify-between gap-4 lg:min-w-[190px] lg:items-end">
           <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600 lg:text-right"><p className="font-black text-slate-950">{new Date(item.created_at).toLocaleDateString()}</p><p className="mt-1">{item.approved_amount ? `Approved: Rs. ${Number(item.approved_amount)}` : 'Approval pending'}</p></div>
-          <Link to="/admin/programs/welfare/$id" params={{ id: item.id }} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition">Review <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          <Link to="/admin/programs/welfare/$id" params={{ id: item.id }} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition">{copy.common.review} <ArrowRight className="ml-2 h-4 w-4" /></Link>
         </div>
       </div>
     </article>
@@ -338,7 +341,7 @@ async function ensureWelfareAdminAccess(): Promise<{ ok: true } | { ok: false; m
   if (assignmentError) return { ok: false, message: assignmentError.message }
   if (assignments?.length) return { ok: true }
 
-  return { ok: false, message: 'Aap ke account ko Welfare Admin access nahi mila.' }
+  return { ok: false, message: 'Aap ke account ko welfare admin access nahi mila.' }
 }
 
 function getUniqueOptions(values: Array<string | null>) {

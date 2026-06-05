@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useAdminProgramsCopy } from '../../../lib/admin-programs-i18n'
 import {
   getEducationStatusClass,
   getEducationStatusLabel,
@@ -80,6 +81,7 @@ function AdminEducationRoute() {
 }
 
 function AdminEducationApplicationsPage() {
+  const { copy } = useAdminProgramsCopy('education')
   const [applications, setApplications] = useState<
     EducationApplicationListItem[]
   >([])
@@ -247,18 +249,18 @@ function AdminEducationApplicationsPage() {
             to="/admin"
             className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200"
           >
-            ← Back to Admin
+            {copy.common.backToAdmin}
           </Link>
 
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
                 <GraduationCap className="h-4 w-4 text-amber-300" />
-                Education Admin
+                {copy.program.adminBadge}
               </div>
 
               <h1 className="mt-5 text-4xl font-black md:text-6xl">
-                Education Applications
+                {copy.program.listTitle}
               </h1>
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">
@@ -276,7 +278,7 @@ function AdminEducationApplicationsPage() {
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                {copy.common.exportCsv}
               </button>
 
               <button
@@ -291,7 +293,7 @@ function AdminEducationApplicationsPage() {
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Refresh
+                {copy.common.refresh}
               </button>
             </div>
           </div>
@@ -312,27 +314,27 @@ function AdminEducationApplicationsPage() {
         <div className="mx-auto max-w-7xl space-y-8">
           <div className="grid gap-4 md:grid-cols-6">
             <StatCard
-              title="Total"
+              title={copy.common.total}
               value={stats.total}
               icon={<ClipboardList className="h-5 w-5" />}
             />
             <StatCard
-              title="Filtered"
+              title={copy.common.filtered}
               value={stats.filtered}
               icon={<Filter className="h-5 w-5" />}
             />
             <StatCard
-              title="Submitted"
+              title={copy.common.submitted}
               value={stats.submitted}
               icon={<CalendarDays className="h-5 w-5" />}
             />
             <StatCard
-              title="Under Review"
+              title={copy.common.underReview}
               value={stats.underReview}
               icon={<ShieldCheck className="h-5 w-5" />}
             />
             <StatCard
-              title="Approved"
+              title={copy.common.approved}
               value={stats.approved}
               icon={<UserCheck className="h-5 w-5" />}
             />
@@ -350,7 +352,7 @@ function AdminEducationApplicationsPage() {
                 <input
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search by name, membership no, phone, institute, district..."
+                  placeholder={copy.program.searchPlaceholder}
                   className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 font-semibold outline-none transition focus:border-amber-500"
                 />
               </label>
@@ -363,7 +365,7 @@ function AdminEducationApplicationsPage() {
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>
                     {status === 'all'
-                      ? 'All Status'
+                      ? copy.common.allStatuses
                       : getEducationStatusLabel(status)}
                   </option>
                 ))}
@@ -374,7 +376,7 @@ function AdminEducationApplicationsPage() {
                 onChange={(event) => setDistrictFilter(event.target.value)}
                 className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none transition focus:border-amber-500"
               >
-                <option value="all">All Districts</option>
+                <option value="all">{copy.common.allDistricts}</option>
                 {districtOptions.map((district) => (
                   <option key={district.value} value={district.value}>
                     {district.label}
@@ -387,7 +389,7 @@ function AdminEducationApplicationsPage() {
                 onChange={(event) => setTalukaFilter(event.target.value)}
                 className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none transition focus:border-amber-500"
               >
-                <option value="all">All Talukas</option>
+                <option value="all">{copy.common.allTalukas}</option>
                 {talukaOptions.map((taluka) => (
                   <option key={taluka.value} value={taluka.value}>
                     {taluka.label}
@@ -461,6 +463,7 @@ function StatCard({
 }
 
 function ApplicationListCard({ item }: { item: EducationApplicationListItem }) {
+  const { copy } = useAdminProgramsCopy('education')
   const details = item.details || {}
 
   return (
@@ -548,10 +551,10 @@ function ApplicationListCard({ item }: { item: EducationApplicationListItem }) {
           <Link
             to="/admin/programs/education/$id"
             params={{ id: item.id }}
-            aria-label={`Review ${item.applicant_name} education application`}
+            aria-label={`{copy.common.review} ${item.applicant_name} education application`}
             className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition"
           >
-            Review
+            {copy.common.review}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </div>

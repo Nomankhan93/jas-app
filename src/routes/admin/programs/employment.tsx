@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useAdminProgramsCopy } from '../../../lib/admin-programs-i18n'
 import {
   formatSkills,
   getCurrentEmploymentStatusLabel,
@@ -62,6 +63,7 @@ function AdminEmploymentRoute() {
 }
 
 function AdminEmploymentApplicationsPage() {
+  const { copy } = useAdminProgramsCopy('employment')
   const [applications, setApplications] = useState<EmploymentApplicationListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
@@ -211,18 +213,18 @@ function AdminEmploymentApplicationsPage() {
     <main className="min-h-screen bg-slate-50">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
-          <Link to="/admin" className="inline-flex items-center text-sm font-bold text-emerald-300 no-underline hover:text-emerald-200">← Back to Admin</Link>
+          <Link to="/admin" className="inline-flex items-center text-sm font-bold text-emerald-300 no-underline hover:text-emerald-200">{copy.common.backToAdmin}</Link>
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
-                <BriefcaseBusiness className="h-4 w-4 text-emerald-300" /> Employment Admin
+                <BriefcaseBusiness className="h-4 w-4 text-emerald-300" /> {copy.program.adminBadge}
               </div>
-              <h1 className="mt-5 text-4xl font-black md:text-6xl">CV Database</h1>
-              <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">Filter job seekers by skill, district, education, employment status and shortlist for placement support.</p>
+              <h1 className="mt-5 text-4xl font-black md:text-6xl">{copy.program.listTitle}</h1>
+              <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">{copy.program.listSubtitle}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[360px]">
-              <button type="button" onClick={exportCsv} disabled={loading || filteredApplications.length === 0} className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:opacity-60"><Download className="mr-2 h-4 w-4" /> Export CSV</button>
-              <button type="button" onClick={loadApplications} disabled={loading} className="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 font-black text-slate-950 transition hover:bg-emerald-300 disabled:opacity-60"><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Refresh</button>
+              <button type="button" onClick={exportCsv} disabled={loading || filteredApplications.length === 0} className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:opacity-60"><Download className="mr-2 h-4 w-4" /> {copy.common.exportCsv}</button>
+              <button type="button" onClick={loadApplications} disabled={loading} className="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 font-black text-slate-950 transition hover:bg-emerald-300 disabled:opacity-60"><RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> {copy.common.refresh}</button>
             </div>
           </div>
         </div>
@@ -231,20 +233,20 @@ function AdminEmploymentApplicationsPage() {
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto max-w-7xl space-y-8">
           <div className="grid gap-4 md:grid-cols-5">
-            <StatCard title="Total" value={stats.total} icon={<Users className="h-5 w-5" />} />
-            <StatCard title="Filtered" value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
-            <StatCard title="Under Review" value={stats.underReview} icon={<ShieldAlert className="h-5 w-5" />} />
-            <StatCard title="Shortlisted" value={stats.shortlisted} icon={<UserCheck className="h-5 w-5" />} />
-            <StatCard title="Placed" value={stats.placed} icon={<BriefcaseBusiness className="h-5 w-5" />} />
+            <StatCard title={copy.common.total} value={stats.total} icon={<Users className="h-5 w-5" />} />
+            <StatCard title={copy.common.filtered} value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
+            <StatCard title={copy.common.underReview} value={stats.underReview} icon={<ShieldAlert className="h-5 w-5" />} />
+            <StatCard title={copy.common.shortlisted} value={stats.shortlisted} icon={<UserCheck className="h-5 w-5" />} />
+            <StatCard title={copy.common.placed} value={stats.placed} icon={<BriefcaseBusiness className="h-5 w-5" />} />
           </div>
 
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="grid gap-4 xl:grid-cols-[1fr_180px_180px_180px_180px_auto]">
-              <label className="relative block"><Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" /><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search name, member no, phone, education, location..." className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 font-semibold outline-none focus:border-emerald-500" /></label>
-              <input value={skillFilter} onChange={(event) => setSkillFilter(event.target.value)} placeholder="Skill filter" className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500" />
-              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500">{statusOptions.map((status) => <option key={status} value={status}>{status === 'all' ? 'All Status' : getEmploymentStatusLabel(status)}</option>)}</select>
-              <select value={districtFilter} onChange={(event) => { setDistrictFilter(event.target.value); setTalukaFilter('all') }} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500"><option value="all">All Districts</option>{districtOptions.map((district) => <option key={district.value} value={district.value}>{district.label}</option>)}</select>
-              <select value={talukaFilter} onChange={(event) => setTalukaFilter(event.target.value)} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500"><option value="all">All Talukas</option>{talukaOptions.map((taluka) => <option key={taluka.value} value={taluka.value}>{taluka.label}</option>)}</select>
+              <label className="relative block"><Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" /><input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={copy.program.searchPlaceholder} className="w-full rounded-2xl border border-slate-300 bg-white py-3 pl-12 pr-4 font-semibold outline-none focus:border-emerald-500" /></label>
+              <input value={skillFilter} onChange={(event) => setSkillFilter(event.target.value)} placeholder={copy.program.skillFilter} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500" />
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500">{statusOptions.map((status) => <option key={status} value={status}>{status === 'all' ? copy.common.allStatuses : getEmploymentStatusLabel(status)}</option>)}</select>
+              <select value={districtFilter} onChange={(event) => { setDistrictFilter(event.target.value); setTalukaFilter('all') }} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500"><option value="all">{copy.common.allDistricts}</option>{districtOptions.map((district) => <option key={district.value} value={district.value}>{district.label}</option>)}</select>
+              <select value={talukaFilter} onChange={(event) => setTalukaFilter(event.target.value)} className="rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none focus:border-emerald-500"><option value="all">{copy.common.allTalukas}</option>{talukaOptions.map((taluka) => <option key={taluka.value} value={taluka.value}>{taluka.label}</option>)}</select>
               <button type="button" onClick={resetFilters} className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-700 hover:bg-slate-50"><XCircle className="mr-2 h-4 w-4" /> Reset</button>
             </div>
           </div>
@@ -257,6 +259,7 @@ function AdminEmploymentApplicationsPage() {
 }
 
 function CandidateCard({ item }: { item: EmploymentApplicationListItem }) {
+  const { copy } = useAdminProgramsCopy('employment')
   const details = item.details || {}
   return (
     <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -277,7 +280,7 @@ function CandidateCard({ item }: { item: EmploymentApplicationListItem }) {
           {item.admin_remarks ? <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Admin Remarks:</strong> {item.admin_remarks}</div> : null}
         </div>
         <div className="flex flex-col justify-end gap-4 lg:min-w-[190px] lg:items-end">
-          <Link to="/admin/programs/employment/$id" params={{ id: item.id }} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition">Review <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          <Link to="/admin/programs/employment/$id" params={{ id: item.id }} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition">{copy.common.review} <ArrowRight className="ml-2 h-4 w-4" /></Link>
         </div>
       </div>
     </article>

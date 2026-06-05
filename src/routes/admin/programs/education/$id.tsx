@@ -14,7 +14,8 @@ import {
   UserPlus,
 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import { supabase } from "../../../../lib/supabase/client";
+import { supabase } from "../../../../lib/supabase/client"
+import { useAdminProgramsCopy } from "../../../../lib/admin-programs-i18n";
 import {
   EDUCATION_DOCUMENT_BUCKET,
   formatEducationFileSize,
@@ -80,6 +81,7 @@ type EducationApplicationDetail = {
 };
 
 function AdminEducationApplicationDetailPage() {
+  const { copy } = useAdminProgramsCopy('education')
   const { id } = Route.useParams();
   const navigate = useNavigate();
 
@@ -375,7 +377,7 @@ function AdminEducationApplicationDetailPage() {
             className="inline-flex items-center text-sm font-bold text-amber-300 transition hover:text-amber-200"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Education Applications
+            {copy.program.detailBack}
           </button>
 
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
@@ -386,7 +388,7 @@ function AdminEducationApplicationDetailPage() {
               </div>
 
               <h1 className="mt-5 text-4xl font-black md:text-6xl">
-                Education Application
+                {copy.program.detailBadge}
               </h1>
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">
@@ -418,7 +420,7 @@ function AdminEducationApplicationDetailPage() {
             </div>
           ) : !application ? (
             <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-800 shadow-sm">
-              <h2 className="text-2xl font-black">Application not available</h2>
+              <h2 className="text-2xl font-black">{copy.common.applicationNotAvailable}</h2>
               <p className="mt-3 font-semibold">{message}</p>
 
               <Link
@@ -435,15 +437,15 @@ function AdminEducationApplicationDetailPage() {
                 <SummaryCard application={application} />
 
                 <InfoSection
-                  title="Student / Applicant Details"
+                  title={copy.program.studentDetails}
                   icon={<User className="h-5 w-5" />}
                   items={[
-                    ["Student Name", application.applicant_name],
+                    [copy.program.studentName, application.applicant_name],
                     ["CNIC / B-form", application.applicant_cnic || "-"],
                     ["Phone", application.phone],
                     ["Email", application.email || "-"],
                     ["Relationship", application.relationship_to_member],
-                    ["Membership No", application.membership_no],
+                    [copy.common.membershipNo, application.membership_no],
                     ["District", application.district || "-"],
                     ["Taluka", application.taluka || "-"],
                     ["Address", application.address || "-"],
@@ -451,7 +453,7 @@ function AdminEducationApplicationDetailPage() {
                 />
 
                 <InfoSection
-                  title="Institute & Academic Details"
+                  title={copy.program.academicDetails}
                   icon={<ClipboardCheck className="h-5 w-5" />}
                   items={[
                     ["Guardian Name", details.guardian_name || "-"],
@@ -468,10 +470,10 @@ function AdminEducationApplicationDetailPage() {
                 />
 
                 <InfoSection
-                  title="Support Request"
+                  title={copy.program.supportRequest}
                   icon={<BadgeIndianRupee className="h-5 w-5" />}
                   items={[
-                    ["Support Type", details.support_type || "-"],
+                    [copy.program.supportType, details.support_type || "-"],
                     [
                       "Required Amount",
                       details.required_amount
@@ -494,7 +496,7 @@ function AdminEducationApplicationDetailPage() {
                   icon={<CalendarDays className="h-5 w-5" />}
                   items={[
                     [
-                      "Submitted At",
+                      copy.common.submittedAt,
                       application.submitted_at
                         ? new Date(application.submitted_at).toLocaleString()
                         : "-",
@@ -587,7 +589,7 @@ function AdminEducationApplicationDetailPage() {
                           onClick={handleAssignToMe}
                           className="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-emerald-900"
                         >
-                          Assign to Me
+                          {copy.common.assignToMe}
                         </button>
 
                         <button
@@ -602,7 +604,7 @@ function AdminEducationApplicationDetailPage() {
 
                     <label className="grid gap-2">
                       <span className="text-sm font-black text-slate-700">
-                        Approved Amount
+                        {copy.common.approvedAmount}
                       </span>
 
                       <input
@@ -657,7 +659,7 @@ function AdminEducationApplicationDetailPage() {
                         ) : (
                           <Save className="mr-2 h-4 w-4" />
                         )}
-                        Save Review
+                        {copy.common.saveReview}
                       </button>
                     </div>
                   </div>
@@ -676,6 +678,8 @@ function SummaryCard({
 }: {
   application: EducationApplicationDetail;
 }) {
+  const { copy } = useAdminProgramsCopy('education')
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-start">
@@ -699,7 +703,7 @@ function SummaryCard({
           </h2>
 
           <p className="mt-2 font-semibold text-slate-500">
-            Membership No: {application.membership_no}
+            {copy.common.membershipNo}: {application.membership_no}
           </p>
           <p className="mt-1 text-sm font-semibold text-slate-500">
             Reviewer: {application.assigned_admin_id ? "Assigned" : "Unassigned"}
@@ -712,7 +716,7 @@ function SummaryCard({
               ? `Rs. ${Number(application.approved_amount)}`
               : "Amount Pending"}
           </p>
-          <p className="mt-1">Approved Amount</p>
+          <p className="mt-1">{copy.common.approvedAmount}</p>
         </div>
       </div>
 
@@ -740,6 +744,8 @@ function DocumentsReviewSection({
     adminNote: string;
   }) => Promise<void>;
 }) {
+  const { copy } = useAdminProgramsCopy('education')
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
@@ -749,7 +755,7 @@ function DocumentsReviewSection({
 
         <div>
           <h2 className="text-2xl font-black text-slate-950">
-            Document Verification
+            {copy.common.documentVerification}
           </h2>
           <p className="mt-1 text-sm text-slate-600">
             Uploaded documents open karen, verify/reject karen, aur admin note
@@ -794,6 +800,8 @@ function DocumentReviewCard({
     adminNote: string;
   }) => Promise<void>;
 }) {
+  const { copy } = useAdminProgramsCopy('education')
+
   const [nextStatus, setNextStatus] = useState<DocumentStatus>(
     normalizeDocumentStatus(document.verification_status),
   );
@@ -869,7 +877,7 @@ function DocumentReviewCard({
             <textarea
               value={adminNote}
               onChange={(event) => setAdminNote(event.target.value)}
-              placeholder="Document note..."
+              placeholder={copy.common.documentNote}
               rows={3}
               className="rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold outline-none transition focus:border-amber-500"
             />

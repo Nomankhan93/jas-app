@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { type FormEvent, useEffect, useState } from 'react'
 import { supabase } from '../../../../lib/supabase/client'
+import { useAdminProgramsCopy } from '../../../../lib/admin-programs-i18n'
 import {
   WELFARE_DOCUMENT_BUCKET,
   formatWelfareFileSize,
@@ -83,6 +84,7 @@ type UserRoleRow = { role: string }
 type AssignmentRow = { id: string; can_view: boolean | null }
 
 function AdminWelfareApplicationDetailPage() {
+  const { copy } = useAdminProgramsCopy('welfare')
   const { id } = Route.useParams()
   const [application, setApplication] = useState<WelfareApplicationDetail | null>(null)
   const [documents, setDocuments] = useState<WelfareDocumentRecord[]>([])
@@ -349,17 +351,17 @@ function AdminWelfareApplicationDetailPage() {
           </style>
         </head>
         <body>
-          <h1>JAS Welfare Case Close Report</h1>
+          <h1>JAS ${sanitizeWelfareReportText(copy.program.detailBadge)} Close Report</h1>
           <p class="muted">${sanitizeWelfareReportText(application.application_no || '-')}</p>
           <div class="grid">
-            <div class="box"><div class="label">Applicant</div><div class="value">${sanitizeWelfareReportText(application.applicant_name)}</div></div>
-            <div class="box"><div class="label">Membership No</div><div class="value">${sanitizeWelfareReportText(application.membership_no)}</div></div>
-            <div class="box"><div class="label">Case Type</div><div class="value">${sanitizeWelfareReportText(details.case_type)}</div></div>
+            <div class="box"><div class="label">${sanitizeWelfareReportText(copy.program.applicantName)}</div><div class="value">${sanitizeWelfareReportText(application.applicant_name)}</div></div>
+            <div class="box"><div class="label">${sanitizeWelfareReportText(copy.common.membershipNo)}</div><div class="value">${sanitizeWelfareReportText(application.membership_no)}</div></div>
+            <div class="box"><div class="label">${sanitizeWelfareReportText(copy.program.caseType)}</div><div class="value">${sanitizeWelfareReportText(details.case_type)}</div></div>
             <div class="box"><div class="label">Status</div><div class="value">${sanitizeWelfareReportText(getWelfareStatusLabel(application.status))}</div></div>
-            <div class="box"><div class="label">Required Amount</div><div class="value">${sanitizeWelfareReportText(formatWelfareMoney(details.required_amount))}</div></div>
-            <div class="box"><div class="label">Approved Amount</div><div class="value">${sanitizeWelfareReportText(application.approved_amount ? formatWelfareMoney(application.approved_amount) : '-')}</div></div>
+            <div class="box"><div class="label">${sanitizeWelfareReportText(copy.common.requiredAmount)}</div><div class="value">${sanitizeWelfareReportText(formatWelfareMoney(details.required_amount))}</div></div>
+            <div class="box"><div class="label">${sanitizeWelfareReportText(copy.common.approvedAmount)}</div><div class="value">${sanitizeWelfareReportText(application.approved_amount ? formatWelfareMoney(application.approved_amount) : '-')}</div></div>
             <div class="box"><div class="label">Fund Status</div><div class="value">${sanitizeWelfareReportText(getWelfarePaymentStatusLabel(details.payment_status))}</div></div>
-            <div class="box"><div class="label">Committee Decision</div><div class="value">${sanitizeWelfareReportText(getWelfareCommitteeDecisionLabel(details.welfare_committee_decision))}</div></div>
+            <div class="box"><div class="label">${sanitizeWelfareReportText(copy.common.committeeDecision)}</div><div class="value">${sanitizeWelfareReportText(getWelfareCommitteeDecisionLabel(details.welfare_committee_decision))}</div></div>
           </div>
           <div class="section"><h2>Case Reason</h2><pre>${sanitizeWelfareReportText(details.reason)}</pre></div>
           <div class="section"><h2>Verifier Remarks</h2><pre>${sanitizeWelfareReportText(details.verifier_remarks)}</pre></div>
@@ -384,9 +386,9 @@ function AdminWelfareApplicationDetailPage() {
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-12">
         <div className="mx-auto max-w-3xl rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-900">
-          <h1 className="text-2xl font-black">Unable to load welfare case</h1>
+          <h1 className="text-2xl font-black">{copy.common.unableToLoad}</h1>
           <p className="mt-3 font-semibold">{message}</p>
-          <Link to="/admin/programs/welfare" className="mt-5 inline-flex rounded-xl bg-slate-950 px-5 py-3 font-black text-white no-underline">Back</Link>
+          <Link to="/admin/programs/welfare" className="mt-5 inline-flex rounded-xl bg-slate-950 px-5 py-3 font-black text-white no-underline">{copy.common.back}</Link>
         </div>
       </main>
     )
@@ -400,10 +402,10 @@ function AdminWelfareApplicationDetailPage() {
     <main className="min-h-screen bg-slate-50">
       <section className="bg-slate-950 px-4 py-12 text-white md:py-16">
         <div className="mx-auto max-w-7xl">
-          <Link to="/admin/programs/welfare" className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Welfare Admin</Link>
+          <Link to="/admin/programs/welfare" className="inline-flex items-center text-sm font-bold text-amber-300 no-underline hover:text-amber-200"><ArrowLeft className="mr-2 h-4 w-4" /> {copy.program.detailBack}</Link>
           <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold"><HandHeart className="h-4 w-4 text-amber-300" /> {application.application_no || 'Welfare Case'}</div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold"><HandHeart className="h-4 w-4 text-amber-300" /> {application.application_no || copy.program.detailBadge}</div>
               <h1 className="mt-5 text-4xl font-black md:text-6xl">{application.applicant_name}</h1>
               <p className="mt-3 text-white/70">{application.district || '-'} / {application.taluka || '-'} • {application.phone}</p>
             </div>
@@ -419,23 +421,23 @@ function AdminWelfareApplicationDetailPage() {
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1fr_420px]">
           <form onSubmit={saveReview} className="space-y-6">
-            <Panel title="Case Summary">
+            <Panel title={copy.program.caseSummary}>
               <InfoGrid rows={[
-                ['Applicant', application.applicant_name],
-                ['CNIC', application.applicant_cnic || '-'],
-                ['Membership No', application.membership_no],
-                ['Relationship', application.relationship_to_member],
-                ['Case Type', details.case_type || '-'],
-                ['Required Amount', formatWelfareMoney(details.required_amount)],
+                [copy.program.applicantName, application.applicant_name],
+                [copy.common.cnic, application.applicant_cnic || '-'],
+                [copy.common.membershipNo, application.membership_no],
+                [copy.common.relationship, application.relationship_to_member],
+                [copy.program.caseType, details.case_type || '-'],
+                [copy.common.requiredAmount, formatWelfareMoney(details.required_amount)],
                 ['Family Members', details.family_members || '-'],
                 ['Monthly Income', details.monthly_income || '-'],
               ]} />
-              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700"><strong>Reason:</strong> {details.reason || '-'}</div>
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm leading-7 text-slate-700"><strong>{copy.program.reason}:</strong> {details.reason || '-'}</div>
             </Panel>
 
-            <Panel title="Review & Approval">
+            <Panel title={copy.program.reviewApproval}>
               <div className="grid gap-4 md:grid-cols-2">
-                <Select label="Case Status" value={form.status} onChange={(value) => updateForm('status', value as WelfareStatus)} options={[
+                <Select label={copy.common.caseStatus} value={form.status} onChange={(value) => updateForm('status', value as WelfareStatus)} options={[
                   ['submitted', 'New'],
                   ['under_review', 'Under Verification'],
                   ['need_more_info', 'Need More Info'],
@@ -444,8 +446,8 @@ function AdminWelfareApplicationDetailPage() {
                   ['paid_completed', 'Fund Released'],
                   ['completed', 'Closed'],
                 ]} />
-                <Input label="Approved Amount" value={form.approvedAmount} onChange={(value) => updateForm('approvedAmount', value)} />
-                <Select label="Committee Decision" value={form.committeeDecision} onChange={(value) => updateForm('committeeDecision', value)} options={welfareCommitteeDecisionOptions.map((item) => [item.value, item.label])} />
+                <Input label={copy.common.approvedAmount} value={form.approvedAmount} onChange={(value) => updateForm('approvedAmount', value)} />
+                <Select label={copy.common.committeeDecision} value={form.committeeDecision} onChange={(value) => updateForm('committeeDecision', value)} options={welfareCommitteeDecisionOptions.map((item) => [item.value, item.label])} />
                 <Select label="Fund Status" value={form.paymentStatus} onChange={(value) => updateForm('paymentStatus', value)} options={welfarePaymentStatusOptions.map((item) => [item.value, item.label])} />
                 <Input label="Committee Members" value={form.committeeMembers} onChange={(value) => updateForm('committeeMembers', value)} />
                 <Input label="Payment Reference" value={form.paymentReference} onChange={(value) => updateForm('paymentReference', value)} />
@@ -459,7 +461,7 @@ function AdminWelfareApplicationDetailPage() {
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button type="button" onClick={printCloseReport} className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-700"><Printer className="mr-2 h-4 w-4" /> Print Close Report</button>
                 <button type="submit" disabled={saving} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-6 py-3 font-black no-underline transition disabled:opacity-60">
-                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Review
+                  {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} {copy.common.saveReview}
                 </button>
               </div>
             </Panel>
@@ -469,12 +471,12 @@ function AdminWelfareApplicationDetailPage() {
             <Panel title="Reviewer">
               <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700"><strong>Assigned:</strong> {application.assigned_admin_id ? 'Reviewer assigned' : 'Unassigned'}</div>
               <div className="mt-4 grid gap-3">
-                <button type="button" onClick={assignToMe} disabled={assigning} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 font-black no-underline transition disabled:opacity-60"><User className="mr-2 h-4 w-4" /> Assign to Me</button>
-                <button type="button" onClick={clearReviewer} disabled={assigning} className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-700"><XCircle className="mr-2 h-4 w-4" /> Clear Reviewer</button>
+                <button type="button" onClick={assignToMe} disabled={assigning} className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 font-black no-underline transition disabled:opacity-60"><User className="mr-2 h-4 w-4" /> {copy.common.assignToMe}</button>
+                <button type="button" onClick={clearReviewer} disabled={assigning} className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-black text-slate-700"><XCircle className="mr-2 h-4 w-4" /> {copy.common.clearReviewer}</button>
               </div>
             </Panel>
 
-            <Panel title="Documents">
+            <Panel title={copy.common.documents}>
               <div className="grid gap-3">
                 {documents.length === 0 ? <p className="text-sm text-slate-600">No documents uploaded.</p> : null}
                 {documents.map((document) => <DocumentReviewCard key={document.id} document={document} onOpen={() => openDocument(document)} onUpdate={(status, note) => updateDocumentStatus(document, status, note)} />)}

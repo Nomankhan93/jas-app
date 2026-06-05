@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase/client'
+import { useAdminProgramsCopy } from '../../../lib/admin-programs-i18n'
 import {
   getHealthCasePriorityClass,
   getHealthCasePriorityLabel,
@@ -98,6 +99,7 @@ function AdminHealthRoute() {
 }
 
 function AdminHealthApplicationsPage() {
+  const { copy } = useAdminProgramsCopy('health')
   const [applications, setApplications] = useState<HealthApplicationListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
@@ -315,18 +317,18 @@ function AdminHealthApplicationsPage() {
             to="/admin"
             className="inline-flex items-center text-sm font-bold text-red-300 no-underline hover:text-red-200"
           >
-            ← Back to Admin
+            {copy.common.backToAdmin}
           </Link>
 
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold">
                 <HeartPulse className="h-4 w-4 text-red-300" />
-                Health Admin
+                {copy.program.adminBadge}
               </div>
 
               <h1 className="mt-5 text-4xl font-black md:text-6xl">
-                Health Applications
+                {copy.program.listTitle}
               </h1>
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-white/70">
@@ -344,7 +346,7 @@ function AdminHealthApplicationsPage() {
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/10 px-5 py-3 font-black text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                {copy.common.exportCsv}
               </button>
 
               <button
@@ -359,7 +361,7 @@ function AdminHealthApplicationsPage() {
                 ) : (
                   <RefreshCw className="mr-2 h-4 w-4" />
                 )}
-                Refresh
+                {copy.common.refresh}
               </button>
             </div>
           </div>
@@ -379,12 +381,12 @@ function AdminHealthApplicationsPage() {
       <section className="px-4 py-10 md:py-14">
         <div className="mx-auto max-w-7xl space-y-8">
           <div className="grid gap-4 md:grid-cols-7">
-            <StatCard title="Total" value={stats.total} icon={<ShieldCheck className="h-5 w-5" />} />
-            <StatCard title="Filtered" value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
-            <StatCard title="Emergency" value={stats.emergency} icon={<AlertTriangle className="h-5 w-5" />} />
+            <StatCard title={copy.common.total} value={stats.total} icon={<ShieldCheck className="h-5 w-5" />} />
+            <StatCard title={copy.common.filtered} value={stats.filtered} icon={<Filter className="h-5 w-5" />} />
+            <StatCard title={copy.common.emergency} value={stats.emergency} icon={<AlertTriangle className="h-5 w-5" />} />
             <StatCard title="Committee Pending" value={stats.committeePending} icon={<ShieldAlert className="h-5 w-5" />} />
-            <StatCard title="Under Review" value={stats.underReview} icon={<Stethoscope className="h-5 w-5" />} />
-            <StatCard title="Approved" value={stats.approved} icon={<UserCheck className="h-5 w-5" />} />
+            <StatCard title={copy.common.underReview} value={stats.underReview} icon={<Stethoscope className="h-5 w-5" />} />
+            <StatCard title={copy.common.approved} value={stats.approved} icon={<UserCheck className="h-5 w-5" />} />
             <StatCard title="Completed" value={stats.completed} icon={<BadgeIndianRupee className="h-5 w-5" />} />
           </div>
 
@@ -408,7 +410,7 @@ function AdminHealthApplicationsPage() {
                 {statusOptions.map((status) => (
                   <option key={status} value={status}>
                     {status === 'all'
-                      ? 'All Status'
+                      ? copy.common.allStatuses
                       : getHealthStatusLabel(status)}
                   </option>
                 ))}
@@ -448,14 +450,14 @@ function AdminHealthApplicationsPage() {
               </SelectBox>
 
               <SelectBox value={districtFilter} onChange={setDistrictFilter}>
-                <option value="all">All Districts</option>
+                <option value="all">{copy.common.allDistricts}</option>
                 {districtOptions.map((district) => (
                   <option key={district.value} value={district.value}>{district.label}</option>
                 ))}
               </SelectBox>
 
               <SelectBox value={talukaFilter} onChange={setTalukaFilter}>
-                <option value="all">All Talukas</option>
+                <option value="all">{copy.common.allTalukas}</option>
                 {talukaOptions.map((taluka) => (
                   <option key={taluka.value} value={taluka.value}>{taluka.label}</option>
                 ))}
@@ -547,6 +549,7 @@ function SelectBox({
 }
 
 function HealthApplicationListCard({ item }: { item: HealthApplicationListItem }) {
+  const { copy } = useAdminProgramsCopy('health')
   const details = item.details || {}
 
   return (
@@ -629,7 +632,7 @@ function HealthApplicationListCard({ item }: { item: HealthApplicationListItem }
             params={{ id: item.id }}
             className="jas-dark-action-link inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-black no-underline transition"
           >
-            Review
+            {copy.common.review}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </div>

@@ -9,6 +9,7 @@ import {
   FileHeart,
   HeartPulse,
   Loader2,
+  Printer,
   Save,
   ShieldCheck,
   Stethoscope,
@@ -17,16 +18,25 @@ import {
 } from 'lucide-react'
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../../lib/supabase/client'
+import { useAdminProgramsCopy } from '../../../../lib/admin-programs-i18n'
 import {
   HEALTH_DOCUMENT_BUCKET,
   formatHealthFileSize,
+  formatHealthMoney,
+  getHealthCasePriorityClass,
+  getHealthCasePriorityLabel,
+  getHealthCommitteeDecisionClass,
+  getHealthCommitteeDecisionLabel,
   getHealthDocumentLabel,
   getHealthDocumentStatusClass,
   getHealthDocumentStatusLabel,
+  getHealthPaymentStatusLabel,
   getHealthStatusClass,
   getHealthStatusLabel,
+  healthCommitteeDecisionOptions,
   healthPaymentStatusOptions,
   isHealthEmergency,
+  sanitizeHealthReportText,
   type HealthApplicationDetails,
   type HealthDocumentRecord,
   type HealthStatus,
@@ -69,6 +79,10 @@ type ReviewFormState = {
   approvedAmount: string
   adminRemarks: string
   medicalCommitteeRemarks: string
+  casePriority: string
+  committeeDecision: string
+  committeeMembers: string
+  committeeRemarks: string
   paymentStatus: string
   followUpNotes: string
   caseCloseReport: string
@@ -81,6 +95,7 @@ type DocumentVerificationStatus =
   | 'needs_reupload'
 
 function AdminHealthApplicationDetailPage() {
+  const { copy } = useAdminProgramsCopy('health')
   const { id } = Route.useParams()
   const navigate = useNavigate()
 
@@ -93,6 +108,10 @@ function AdminHealthApplicationDetailPage() {
     approvedAmount: '',
     adminRemarks: '',
     medicalCommitteeRemarks: '',
+    casePriority: 'normal',
+    committeeDecision: 'pending',
+    committeeMembers: '',
+    committeeRemarks: '',
     paymentStatus: 'not_started',
     followUpNotes: '',
     caseCloseReport: '',
@@ -158,6 +177,10 @@ function AdminHealthApplicationDetailPage() {
       approvedAmount: row.approved_amount ? String(row.approved_amount) : '',
       adminRemarks: row.admin_remarks || '',
       medicalCommitteeRemarks: row.details?.medical_committee_remarks || '',
+      casePriority: row.details?.case_priority || (row.details?.emergency ? 'emergency' : 'normal'),
+      committeeDecision: row.details?.health_committee_decision || 'pending',
+      committeeMembers: row.details?.health_committee_members || '',
+      committeeRemarks: row.details?.health_committee_remarks || '',
       paymentStatus: row.details?.payment_status || 'not_started',
       followUpNotes: row.details?.follow_up_notes || '',
       caseCloseReport: row.details?.case_close_report || '',
@@ -220,6 +243,14 @@ function AdminHealthApplicationDetailPage() {
     const mergedDetails: HealthApplicationDetails = {
       ...(application.details || {}),
       medical_committee_remarks: reviewForm.medicalCommitteeRemarks.trim(),
+      case_priority: reviewForm.casePriority,
+      health_committee_decision: reviewForm.committeeDecision,
+      health_committee_members: reviewForm.committeeMembers.trim(),
+      health_committee_remarks: reviewForm.committeeRemarks.trim(),
+      health_committee_reviewed_at:
+        reviewForm.committeeDecision && reviewForm.committeeDecision !== 'pending'
+          ? application.details?.health_committee_reviewed_at || new Date().toISOString()
+          : '',
       payment_status: reviewForm.paymentStatus,
       follow_up_notes: reviewForm.followUpNotes.trim(),
       case_close_report: reviewForm.caseCloseReport.trim(),
@@ -354,7 +385,7 @@ function AdminHealthApplicationDetailPage() {
             className="inline-flex items-center text-sm font-bold text-red-300 transition hover:text-red-200"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Health Admin
+            {copy.program.detailBack}
           </button>
 
           <div className="mt-6 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
@@ -375,13 +406,24 @@ function AdminHealthApplicationDetailPage() {
             </div>
 
             {application ? (
-              <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <button
+                  type="button"
+                  onClick={() => printHealthCaseReport(application, details, documents)}
+                  className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20"
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print Close Report
+                </button>
+
+                <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm">
                 <p className="font-black text-white">
                   {application.application_no || 'Application'}
                 </p>
                 <p className="mt-1 text-white/70">
                   Submitted: {new Date(application.created_at).toLocaleDateString()}
                 </p>
+                </div>
               </div>
             ) : null}
           </div>
@@ -396,23 +438,25 @@ function AdminHealthApplicationDetailPage() {
             </div>
           ) : !application ? (
             <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center text-red-800 shadow-sm">
-              <h2 className="text-2xl font-black">Application not available</h2>
+              <h2 className="text-2xl font-black">{copy.common.applicationNotAvailable}</h2>
               <p className="mt-3 font-semibold">{message}</p>
 
               <Link
                 to="/admin/programs/health"
                 className="mt-6 inline-flex items-center justify-center rounded-xl bg-red-700 px-5 py-3 font-black text-white no-underline"
               >
-                Back to Health Admin
+                {copy.program.detailBack}
               </Link>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
               <div className="space-y-6">
+                <PrivacyNotice />
+
                 <SummaryCard application={application} details={details} />
 
                 <InfoSection
-                  title="Patient / Applicant Details"
+                  title={copy.program.patientDetails}
                   icon={<User className="h-5 w-5" />}
                   items={[
                     ['Patient Name', application.applicant_name],
@@ -436,13 +480,33 @@ function AdminHealthApplicationDetailPage() {
                   items={[
                     ['Disease / Condition', details.disease_name || '-'],
                     ['Treatment Type', details.treatment_type || '-'],
-                    ['Hospital Name', details.hospital_name || '-'],
+                    [`${copy.program.hospital} Name`, details.hospital_name || '-'],
                     ['Doctor Name', details.doctor_name || '-'],
                     ['Doctor Contact', details.doctor_contact || '-'],
                     ['Estimated Cost', details.estimated_cost ? `Rs. ${details.estimated_cost}` : '-'],
                     ['Required Support', details.required_amount ? `Rs. ${details.required_amount}` : '-'],
                     ['Emergency', isHealthEmergency(details) ? 'Yes' : 'No'],
+                    ['Case Priority', getHealthCasePriorityLabel(details)],
                     ['Case Summary', details.case_summary || '-'],
+                  ]}
+                />
+
+                <InfoSection
+                  title="Health Committee Review"
+                  icon={<ShieldCheck className="h-5 w-5" />}
+                  items={[
+                    [
+                      'Committee Decision',
+                      getHealthCommitteeDecisionLabel(details.health_committee_decision),
+                    ],
+                    ['Committee Members', details.health_committee_members || '-'],
+                    [
+                      'Committee Reviewed At',
+                      details.health_committee_reviewed_at
+                        ? new Date(details.health_committee_reviewed_at).toLocaleString()
+                        : '-',
+                    ],
+                    ['Committee Remarks', details.health_committee_remarks || '-'],
                   ]}
                 />
 
@@ -479,6 +543,120 @@ function AdminHealthApplicationDetailPage() {
   )
 }
 
+
+function PrivacyNotice() {
+  return (
+    <section className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm leading-7 text-red-900 shadow-sm">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-1 h-5 w-5 flex-shrink-0" />
+        <div>
+          <h2 className="font-black">Medical Privacy & Restricted Access</h2>
+          <p className="mt-1">
+            Is case mein sensitive medical information ho sakti hai. Documents,
+            disease details, committee notes aur close report sirf authorized
+            health committee/admin review ke liye use karen.
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function printHealthCaseReport(
+  application: HealthApplicationDetail,
+  details: HealthApplicationDetails,
+  documents: HealthDocumentRecord[],
+) {
+  const rows: Array<[string, string]> = [
+    ['Case No', application.application_no || application.id],
+    ['Patient Name', application.applicant_name],
+    ['Membership No', application.membership_no],
+    ['District / Taluka', `${application.district || '-'} / ${application.taluka || '-'}`],
+    ['Status', getHealthStatusLabel(application.status)],
+    ['Priority', getHealthCasePriorityLabel(details)],
+    ['Emergency', isHealthEmergency(details) ? 'Yes' : 'No'],
+    ['Disease / Condition', details.disease_name || '-'],
+    ['Treatment Type', details.treatment_type || '-'],
+    ['Hospital', details.hospital_name || '-'],
+    ['Doctor', details.doctor_name || '-'],
+    ['Estimated Cost', formatHealthMoney(details.estimated_cost)],
+    ['Required Support', formatHealthMoney(details.required_amount)],
+    ['Approved Amount', application.approved_amount ? formatHealthMoney(application.approved_amount) : 'Pending'],
+    ['Payment Status', getHealthPaymentStatusLabel(details.payment_status)],
+    ['Committee Decision', getHealthCommitteeDecisionLabel(details.health_committee_decision)],
+    ['Committee Members', details.health_committee_members || '-'],
+    ['Committee Remarks', details.health_committee_remarks || details.medical_committee_remarks || '-'],
+    ['Follow-up Notes', details.follow_up_notes || '-'],
+    ['Case Close Report', details.case_close_report || '-'],
+  ]
+
+  const documentRows = documents
+    .map(
+      (document) => `
+        <tr>
+          <td>${sanitizeHealthReportText(getHealthDocumentLabel(document.document_type))}</td>
+          <td>${sanitizeHealthReportText(getHealthDocumentStatusLabel(document.verification_status))}</td>
+          <td>${sanitizeHealthReportText(document.admin_note || '-')}</td>
+        </tr>
+      `,
+    )
+    .join('')
+
+  const html = `
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Health Case Report - ${sanitizeHealthReportText(application.application_no || application.id)}</title>
+        <style>
+          body { font-family: Arial, sans-serif; color: #0f172a; padding: 32px; }
+          h1 { margin: 0 0 8px; }
+          .muted { color: #64748b; margin-bottom: 24px; }
+          .privacy { border: 1px solid #fecaca; background: #fef2f2; color: #7f1d1d; padding: 14px; border-radius: 12px; margin-bottom: 24px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+          th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; vertical-align: top; }
+          th { background: #f8fafc; }
+          .section { margin-top: 28px; }
+          @media print { button { display: none; } body { padding: 16px; } }
+        </style>
+      </head>
+      <body>
+        <button onclick="window.print()">Print / Save PDF</button>
+        <h1>Jatt Alliance Sindh — Health Case Report</h1>
+        <div class="muted">Generated: ${sanitizeHealthReportText(new Date().toLocaleString())}</div>
+        <div class="privacy"><strong>Restricted:</strong> This report contains sensitive medical information. Share only with authorized JAS health committee/admin users.</div>
+        <table>
+          <tbody>
+            ${rows
+              .map(
+                ([label, value]) => `
+                  <tr>
+                    <th>${sanitizeHealthReportText(label)}</th>
+                    <td>${sanitizeHealthReportText(value)}</td>
+                  </tr>
+                `,
+              )
+              .join('')}
+          </tbody>
+        </table>
+        <div class="section">
+          <h2>Document Verification</h2>
+          <table>
+            <thead><tr><th>Document</th><th>Status</th><th>Admin Note</th></tr></thead>
+            <tbody>${documentRows || '<tr><td colspan="3">No documents uploaded.</td></tr>'}</tbody>
+          </table>
+        </div>
+      </body>
+    </html>
+  `
+
+  const reportWindow = window.open('', '_blank', 'noopener,noreferrer')
+  if (!reportWindow) return
+
+  reportWindow.document.write(html)
+  reportWindow.document.close()
+}
+
 function SummaryCard({
   application,
   details,
@@ -486,6 +664,8 @@ function SummaryCard({
   application: HealthApplicationDetail
   details: HealthApplicationDetails
 }) {
+  const { copy } = useAdminProgramsCopy('health')
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center gap-3">
@@ -499,19 +679,26 @@ function SummaryCard({
         >
           {getHealthStatusLabel(application.status)}
         </span>
-        {isHealthEmergency(details) ? (
-          <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-800">
+        <span
+          className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-black ${getHealthCasePriorityClass(details)}`}
+        >
+          {isHealthEmergency(details) ? (
             <AlertTriangle className="mr-1 h-3.5 w-3.5" />
-            Emergency
-          </span>
-        ) : null}
+          ) : null}
+          {getHealthCasePriorityLabel(details)}
+        </span>
+        <span
+          className={`rounded-full border px-3 py-1 text-xs font-black ${getHealthCommitteeDecisionClass(details.health_committee_decision)}`}
+        >
+          {getHealthCommitteeDecisionLabel(details.health_committee_decision)}
+        </span>
       </div>
 
       <h2 className="mt-4 text-3xl font-black text-slate-950">
         {application.applicant_name}
       </h2>
       <p className="mt-2 text-slate-600">
-        Membership No: <strong>{application.membership_no}</strong>
+        {copy.common.membershipNo}: <strong>{application.membership_no}</strong>
       </p>
     </section>
   )
@@ -530,6 +717,8 @@ function ReviewerCard({
   onAssignToMe: () => void
   onClearReviewer: () => void
 }) {
+  const { copy } = useAdminProgramsCopy('health')
+
   const assignedToMe =
     currentUserId && application.assigned_admin_id === currentUserId
 
@@ -561,7 +750,7 @@ function ReviewerCard({
           className="inline-flex items-center justify-center rounded-xl bg-red-500 px-4 py-3 text-sm font-black text-slate-950 transition hover:bg-red-400 disabled:opacity-60"
         >
           {assigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Assign to Me
+          {copy.common.assignToMe}
         </button>
 
         <button
@@ -593,6 +782,8 @@ function ReviewForm({
   ) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const { copy } = useAdminProgramsCopy('health')
+
   return (
     <form
       onSubmit={onSubmit}
@@ -645,7 +836,35 @@ function ReviewForm({
         </label>
 
         <TextareaField label="Admin Remarks" value={form.adminRemarks} onChange={(value) => onChange('adminRemarks', value)} />
+        <label className="grid gap-2 text-sm font-black text-slate-700">
+          Case Priority
+          <select
+            value={form.casePriority}
+            onChange={(event) => onChange('casePriority', event.target.value)}
+            className="rounded-xl border border-slate-300 px-4 py-3 font-semibold outline-none focus:border-red-500"
+          >
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
+            <option value="emergency">Emergency</option>
+          </select>
+        </label>
+
+        <label className="grid gap-2 text-sm font-black text-slate-700">
+          Health Committee Decision
+          <select
+            value={form.committeeDecision}
+            onChange={(event) => onChange('committeeDecision', event.target.value)}
+            className="rounded-xl border border-slate-300 px-4 py-3 font-semibold outline-none focus:border-red-500"
+          >
+            {healthCommitteeDecisionOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <TextareaField label="Committee Members / Reviewers" value={form.committeeMembers} onChange={(value) => onChange('committeeMembers', value)} />
         <TextareaField label="Medical Committee Remarks" value={form.medicalCommitteeRemarks} onChange={(value) => onChange('medicalCommitteeRemarks', value)} />
+        <TextareaField label="Committee Decision Notes" value={form.committeeRemarks} onChange={(value) => onChange('committeeRemarks', value)} />
         <TextareaField label="Follow-up Notes" value={form.followUpNotes} onChange={(value) => onChange('followUpNotes', value)} />
         <TextareaField label="Case Close Report" value={form.caseCloseReport} onChange={(value) => onChange('caseCloseReport', value)} />
       </div>
@@ -666,7 +885,7 @@ function ReviewForm({
         ) : (
           <Save className="mr-2 h-4 w-4" />
         )}
-        Save Review
+        {copy.common.saveReview}
       </button>
     </form>
   )
@@ -743,6 +962,8 @@ function DocumentsReviewSection({
     note?: string
   }) => void
 }) {
+  const { copy } = useAdminProgramsCopy('health')
+
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
@@ -750,7 +971,7 @@ function DocumentsReviewSection({
           <FileHeart className="h-5 w-5" />
         </div>
         <h2 className="text-2xl font-black text-slate-950">
-          Medical Document Verification
+          Medical {copy.common.documentVerification}
         </h2>
       </div>
 
