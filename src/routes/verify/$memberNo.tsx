@@ -457,7 +457,7 @@ function VerifyMemberPage() {
                   <img
                     src={result.photoSignedUrl}
                     alt={`${result.member.full_name} profile photo`}
-                    className="h-36 w-36 rounded-3xl object-cover shadow-sm ring-1 ring-slate-200"
+                    className="h-36 w-36 rounded-3xl object-cover object-top shadow-sm ring-1 ring-slate-200"
                   />
                 ) : (
                   <div className="flex h-36 w-36 items-center justify-center rounded-3xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">

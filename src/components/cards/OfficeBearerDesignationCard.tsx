@@ -263,7 +263,7 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
           <div className="space-y-4">
             <div className="relative h-[225px] w-[225px] overflow-hidden rounded-[32px] border-[6px] border-white bg-white shadow-[0_22px_55px_rgba(0,0,0,0.33)]">
               {card.photoSignedUrl ? (
-                <img src={card.photoSignedUrl} alt={memberName} className="h-full w-full object-cover" draggable={false} />
+                <img src={card.photoSignedUrl} alt={memberName} className="h-full w-full object-cover object-top" draggable={false} />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#08251c,#0f5138)] text-[54px] font-black text-[#f6d56f]">
                   {getInitials(memberName)}

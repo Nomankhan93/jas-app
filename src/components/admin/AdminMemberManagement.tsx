@@ -321,7 +321,7 @@ export function AdminMemberManagement({
                   <MemberPhoto
                     src={photoUrls[member.id]}
                     alt={member.full_name}
-                    className="h-12 w-12 rounded-xl object-cover ring-1 ring-slate-200"
+                    className="h-12 w-12 rounded-xl object-cover object-top ring-1 ring-slate-200"
                     fallbackClassName="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
                     fallbackText={<ImageOff className="h-4 w-4" />}
                   />
@@ -415,7 +415,7 @@ function MobileMemberCard({
         <MemberPhoto
           src={photoUrl}
           alt={member.full_name}
-          className="h-14 w-14 shrink-0 rounded-xl object-cover ring-1 ring-slate-200"
+          className="h-14 w-14 shrink-0 rounded-xl object-cover object-top ring-1 ring-slate-200"
           fallbackClassName="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
           fallbackText={<ImageOff className="h-4 w-4" />}
         />

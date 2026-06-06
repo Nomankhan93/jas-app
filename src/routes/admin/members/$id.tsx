@@ -1270,7 +1270,7 @@ function AdminMemberEditPanel({
               <img
                 src={photoPreview}
                 alt="Profile preview"
-                className="aspect-[4/5] w-full object-cover"
+                className="aspect-[4/5] w-full object-contain bg-slate-50"
               />
             ) : (
               <div className="flex aspect-[4/5] items-center justify-center text-slate-400">
@@ -1538,7 +1538,7 @@ function MemberPhoto({ src, alt }: { src: string | null; alt: string }) {
     <img
       src={src}
       alt={`${alt} profile photo`}
-      className="aspect-square w-full rounded-2xl object-cover ring-1 ring-slate-200"
+      className="aspect-square w-full rounded-2xl object-contain bg-slate-50 ring-1 ring-slate-200"
     />
   )
 }

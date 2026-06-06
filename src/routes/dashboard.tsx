@@ -399,7 +399,7 @@ function DashboardPage() {
                     <img
                       src={data.photoSignedUrl}
                       alt={member.full_name}
-                      className="h-20 w-20 rounded-3xl border-2 border-amber-300 object-cover"
+                      className="h-20 w-20 rounded-3xl border-2 border-amber-300 object-cover object-top"
                     />
                   ) : (
                     <div className="flex h-20 w-20 items-center justify-center rounded-3xl border-2 border-amber-300 bg-white/10">

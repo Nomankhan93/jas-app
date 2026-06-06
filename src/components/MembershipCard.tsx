@@ -114,7 +114,7 @@ function CardFront({
                 <img
                   src={photoUrl}
                   alt={`${member.full_name} profile photo`}
-                  className="h-[250px] w-[250px] rounded-[1.9rem] border-4 border-white object-cover"
+                  className="h-[250px] w-[250px] rounded-[1.9rem] border-4 border-white object-cover object-top"
                   draggable={false}
                 />
               ) : (
@@ -412,7 +412,7 @@ function LogoMark({ logoUrl }: { logoUrl: string | null }) {
     <img
       src={logoUrl}
       alt="Jatt Alliance Sindh logo"
-      className="mt-1 h-24 w-24 rounded-full border-2 border-yellow-400 bg-white object-cover shadow-xl"
+      className="mt-1 h-24 w-24 rounded-full border-2 border-yellow-400 bg-white object-cover object-top shadow-xl"
       draggable={false}
     />
   ) : (
