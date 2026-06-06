@@ -2915,3 +2915,27 @@ button.admin-quick-action {
   }
 }
 
+
+/* Admin pending membership edit form */
+.admin-edit-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240);
+  background: #ffffff;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-edit-input:focus {
+  border-color: rgb(16 185 129);
+  box-shadow: 0 0 0 4px rgb(209 250 229);
+}
+
+.admin-edit-input[aria-invalid='true'] {
+  border-color: rgb(248 113 113);
+  background: rgb(254 242 242);
+}

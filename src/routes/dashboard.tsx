@@ -778,6 +778,8 @@ function MembershipFeePanel({ payment }: { payment: MembershipPayment | null }) 
 
 function QuickActions({ member }: { member: Member }) {
   const { t } = useI18n()
+  const canEditApplication =
+    member.status === 'pending' || member.status === 'rejected'
 
   return (
     <section className="dashboard-quick-actions rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -788,6 +790,10 @@ function QuickActions({ member }: { member: Member }) {
       <div className="mt-5 grid gap-3">
         {member.status === 'approved' ? (
           <>
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold leading-6 text-emerald-800">
+              {t('dashboard.applicationLocked')}
+            </div>
+
             <Link to="/card" className="primary-btn w-full">
               <CreditCard className="h-4 w-4" />
               {t('dashboard.openDigitalCard')}
@@ -800,6 +806,17 @@ function QuickActions({ member }: { member: Member }) {
             >
               <BadgeCheck className="h-4 w-4" />
               {t('dashboard.officeBearerCard')}
+            </Link>
+          </>
+        ) : canEditApplication ? (
+          <>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold leading-6 text-amber-900">
+              {t('dashboard.applicationEditable')}
+            </div>
+
+            <Link to="/register" className="primary-btn w-full">
+              <IdCard className="h-4 w-4" />
+              {t('dashboard.editApplication')}
             </Link>
           </>
         ) : (

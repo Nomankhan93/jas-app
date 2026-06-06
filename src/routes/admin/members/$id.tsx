@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-router'
 import { AdminShell } from '../../../components/admin/AdminShell'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ChangeEvent, FormEvent, ReactNode } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -34,8 +34,12 @@ import {
   rejectMemberAction,
 } from '../../../lib/admin/actions'
 import {
+  MEMBERSHIP_RECEIPT_ALLOWED_TYPES,
   MEMBERSHIP_RECEIPT_BUCKET,
+  MEMBERSHIP_RECEIPT_MAX_SIZE_BYTES,
+  MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL,
   type MembershipPayment,
+  createPendingMembershipPaymentPayload,
   type MembershipPaymentStatus,
   formatMembershipMoney,
   getMembershipPaymentDisplayStatus,
@@ -44,6 +48,14 @@ import {
   getMembershipPaymentStatusLabel,
 } from '../../../lib/membership-fee'
 import { supabase } from '../../../lib/supabase/client'
+import {
+  formatCnicInput,
+  formatMobileInput,
+  isPakistaniMobile,
+  normalizeMobile,
+  optionalText,
+  todayDate,
+} from '../../../lib/shared/formatters'
 import { useAdminMemberDetailCopy } from '../../../lib/admin-member-detail-i18n'
 
 export const Route = createFileRoute('/admin/members/$id')({
@@ -81,11 +93,37 @@ type Member = {
   created_at: string
 }
 
+type AdminEditFormState = {
+  fullName: string
+  fatherName: string
+  cnic: string
+  mobile: string
+  district: string
+  taluka: string
+  address: string
+  dateOfBirth: string
+  gender: string
+  education: string
+  bloodGroup: string
+  profession: string
+  casteBranch: string
+  emergencyContactName: string
+  emergencyContactRelation: string
+  emergencyContactMobile: string
+  declarationAccepted: boolean
+}
+
+type AdminEditField = keyof AdminEditFormState | 'photo'
+
+type AdminEditErrors = Partial<Record<AdminEditField, string>>
+
 type AdminAccessResult =
   | { ok: true }
   | { ok: false; redirectTo: '/login' | '/dashboard' }
 
 const MEMBER_PHOTO_BUCKET = 'member-photos'
+const MEMBER_PHOTO_MAX_SIZE_BYTES = 2 * 1024 * 1024
+const MEMBER_PHOTO_ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const SIGNED_URL_TTL_SECONDS = 60 * 60
 const RECEIPT_SIGNED_URL_TTL_SECONDS = 60 * 60
 const MIN_REJECTION_REASON_LENGTH = 10
@@ -157,6 +195,13 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editForm, setEditForm] = useState<AdminEditFormState | null>(null)
+  const [editErrors, setEditErrors] = useState<AdminEditErrors>({})
+  const [editPhoto, setEditPhoto] = useState<File | null>(null)
+  const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null)
+  const [receiptUploading, setReceiptUploading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -166,6 +211,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   )
 
   const canViewCard = member?.status === 'approved' && Boolean(member.member_no)
+  const canEditApplication =
+    member?.status === 'pending' || member?.status === 'rejected'
   const reasonTooShort =
     trimmedRejectionReason.length > 0 &&
     trimmedRejectionReason.length < MIN_REJECTION_REASON_LENGTH
@@ -211,6 +258,16 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         if (cancelledRef?.current) return
 
         setMember(safeMember)
+        setEditForm(memberToAdminEditForm(safeMember))
+        setEditErrors({})
+        setEditPhoto(null)
+        if (editPhotoPreview?.startsWith('blob:')) {
+          URL.revokeObjectURL(editPhotoPreview)
+        }
+        setEditPhotoPreview(null)
+        if (!safeMember.status || safeMember.status === 'approved') {
+          setEditMode(false)
+        }
         setPhotoUrl(signedPhotoUrl)
         setMembershipPayment(paymentResult.payment)
         setReceiptSignedUrl(paymentResult.receiptSignedUrl)
@@ -245,6 +302,318 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       cancelledRef.current = true
     }
   }, [loadMember])
+
+  useEffect(() => {
+    return () => {
+      if (editPhotoPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(editPhotoPreview)
+      }
+    }
+  }, [editPhotoPreview])
+
+  function startEditMode() {
+    if (!member || !canEditApplication) return
+
+    setEditForm(memberToAdminEditForm(member))
+    setEditErrors({})
+    setEditPhoto(null)
+    if (editPhotoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(editPhotoPreview)
+    }
+    setEditPhotoPreview(null)
+    setError('')
+    setSuccess('')
+    setEditMode(true)
+  }
+
+  function cancelEditMode() {
+    if (editPhotoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(editPhotoPreview)
+    }
+
+    setEditForm(member ? memberToAdminEditForm(member) : null)
+    setEditErrors({})
+    setEditPhoto(null)
+    setEditPhotoPreview(null)
+    setEditMode(false)
+    setError('')
+  }
+
+  function updateEditField<K extends keyof AdminEditFormState>(
+    field: K,
+    value: AdminEditFormState[K],
+  ) {
+    setEditForm((current) =>
+      current
+        ? {
+            ...current,
+            [field]: value,
+          }
+        : current,
+    )
+
+    setEditErrors((current) => {
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+
+    setError('')
+    setSuccess('')
+  }
+
+  function handleAdminPhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    setError('')
+    setSuccess('')
+    setEditPhoto(null)
+
+    if (editPhotoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(editPhotoPreview)
+      setEditPhotoPreview(null)
+    }
+
+    const file = event.target.files?.[0] ?? null
+    if (!file) return
+
+    if (!MEMBER_PHOTO_ALLOWED_TYPES.includes(file.type)) {
+      setEditErrors((current) => ({
+        ...current,
+        photo: 'Upload PNG, JPG or WebP image only.',
+      }))
+      event.target.value = ''
+      return
+    }
+
+    if (file.size > MEMBER_PHOTO_MAX_SIZE_BYTES) {
+      setEditErrors((current) => ({
+        ...current,
+        photo: 'Profile photo must be 2MB or smaller.',
+      }))
+      event.target.value = ''
+      return
+    }
+
+    setEditPhoto(file)
+    setEditPhotoPreview(URL.createObjectURL(file))
+    setEditErrors((current) => {
+      const next = { ...current }
+      delete next.photo
+      return next
+    })
+  }
+
+  async function handleAdminEditSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!member || !editForm || !canEditApplication || editSaving) return
+
+    const validationErrors = validateAdminEditForm(editForm)
+    setEditErrors(validationErrors)
+
+    if (Object.keys(validationErrors).length > 0) {
+      setError('Please fix the highlighted application fields before saving.')
+      return
+    }
+
+    setEditSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      let photoPath = member.photo_url
+
+      if (editPhoto) {
+        const extension = editPhoto.name.split('.').pop()?.toLowerCase() || 'jpg'
+        photoPath = `${member.user_id}/admin-photo-${Date.now()}.${extension}`
+
+        const { error: uploadError } = await supabase.storage
+          .from(MEMBER_PHOTO_BUCKET)
+          .upload(photoPath, editPhoto, {
+            upsert: true,
+            contentType: editPhoto.type || 'image/jpeg',
+          })
+
+        if (uploadError) throw uploadError
+      }
+
+      const payload = {
+        full_name: editForm.fullName.trim(),
+        father_name: editForm.fatherName.trim(),
+        cnic: editForm.cnic.trim(),
+        mobile: normalizeMobile(editForm.mobile),
+        district: editForm.district.trim(),
+        taluka: optionalText(editForm.taluka),
+        address: editForm.address.trim(),
+        date_of_birth: editForm.dateOfBirth || null,
+        gender: optionalText(editForm.gender),
+        education: optionalText(editForm.education),
+        blood_group: optionalText(editForm.bloodGroup),
+        profession: optionalText(editForm.profession),
+        caste_branch: optionalText(editForm.casteBranch),
+        emergency_contact_name: optionalText(editForm.emergencyContactName),
+        emergency_contact_relation: optionalText(editForm.emergencyContactRelation),
+        emergency_contact_mobile:
+          normalizeMobile(editForm.emergencyContactMobile) || null,
+        declaration_accepted: editForm.declarationAccepted,
+        photo_url: photoPath ?? '',
+      }
+
+      const { data: updatedMember, error: updateError } = await supabase
+        .from('members')
+        .update(payload)
+        .eq('id', member.id)
+        .in('status', ['pending', 'rejected'])
+        .select(MEMBER_SELECT_COLUMNS)
+        .maybeSingle()
+
+      if (updateError) throw updateError
+      if (!updatedMember) {
+        throw new Error('Application could not be updated. It may already be approved.')
+      }
+
+      const nextMember = updatedMember as unknown as Member
+      const signedPhotoUrl = await createSignedPhotoUrl(nextMember.photo_url)
+
+      if (editPhotoPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(editPhotoPreview)
+      }
+
+      setMember(nextMember)
+      setEditForm(memberToAdminEditForm(nextMember))
+      setPhotoUrl(signedPhotoUrl)
+      setEditPhoto(null)
+      setEditPhotoPreview(null)
+      setEditErrors({})
+      setEditMode(false)
+      setSuccess('Application details updated successfully.')
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to update application details.',
+      )
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  async function handlePaymentReceiptUpload(file: File) {
+    if (!member || receiptUploading) return
+
+    const paymentFinal =
+      membershipPayment?.status === 'paid' || membershipPayment?.status === 'waived'
+
+    if (paymentFinal) {
+      setError('Paid or waived payment records are locked. Receipt changes are not allowed.')
+      return
+    }
+
+    if (!canEditApplication) {
+      setError('Approved applications cannot receive replacement receipts in this patch.')
+      return
+    }
+
+    if (!MEMBERSHIP_RECEIPT_ALLOWED_TYPES.includes(file.type)) {
+      setError(`Receipt must be PNG, JPG, WebP or PDF and ${MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL} or smaller.`)
+      return
+    }
+
+    if (file.size > MEMBERSHIP_RECEIPT_MAX_SIZE_BYTES) {
+      setError(`Receipt file must be ${MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL} or smaller.`)
+      return
+    }
+
+    if (
+      membershipPayment &&
+      membershipPayment.status !== 'pending' &&
+      membershipPayment.status !== 'failed'
+    ) {
+      setError('Only pending or failed payment records can receive replacement receipts.')
+      return
+    }
+
+    setReceiptUploading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const receiptPath = `${member.user_id}/admin-receipt-${Date.now()}.${extension}`
+      const receiptMimeType = file.type || 'application/octet-stream'
+      const receiptUploadedAt = new Date().toISOString()
+
+      const { error: uploadError } = await supabase.storage
+        .from(MEMBERSHIP_RECEIPT_BUCKET)
+        .upload(receiptPath, file, {
+          upsert: true,
+          contentType: receiptMimeType,
+        })
+
+      if (uploadError) throw uploadError
+
+      const receiptPayload = {
+        receipt_path: receiptPath,
+        receipt_file_name: file.name,
+        receipt_mime_type: receiptMimeType,
+        receipt_size_bytes: file.size,
+        receipt_uploaded_at: receiptUploadedAt,
+      }
+
+      let savedPayment: MembershipPayment | null = null
+
+      if (membershipPayment) {
+        const { data, error: updateError } = await supabase
+          .from('membership_payments')
+          .update({
+            ...receiptPayload,
+            status:
+              membershipPayment.status === 'failed'
+                ? 'pending'
+                : membershipPayment.status,
+            updated_at: receiptUploadedAt,
+          })
+          .eq('id', membershipPayment.id)
+          .in('status', ['pending', 'failed'])
+          .select('*')
+          .maybeSingle()
+          .returns<MembershipPayment | null>()
+
+        if (updateError) throw updateError
+        if (!data) throw new Error('Payment record could not be updated.')
+        savedPayment = data
+      } else {
+        const { data, error: insertError } = await supabase
+          .from('membership_payments')
+          .insert(
+            createPendingMembershipPaymentPayload(
+              member.id,
+              member.user_id,
+              receiptPayload,
+            ),
+          )
+          .select('*')
+          .maybeSingle()
+          .returns<MembershipPayment | null>()
+
+        if (insertError) throw insertError
+        if (!data) throw new Error('Payment record could not be created.')
+        savedPayment = data
+      }
+
+      const signedReceiptUrl = await createSignedReceiptUrl(savedPayment.receipt_path)
+      setMembershipPayment(savedPayment)
+      setReceiptSignedUrl(signedReceiptUrl)
+      setPaymentAdminNote(savedPayment.admin_note ?? '')
+      setPaymentLoadError(
+        savedPayment.receipt_path && !signedReceiptUrl
+          ? 'Receipt file not available.'
+          : '',
+      )
+      setSuccess('Payment receipt updated successfully.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload receipt.')
+    } finally {
+      setReceiptUploading(false)
+    }
+  }
 
   async function handleApprove() {
     if (!member || actionLoading) return
@@ -469,6 +838,17 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     {copy.refresh}
                   </button>
 
+                  {canEditApplication ? (
+                    <button
+                      type="button"
+                      onClick={startEditMode}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-amber-700"
+                    >
+                      <IdCard className="h-4 w-4" />
+                      Edit Application
+                    </button>
+                  ) : null}
+
                   {canViewCard ? (
                     <>
                       <Link
@@ -551,7 +931,10 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           adminNote={paymentAdminNote}
           onAdminNoteChange={setPaymentAdminNote}
           onStatusUpdate={handlePaymentStatusUpdate}
+          onReceiptUpload={handlePaymentReceiptUpload}
           actionLoading={paymentActionLoading}
+          receiptUploading={receiptUploading}
+          canEditReceipt={canEditApplication}
         />
 
         <section className="grid gap-6 md:grid-cols-3">
@@ -580,6 +963,20 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               </div>
             </div>
           </aside>
+
+          {editMode && editForm && canEditApplication ? (
+            <AdminMemberEditPanel
+              form={editForm}
+              errors={editErrors}
+              photoPreview={editPhotoPreview || photoUrl}
+              selectedPhotoName={editPhoto?.name ?? ''}
+              saving={editSaving}
+              onChange={updateEditField}
+              onPhotoChange={handleAdminPhotoChange}
+              onSubmit={handleAdminEditSubmit}
+              onCancel={cancelEditMode}
+            />
+          ) : null}
 
           <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6 md:col-span-2">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -818,6 +1215,297 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   )
 }
 
+function AdminMemberEditPanel({
+  form,
+  errors,
+  photoPreview,
+  selectedPhotoName,
+  saving,
+  onChange,
+  onPhotoChange,
+  onSubmit,
+  onCancel,
+}: {
+  form: AdminEditFormState
+  errors: AdminEditErrors
+  photoPreview: string | null
+  selectedPhotoName: string
+  saving: boolean
+  onChange: <K extends keyof AdminEditFormState>(
+    field: K,
+    value: AdminEditFormState[K],
+  ) => void
+  onPhotoChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onCancel: () => void
+}) {
+  return (
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200 sm:p-6 md:col-span-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
+            Admin Edit Mode
+          </p>
+          <h2 className="mt-2 text-lg font-black text-slate-950">
+            Edit pending application
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+            Update member details before approval. Member number, review status and approval fields are still controlled by the review workflow.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+      </div>
+
+      <form onSubmit={onSubmit} className="mt-6 space-y-6" noValidate>
+        <div className="grid gap-4 md:grid-cols-[140px_minmax(0,1fr)]">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+            {photoPreview ? (
+              <img
+                src={photoPreview}
+                alt="Profile preview"
+                className="aspect-[4/5] w-full object-cover"
+              />
+            ) : (
+              <div className="flex aspect-[4/5] items-center justify-center text-slate-400">
+                <ImageOff className="h-8 w-8" />
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <label className="block">
+              <span className="text-xs font-black uppercase tracking-wide text-slate-500">
+                Replace profile photo
+              </span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={onPhotoChange}
+                className="mt-2 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900"
+              />
+            </label>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              PNG, JPG or WebP only. Maximum 2MB. {selectedPhotoName ? `Selected: ${selectedPhotoName}` : ''}
+            </p>
+            {errors.photo ? <p className="mt-2 text-xs font-bold text-red-700">{errors.photo}</p> : null}
+          </div>
+        </div>
+
+        <AdminEditGroup title="Identity">
+          <AdminEditInput label="Full name" error={errors.fullName} required>
+            <input
+              value={form.fullName}
+              onChange={(event) => onChange('fullName', event.target.value)}
+              className="admin-edit-input"
+              aria-invalid={Boolean(errors.fullName)}
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Father name" error={errors.fatherName} required>
+            <input
+              value={form.fatherName}
+              onChange={(event) => onChange('fatherName', event.target.value)}
+              className="admin-edit-input"
+              aria-invalid={Boolean(errors.fatherName)}
+            />
+          </AdminEditInput>
+          <AdminEditInput label="CNIC" error={errors.cnic} required>
+            <input
+              value={form.cnic}
+              onChange={(event) => onChange('cnic', formatCnicInput(event.target.value))}
+              className="admin-edit-input"
+              inputMode="numeric"
+              aria-invalid={Boolean(errors.cnic)}
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Mobile" error={errors.mobile} required>
+            <input
+              value={form.mobile}
+              onChange={(event) => onChange('mobile', formatMobileInput(event.target.value))}
+              className="admin-edit-input"
+              inputMode="tel"
+              aria-invalid={Boolean(errors.mobile)}
+            />
+          </AdminEditInput>
+        </AdminEditGroup>
+
+        <AdminEditGroup title="Location">
+          <AdminEditInput label="District" error={errors.district} required>
+            <input
+              value={form.district}
+              onChange={(event) => onChange('district', event.target.value)}
+              className="admin-edit-input"
+              aria-invalid={Boolean(errors.district)}
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Taluka" error={errors.taluka} required>
+            <input
+              value={form.taluka}
+              onChange={(event) => onChange('taluka', event.target.value)}
+              className="admin-edit-input"
+              aria-invalid={Boolean(errors.taluka)}
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Address" error={errors.address} required wide>
+            <textarea
+              value={form.address}
+              onChange={(event) => onChange('address', event.target.value)}
+              className="admin-edit-input min-h-24"
+              aria-invalid={Boolean(errors.address)}
+            />
+          </AdminEditInput>
+        </AdminEditGroup>
+
+        <AdminEditGroup title="Profile">
+          <AdminEditInput label="Date of birth" error={errors.dateOfBirth}>
+            <input
+              type="date"
+              value={form.dateOfBirth}
+              onChange={(event) => onChange('dateOfBirth', event.target.value)}
+              className="admin-edit-input"
+              max={todayDate()}
+              aria-invalid={Boolean(errors.dateOfBirth)}
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Gender">
+            <input
+              value={form.gender}
+              onChange={(event) => onChange('gender', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Education">
+            <input
+              value={form.education}
+              onChange={(event) => onChange('education', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Blood group">
+            <input
+              value={form.bloodGroup}
+              onChange={(event) => onChange('bloodGroup', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Profession">
+            <input
+              value={form.profession}
+              onChange={(event) => onChange('profession', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Caste / branch">
+            <input
+              value={form.casteBranch}
+              onChange={(event) => onChange('casteBranch', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+        </AdminEditGroup>
+
+        <AdminEditGroup title="Emergency contact">
+          <AdminEditInput label="Contact name">
+            <input
+              value={form.emergencyContactName}
+              onChange={(event) => onChange('emergencyContactName', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Relation">
+            <input
+              value={form.emergencyContactRelation}
+              onChange={(event) => onChange('emergencyContactRelation', event.target.value)}
+              className="admin-edit-input"
+            />
+          </AdminEditInput>
+          <AdminEditInput label="Contact mobile" error={errors.emergencyContactMobile}>
+            <input
+              value={form.emergencyContactMobile}
+              onChange={(event) => onChange('emergencyContactMobile', formatMobileInput(event.target.value))}
+              className="admin-edit-input"
+              inputMode="tel"
+              aria-invalid={Boolean(errors.emergencyContactMobile)}
+            />
+          </AdminEditInput>
+        </AdminEditGroup>
+
+        <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-800">
+          <input
+            type="checkbox"
+            checked={form.declarationAccepted}
+            onChange={(event) => onChange('declarationAccepted', event.target.checked)}
+            className="mt-1 h-4 w-4 accent-emerald-700"
+          />
+          Declaration accepted by the member / verified by admin.
+        </label>
+        {errors.declarationAccepted ? (
+          <p className="text-xs font-bold text-red-700">{errors.declarationAccepted}</p>
+        ) : null}
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            {saving ? 'Saving...' : 'Save Application'}
+          </button>
+        </div>
+      </form>
+    </section>
+  )
+}
+
+function AdminEditGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section>
+      <h3 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-700">
+        {title}
+      </h3>
+      <div className="grid gap-4 md:grid-cols-2">{children}</div>
+    </section>
+  )
+}
+
+function AdminEditInput({
+  label,
+  children,
+  error,
+  required,
+  wide,
+}: {
+  label: string
+  children: ReactNode
+  error?: string
+  required?: boolean
+  wide?: boolean
+}) {
+  return (
+    <label className={`block ${wide ? 'md:col-span-2' : ''}`}>
+      <span className="mb-1 block text-xs font-black uppercase tracking-wide text-slate-500">
+        {label}{required ? ' *' : ''}
+      </span>
+      {children}
+      {error ? <span className="mt-1 block text-xs font-bold text-red-700">{error}</span> : null}
+    </label>
+  )
+}
+
 function BackToAdmin() {
   const { copy, iconBeforeClass } = useAdminMemberDetailCopy()
 
@@ -1002,7 +1690,10 @@ function MembershipPaymentPanel({
   adminNote,
   onAdminNoteChange,
   onStatusUpdate,
+  onReceiptUpload,
   actionLoading,
+  receiptUploading,
+  canEditReceipt,
 }: {
   payment: MembershipPayment | null
   receiptSignedUrl: string | null
@@ -1010,10 +1701,19 @@ function MembershipPaymentPanel({
   adminNote: string
   onAdminNoteChange: (value: string) => void
   onStatusUpdate: (status: MembershipPaymentStatus) => void
+  onReceiptUpload: (file: File) => void
   actionLoading: boolean
+  receiptUploading: boolean
+  canEditReceipt: boolean
 }) {
   const status = getMembershipPaymentDisplayStatus(payment)
+  const paymentFinal = status === 'paid' || status === 'waived'
   const canUpdate = Boolean(payment) && !actionLoading
+  const canUploadReceipt =
+    canEditReceipt &&
+    !receiptUploading &&
+    (!payment || payment.status === 'pending' || payment.status === 'failed') &&
+    !paymentFinal
   const receiptLabel = payment?.receipt_file_name || (payment?.receipt_path ? 'Uploaded' : 'Not uploaded')
 
   return (
@@ -1048,7 +1748,27 @@ function MembershipPaymentPanel({
 
       {!payment ? (
         <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-600">
-          No membership payment record found for this application.
+          <p>No membership payment record found for this application.</p>
+          <label
+            className={`mt-4 inline-flex h-11 items-center justify-center rounded-xl border px-4 text-sm font-bold shadow-sm transition ${
+              canUploadReceipt
+                ? 'cursor-pointer border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                : 'cursor-not-allowed border-slate-200 bg-white text-slate-400'
+            }`}
+          >
+            {receiptUploading ? 'Uploading...' : 'Upload Receipt & Create Pending Payment'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,application/pdf"
+              disabled={!canUploadReceipt}
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                event.target.value = ''
+                if (file) onReceiptUpload(file)
+              }}
+              className="sr-only"
+            />
+          </label>
         </div>
       ) : (
         <>
@@ -1099,6 +1819,33 @@ function MembershipPaymentPanel({
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+              <label
+                className={`inline-flex h-11 items-center justify-center rounded-xl border px-4 text-sm font-bold shadow-sm transition ${
+                  canUploadReceipt
+                    ? 'cursor-pointer border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                    : 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
+                }`}
+              >
+                {receiptUploading ? 'Uploading...' : payment?.receipt_path ? 'Replace Receipt' : 'Upload Receipt'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,application/pdf"
+                  disabled={!canUploadReceipt}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    event.target.value = ''
+                    if (file) onReceiptUpload(file)
+                  }}
+                  className="sr-only"
+                />
+              </label>
+
+              {!canUploadReceipt && paymentFinal ? (
+                <span className="inline-flex min-h-11 items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-800">
+                  Final payment locked
+                </span>
+              ) : null}
+
               {receiptSignedUrl ? (
                 <a
                   href={receiptSignedUrl}
@@ -1408,6 +2155,76 @@ async function fetchMemberById(id: string) {
   if (error) throw error
 
   return data as Member | null
+}
+
+function memberToAdminEditForm(member: Member): AdminEditFormState {
+  return {
+    fullName: member.full_name,
+    fatherName: member.father_name,
+    cnic: member.cnic,
+    mobile: member.mobile,
+    district: member.district,
+    taluka: member.taluka ?? '',
+    address: member.address ?? '',
+    dateOfBirth: member.date_of_birth ?? '',
+    gender: member.gender ?? '',
+    education: member.education ?? '',
+    bloodGroup: member.blood_group ?? '',
+    profession: member.profession ?? '',
+    casteBranch: member.caste_branch ?? '',
+    emergencyContactName: member.emergency_contact_name ?? '',
+    emergencyContactRelation: member.emergency_contact_relation ?? '',
+    emergencyContactMobile: member.emergency_contact_mobile ?? '',
+    declarationAccepted: member.declaration_accepted,
+  }
+}
+
+function validateAdminEditForm(form: AdminEditFormState) {
+  const errors: AdminEditErrors = {}
+  const normalizedMobile = normalizeMobile(form.mobile)
+  const normalizedEmergencyMobile = normalizeMobile(form.emergencyContactMobile)
+
+  if (!form.fullName.trim() || form.fullName.trim().length < 3) {
+    errors.fullName = 'Full name must be at least 3 characters.'
+  }
+
+  if (!form.fatherName.trim() || form.fatherName.trim().length < 3) {
+    errors.fatherName = 'Father name must be at least 3 characters.'
+  }
+
+  if (!/^[0-9]{5}-[0-9]{7}-[0-9]$/.test(form.cnic.trim())) {
+    errors.cnic = 'CNIC must use 12345-1234567-1 format.'
+  }
+
+  if (!isPakistaniMobile(normalizedMobile)) {
+    errors.mobile = 'Enter a valid Pakistani mobile number.'
+  }
+
+  if (!form.district.trim()) {
+    errors.district = 'District is required.'
+  }
+
+  if (!form.taluka.trim()) {
+    errors.taluka = 'Taluka is required.'
+  }
+
+  if (!form.address.trim() || form.address.trim().length < 10) {
+    errors.address = 'Address must be at least 10 characters.'
+  }
+
+  if (form.dateOfBirth && form.dateOfBirth > todayDate()) {
+    errors.dateOfBirth = 'Date of birth cannot be in the future.'
+  }
+
+  if (normalizedEmergencyMobile && !isPakistaniMobile(normalizedEmergencyMobile)) {
+    errors.emergencyContactMobile = 'Enter a valid emergency mobile number.'
+  }
+
+  if (!form.declarationAccepted) {
+    errors.declarationAccepted = 'Declaration must be accepted before approval.'
+  }
+
+  return errors
 }
 
 function getStatusLabel(

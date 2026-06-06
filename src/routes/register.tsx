@@ -307,7 +307,11 @@ function RegisterPage() {
   const [draftSavedAt, setDraftSavedAt] = useState('')
 
   const locked = existingMember?.status === 'approved'
+  const isPendingEdit = existingMember?.status === 'pending'
   const isRejected = existingMember?.status === 'rejected'
+  const paymentReceiptLocked =
+    existingMembershipPayment?.status === 'paid' ||
+    existingMembershipPayment?.status === 'waived'
   const isLastStep = currentStep === formSteps.length - 1
   const localizedSteps = useMemo(() =>
     formSteps.map((step) => ({
@@ -510,6 +514,12 @@ function RegisterPage() {
     setError('')
     setSuccess('')
 
+    if (paymentReceiptLocked) {
+      setError(t('register.payment.receiptLocked'))
+      event.target.value = ''
+      return
+    }
+
     const file = event.target.files?.[0] ?? null
     setPaymentReceipt(null)
 
@@ -700,6 +710,12 @@ function RegisterPage() {
     let receiptSizeBytes = existingMembershipPayment?.receipt_size_bytes ?? null
     let receiptUploadedAt = existingMembershipPayment?.receipt_uploaded_at ?? null
 
+    if (paymentReceipt && paymentReceiptLocked) {
+      setError(t('register.payment.receiptLocked'))
+      setSubmitting(false)
+      return
+    }
+
     if (paymentReceipt) {
       const extension = paymentReceipt.name.split('.').pop()?.toLowerCase() || 'jpg'
       receiptPath = `${userId}/receipt-${Date.now()}.${extension}`
@@ -888,7 +904,11 @@ function RegisterPage() {
       errors.photo = t('register.error.photoRequired')
     }
 
-    if (!paymentReceipt && !existingMembershipPayment?.receipt_path) {
+    if (
+      !paymentReceiptLocked &&
+      !paymentReceipt &&
+      !existingMembershipPayment?.receipt_path
+    ) {
       errors.paymentReceipt = t('register.error.receiptRequired')
     }
 
@@ -1390,7 +1410,7 @@ function RegisterPage() {
           <div className="mt-4">
             <label
               className={`reg-upload-btn reg-payment-upload ${
-                locked ? 'is-disabled' : 'cursor-pointer'
+                paymentReceiptLocked ? 'is-disabled' : 'cursor-pointer'
               }`}
               htmlFor="paymentReceipt"
             >
@@ -1420,7 +1440,7 @@ function RegisterPage() {
               type="file"
               accept="image/png,image/jpeg,image/webp,application/pdf"
               onChange={handlePaymentReceiptChange}
-              disabled={locked}
+              disabled={paymentReceiptLocked}
               className="reg-sr-only"
               aria-invalid={Boolean(fieldErrors.paymentReceipt)}
               aria-describedby={getDescriptionIds('paymentReceipt', true)}
@@ -1429,6 +1449,12 @@ function RegisterPage() {
             <p id="paymentReceipt-hint" className="reg-upload-hint mt-2">
               {t('register.payment.receiptHint').replace('{size}', MEMBERSHIP_RECEIPT_MAX_SIZE_LABEL)}
             </p>
+
+            {paymentReceiptLocked ? (
+              <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-800">
+                {t('register.payment.receiptLocked')}
+              </p>
+            ) : null}
 
             {fieldErrors.paymentReceipt ? (
               <p id="paymentReceipt-error" className="reg-error-text">
@@ -1559,6 +1585,13 @@ function RegisterPage() {
             <div className="reg-banner reg-banner--success">
               <span className="reg-banner-icon">✓</span>
               {t('register.approvedBanner')}
+            </div>
+          ) : null}
+
+          {isPendingEdit ? (
+            <div className="reg-banner reg-banner--info">
+              <span className="reg-banner-icon">i</span>
+              {t('register.pendingEditBanner')}
             </div>
           ) : null}
 
