@@ -35,6 +35,21 @@ import {
 import { supabase } from '../../../lib/supabase/client'
 import { useAdminMemberDetailCopy } from '../../../lib/admin-member-detail-i18n'
 
+// Membership fee helpers
+// NOTE: These imports restore manual membership payment support on the admin
+// member detail page. See docs/MEMBERSHIP_MANUAL_PAYMENT_PHASE2.md for
+// more information about what data should be shown here.
+import type {
+  MembershipPayment,
+  MembershipPaymentStatus,
+} from '../../../lib/membership-fee'
+import {
+  formatMembershipMoney,
+  getMembershipPaymentStatusLabel,
+  MEMBERSHIP_MANUAL_PAYMENT_DETAILS,
+  MEMBERSHIP_RECEIPT_BUCKET,
+} from '../../../lib/membership-fee'
+
 export const Route = createFileRoute('/admin/members/$id')({
   component: AdminMemberDetailPage,
 })
@@ -142,6 +157,17 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
+  // membership payment state
+  // Holds the membership payment record for this member (if any). When null,
+  // it means no record exists. Loading and error states are handled
+  // separately. See docs/MEMBERSHIP_MANUAL_PAYMENT_PHASE2.md for details.
+  const [payment, setPayment] = useState<MembershipPayment | null>(null)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  // Indicates if a payment status update is in progress
+  const [paymentUpdating, setPaymentUpdating] = useState(false)
+
   const trimmedRejectionReason = useMemo(
     () => rejectionReason.trim(),
     [rejectionReason],
@@ -186,6 +212,44 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
 
         const signedPhotoUrl = await createSignedPhotoUrl(safeMember.photo_url)
 
+        // Reset payment state before loading payment
+        if (!cancelledRef?.current) {
+          setPayment(null)
+          setPaymentError('')
+          setReceiptUrl(null)
+          setPaymentLoading(true)
+        }
+
+        // Fetch membership payment record and generate signed receipt URL
+        try {
+          const paymentRecord = await fetchMembershipPaymentByMemberId(
+            safeMember.id,
+          )
+
+          if (!cancelledRef?.current) {
+            setPayment(paymentRecord)
+
+            if (paymentRecord?.receipt_path) {
+              const urlResult = await createSignedReceiptUrl(
+                paymentRecord.receipt_path,
+              )
+              setReceiptUrl(urlResult)
+            }
+          }
+        } catch (paymentErr) {
+          if (!cancelledRef?.current) {
+            setPaymentError(
+              paymentErr instanceof Error
+                ? paymentErr.message
+                : 'Failed to load membership payment.',
+            )
+          }
+        } finally {
+          if (!cancelledRef?.current) {
+            setPaymentLoading(false)
+          }
+        }
+
         if (cancelledRef?.current) return
 
         setMember(safeMember)
@@ -215,6 +279,74 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       cancelledRef.current = true
     }
   }, [loadMember])
+
+  /**
+   * Update the membership payment status for this member. When marking a
+   * payment as paid, the `paid_at` timestamp is set to the current time.
+   * When marking as waived or pending, `paid_at` is cleared. If the update
+   * fails, an error message is stored in `paymentError`.
+   */
+  const updatePaymentStatus = useCallback(
+    async (status: MembershipPaymentStatus) => {
+      // If no payment record exists, nothing to update
+      if (!payment) return
+
+      // Confirm with the admin before proceeding
+      const statusLabel = getMembershipPaymentStatusLabel(status)
+      const confirmed = window.confirm(
+        `Are you sure you want to mark this payment as ${statusLabel}?`,
+      )
+      if (!confirmed) return
+
+      setPaymentUpdating(true)
+      setPaymentError('')
+      try {
+        // prepare update payload
+        const updatePayload: Partial<MembershipPayment> & {
+          status: MembershipPaymentStatus
+        } = {
+          status,
+        }
+
+        // Set or clear paid_at based on new status
+        if (status === 'paid') {
+          updatePayload.paid_at = new Date().toISOString()
+        } else {
+          updatePayload.paid_at = null
+        }
+
+        const { data, error } = await supabase
+          .from('membership_payments')
+          .update(updatePayload)
+          .eq('id', payment.id)
+          .select('*')
+          .maybeSingle()
+
+        if (error) {
+          throw new Error(error.message)
+        }
+
+        // Refresh local payment state
+        setPayment(data as MembershipPayment)
+        // Reload the signed receipt URL in case of any changes
+        if (data?.receipt_path) {
+          const urlResult = await createSignedReceiptUrl(data.receipt_path)
+          setReceiptUrl(urlResult)
+        } else {
+          setReceiptUrl(null)
+        }
+      } catch (err) {
+        setPaymentError(
+          err instanceof Error
+            ? err.message
+            : 'Failed to update payment status.',
+        )
+      } finally {
+        setPaymentUpdating(false)
+      }
+    },
+    [payment],
+  )
 
   async function handleApprove() {
     if (!member || actionLoading) return
@@ -457,6 +589,16 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         ) : null}
 
         <StatusPanel member={member} />
+
+        {/* Membership payment details for this member. Restored from 49f591c */}
+        <PaymentSection
+          payment={payment}
+          loading={paymentLoading}
+          error={paymentError}
+          receiptUrl={receiptUrl}
+          updating={paymentUpdating}
+          onUpdateStatus={updatePaymentStatus}
+        />
 
         <section className="grid gap-6 md:grid-cols-3">
           <aside className="space-y-5 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
@@ -1087,6 +1229,47 @@ async function createSignedPhotoUrl(photoPath: string | null) {
   return data.signedUrl
 }
 
+/**
+ * Fetch a membership payment record for a given member ID. Returns null if no
+ * record exists. Throws an error if the Supabase query fails.
+ */
+async function fetchMembershipPaymentByMemberId(
+  memberId: string,
+): Promise<MembershipPayment | null> {
+  const { data, error } = await supabase
+    .from('membership_payments')
+    .select('*')
+    .eq('member_id', memberId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return (data ?? null) as MembershipPayment | null
+}
+
+/**
+ * Generate a signed URL for a receipt path in the private membership-receipts
+ * bucket. Returns null if the path is falsy or if the signed URL could not be
+ * generated.
+ */
+async function createSignedReceiptUrl(
+  receiptPath: string | null,
+): Promise<string | null> {
+  if (!receiptPath) return null
+
+  const { data, error } = await supabase.storage
+    .from(MEMBERSHIP_RECEIPT_BUCKET)
+    .createSignedUrl(receiptPath, 60 * 60) // 1 hour
+
+  if (error || !data?.signedUrl) {
+    return null
+  }
+
+  return data.signedUrl
+}
+
 async function fetchMemberById(id: string) {
   const { data, error } = await supabase
     .from('members')
@@ -1111,6 +1294,270 @@ function getStatusLabel(
     default:
       return copy?.status.pending ?? 'Pending'
   }
+}
+
+/**
+ * Render a membership payment overview for a member. Displays the fee breakdown,
+ * manual payment account details, receipt information and controls to update
+ * payment status. When no record exists, a helpful message is shown. Errors
+ * during fetch or update are surfaced to the admin.
+ */
+function PaymentSection({
+  payment,
+  loading,
+  error,
+  receiptUrl,
+  updating,
+  onUpdateStatus,
+}: {
+  payment: MembershipPayment | null
+  loading: boolean
+  error: string
+  receiptUrl: string | null
+  updating: boolean
+  onUpdateStatus: (status: MembershipPaymentStatus) => void
+}) {
+  // Format a date/time string using the existing formatDate helper. If
+  // undefined/null, returns '-'.
+  const formatDateTime = (value: string | null | undefined) =>
+    value ? formatDate(value, true) : '-'
+
+  return (
+    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-black text-slate-950">Payment Details</h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Membership fee breakdown, receipt and manual payment information.
+          </p>
+        </div>
+      </div>
+
+      {/* Loading state */}
+      {loading ? (
+        <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading payment...</span>
+        </div>
+      ) : null}
+
+      {/* Error state */}
+      {!loading && error ? (
+        <AlertBox tone="error" icon={<AlertCircle className="h-5 w-5" />}>
+          {error}
+        </AlertBox>
+      ) : null}
+
+      {/* No payment record */}
+      {!loading && !error && !payment ? (
+        <div className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm leading-6 text-amber-900 ring-1 ring-amber-100">
+          No membership payment record found for this application.
+        </div>
+      ) : null}
+
+      {/* Payment details */}
+      {!loading && payment ? (
+        <>
+          <div className="mt-4 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Base Amount
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {formatMembershipMoney(payment.base_amount)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Tax/Charges
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {formatMembershipMoney(payment.tax_amount)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Total Amount
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {formatMembershipMoney(payment.total_amount)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Status
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {getMembershipPaymentStatusLabel(payment.status)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Payment Method
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {payment.payment_method ?? payment.gateway_provider ?? 'Manual'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Gateway/Provider
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {payment.gateway_provider ?? payment.payment_method ?? 'N/A'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Receipt File
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {payment.receipt_file_name || '–'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Receipt Uploaded
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {formatDateTime(payment.receipt_uploaded_at)}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Paid At
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {formatDateTime(payment.paid_at)}
+              </p>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Admin Note
+              </p>
+              <p className="mt-1 font-black text-slate-950 whitespace-pre-wrap">
+                {payment.admin_note || '–'}
+              </p>
+            </div>
+          </div>
+
+          {/* Manual payment account details */}
+          <div className="mt-6 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Bank Name
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.bankName}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Account Title
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountTitle}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Account Number
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.accountNumber}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                IBAN
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.iban}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Payment Network
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.paymentNetwork}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                Till ID
+              </p>
+              <p className="mt-1 font-black text-slate-950">
+                {MEMBERSHIP_MANUAL_PAYMENT_DETAILS.tillId}
+              </p>
+            </div>
+          </div>
+
+          {/* Receipt controls */}
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {receiptUrl ? (
+              <a
+                href={receiptUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold text-white no-underline shadow-sm transition hover:bg-slate-800"
+              >
+                <FileCheck2 className="h-4 w-4" />
+                Open Receipt
+              </a>
+            ) : (
+              <p className="text-sm font-medium text-slate-500">
+                Receipt file not available.
+              </p>
+            )}
+
+            {/* Payment status update buttons */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onUpdateStatus('paid')}
+                disabled={updating}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                Mark Paid
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateStatus('waived')}
+                disabled={updating}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <BadgeCheck className="h-4 w-4" />
+                )}
+                Mark Waived
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdateStatus('pending')}
+                disabled={updating}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {updating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Hourglass className="h-4 w-4" />
+                )}
+                Mark Pending
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
+    </section>
+  )
 }
 
 function formatDate(value: string | null | undefined, withTime = false) {
