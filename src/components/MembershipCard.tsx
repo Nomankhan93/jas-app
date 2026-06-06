@@ -92,8 +92,7 @@ function CardFront({
   qrUrl,
   verifyUrl,
 }: Omit<MembershipCardProps, 'side'>) {
-  const professionOrCaste =
-    member.profession || member.caste_branch || 'Not provided'
+  const profession = member.profession || 'Not provided'
 
   return (
     <>
@@ -151,7 +150,7 @@ function CardFront({
               <Info label="Father Name" value={member.father_name} />
               <Info label="District" value={member.district} />
               <Info label="Taluka" value={member.taluka || 'Not provided'} />
-              <Info label="Profession / Caste" value={professionOrCaste} />
+              <Info label="Profession" value={profession} />
               <Info
                 label="Approved Date"
                 value={formatDate(member.approved_at)}
@@ -196,7 +195,7 @@ function CardBack({
         label="Jatt Alliance Sindh"
         title="CARDHOLDER DETAILS"
         subtitle="Address, emergency contact, verification and issuing authority"
-        badge="Back Side"
+        badge="Card Details"
       />
 
       <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
@@ -334,7 +333,7 @@ function CardBack({
                 Verification URL
               </p>
               <p className="mt-1 break-all text-[11px] font-bold leading-4 text-slate-950">
-                {verifyUrl || 'Verification link unavailable'}
+                {formatVerifyUrlForDisplay(verifyUrl) || 'Verification link unavailable'}
               </p>
             </div>
 
@@ -527,7 +526,7 @@ function QrPanel({
 }) {
   return (
     <aside className="flex items-center justify-center">
-      <div className="flex h-[350px] w-[210px] flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white/95 p-4 shadow-lg">
+      <div className="flex h-[350px] w-[210px] flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white/95 px-4 py-5 shadow-lg">
         {qrUrl ? (
           <img
             src={qrUrl}
@@ -545,12 +544,24 @@ function QrPanel({
           Scan to verify
         </p>
 
-        <p className="mt-3 line-clamp-4 break-all text-center text-[11px] font-semibold leading-4 text-slate-500">
-          {verifyUrl || 'Verification link unavailable'}
+        <p className="mt-3 line-clamp-3 break-all text-center text-[10.5px] font-bold leading-4 text-slate-500">
+          {formatVerifyUrlForDisplay(verifyUrl) || 'Verification link unavailable'}
         </p>
       </div>
     </aside>
   )
+}
+
+
+function formatVerifyUrlForDisplay(value: string | null | undefined) {
+  if (!value) return ''
+
+  try {
+    const url = new URL(value)
+    return `${url.host}${url.pathname}`
+  } catch {
+    return value.replace(/^https?:\/\//, '')
+  }
 }
 
 function CardFooter({ children }: { children: ReactNode }) {

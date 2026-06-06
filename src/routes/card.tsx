@@ -37,6 +37,7 @@ const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_FLAG_PATH = '/jas/flag.jpeg'
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+const PUBLIC_VERIFY_ORIGIN = 'https://jasofficial.org'
 
 
 type CardPageText = {
@@ -343,9 +344,7 @@ function CardPage() {
           return
         }
 
-        const publicVerifyUrl = `${window.location.origin}/verify/${encodeURIComponent(
-          data.member_no,
-        )}`
+        const publicVerifyUrl = buildPublicVerifyUrl(data.member_no)
 
         const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
           width: 320,
@@ -671,7 +670,7 @@ function CardPage() {
                   </p>
 
                   <p className="mt-2 break-all rounded-2xl bg-slate-50 p-3 font-mono text-xs font-semibold text-slate-700 ring-1 ring-slate-100">
-                    {verifyUrl}
+                    {formatVerifyUrlForDisplay(verifyUrl)}
                   </p>
 
                   <div className="mt-3 grid gap-2">
@@ -1088,6 +1087,22 @@ function getUnavailableMessage(member: MembershipCardMember, text: CardPageText)
 
 function getCardSideText(side: CardSide, text: CardPageText) {
   return side === 'front' ? text.sideFront : text.sideBack
+}
+
+
+function buildPublicVerifyUrl(memberNo: string) {
+  return `${PUBLIC_VERIFY_ORIGIN}/verify/${encodeURIComponent(memberNo)}`
+}
+
+function formatVerifyUrlForDisplay(value: string) {
+  if (!value) return ''
+
+  try {
+    const url = new URL(value)
+    return `${url.host}${url.pathname}`
+  } catch {
+    return value.replace(/^https?:\/\//, '')
+  }
 }
 
 
