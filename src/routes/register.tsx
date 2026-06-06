@@ -888,19 +888,50 @@ function RegisterPage() {
       errors.address = t('register.error.addressRequired')
     }
 
-    if (form.dateOfBirth && form.dateOfBirth > todayDate()) {
+    const requiredMessage = 'This field is required.'
+
+    if (!form.profession.trim()) {
+      errors.profession = requiredMessage
+    }
+
+    if (!form.casteBranch.trim()) {
+      errors.casteBranch = requiredMessage
+    }
+
+    if (!form.dateOfBirth) {
+      errors.dateOfBirth = requiredMessage
+    } else if (form.dateOfBirth > todayDate()) {
       errors.dateOfBirth = t('register.error.dobFuture')
     }
 
-    if (
-      normalizedEmergencyMobile &&
-      !isPakistaniMobile(normalizedEmergencyMobile)
-    ) {
+    if (!form.gender) {
+      errors.gender = requiredMessage
+    }
+
+    if (!form.education.trim()) {
+      errors.education = requiredMessage
+    }
+
+    if (!form.bloodGroup) {
+      errors.bloodGroup = requiredMessage
+    }
+
+    if (!form.emergencyContactName.trim()) {
+      errors.emergencyContactName = requiredMessage
+    }
+
+    if (!form.emergencyContactRelation.trim()) {
+      errors.emergencyContactRelation = requiredMessage
+    }
+
+    if (!normalizedEmergencyMobile) {
+      errors.emergencyContactMobile = requiredMessage
+    } else if (!isPakistaniMobile(normalizedEmergencyMobile)) {
       errors.emergencyContactMobile =
         t('register.error.emergencyMobileInvalid')
     }
 
-    if (!existingMember && !photo) {
+    if (!photo && !existingMember?.photo_url) {
       errors.photo = t('register.error.photoRequired')
     }
 
@@ -1112,7 +1143,12 @@ function RegisterPage() {
           description={currentStepData.description}
         >
           <div className="reg-grid">
-            <Field name="profession" label={t('register.field.profession')}>
+            <Field
+              name="profession"
+              label={t('register.field.profession')}
+              required
+              error={fieldErrors.profession}
+            >
               <input
                 id="profession"
                 value={form.profession}
@@ -1121,24 +1157,34 @@ function RegisterPage() {
                 className="reg-input"
                 placeholder={t('register.placeholder.profession')}
                 autoComplete="organization-title"
+                aria-invalid={Boolean(fieldErrors.profession)}
+                aria-describedby={getDescriptionIds('profession')}
               />
             </Field>
 
-            <Field name="casteBranch" label={t('register.field.casteBranch')}>
+            <Field
+              name="casteBranch"
+              label={t('register.field.casteBranch')}
+              required
+              error={fieldErrors.casteBranch}
+            >
               <input
                 id="casteBranch"
                 value={form.casteBranch}
                 onChange={(event) => updateField('casteBranch', event.target.value)}
                 disabled={locked}
                 className="reg-input"
-                placeholder={t('register.placeholder.optional')}
+                placeholder="Enter caste branch"
                 autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.casteBranch)}
+                aria-describedby={getDescriptionIds('casteBranch')}
               />
             </Field>
 
             <Field
               name="dateOfBirth"
               label={t('register.field.dateOfBirth')}
+              required
               error={fieldErrors.dateOfBirth}
             >
               <input
@@ -1154,15 +1200,22 @@ function RegisterPage() {
               />
             </Field>
 
-            <Field name="gender" label={t('register.field.gender')}>
+            <Field
+              name="gender"
+              label={t('register.field.gender')}
+              required
+              error={fieldErrors.gender}
+            >
               <select
                 id="gender"
                 value={form.gender}
                 onChange={(event) => updateField('gender', event.target.value)}
                 disabled={locked}
                 className="reg-input reg-select"
+                aria-invalid={Boolean(fieldErrors.gender)}
+                aria-describedby={getDescriptionIds('gender')}
               >
-                <option value="">{t('register.optional')}</option>
+                <option value="">Select gender</option>
                 {genderOptions.map((item) => (
                   <option key={item} value={item}>
                     {item}
@@ -1171,7 +1224,12 @@ function RegisterPage() {
               </select>
             </Field>
 
-            <Field name="education" label={t('register.field.education')}>
+            <Field
+              name="education"
+              label={t('register.field.education')}
+              required
+              error={fieldErrors.education}
+            >
               <input
                 id="education"
                 value={form.education}
@@ -1180,18 +1238,27 @@ function RegisterPage() {
                 className="reg-input"
                 placeholder={t('register.placeholder.education')}
                 autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.education)}
+                aria-describedby={getDescriptionIds('education')}
               />
             </Field>
 
-            <Field name="bloodGroup" label={t('register.field.bloodGroup')}>
+            <Field
+              name="bloodGroup"
+              label={t('register.field.bloodGroup')}
+              required
+              error={fieldErrors.bloodGroup}
+            >
               <select
                 id="bloodGroup"
                 value={form.bloodGroup}
                 onChange={(event) => updateField('bloodGroup', event.target.value)}
                 disabled={locked}
                 className="reg-input reg-select"
+                aria-invalid={Boolean(fieldErrors.bloodGroup)}
+                aria-describedby={getDescriptionIds('bloodGroup')}
               >
-                <option value="">{t('register.optional')}</option>
+                <option value="">Select blood group</option>
                 {bloodGroupOptions.map((item) => (
                   <option key={item} value={item}>
                     {item}
@@ -1211,7 +1278,12 @@ function RegisterPage() {
           description={currentStepData.description}
         >
           <div className="reg-grid">
-            <Field name="emergencyContactName" label={t('register.field.contactName')}>
+            <Field
+              name="emergencyContactName"
+              label={t('register.field.contactName')}
+              required
+              error={fieldErrors.emergencyContactName}
+            >
               <input
                 id="emergencyContactName"
                 value={form.emergencyContactName}
@@ -1222,10 +1294,17 @@ function RegisterPage() {
                 className="reg-input"
                 placeholder="Full name"
                 autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.emergencyContactName)}
+                aria-describedby={getDescriptionIds('emergencyContactName')}
               />
             </Field>
 
-            <Field name="emergencyContactRelation" label={t('register.field.relation')}>
+            <Field
+              name="emergencyContactRelation"
+              label={t('register.field.relation')}
+              required
+              error={fieldErrors.emergencyContactRelation}
+            >
               <input
                 id="emergencyContactRelation"
                 value={form.emergencyContactRelation}
@@ -1236,12 +1315,15 @@ function RegisterPage() {
                 className="reg-input"
                 placeholder={t('register.placeholder.relation')}
                 autoComplete="off"
+                aria-invalid={Boolean(fieldErrors.emergencyContactRelation)}
+                aria-describedby={getDescriptionIds('emergencyContactRelation')}
               />
             </Field>
 
             <Field
               name="emergencyContactMobile"
               label={t('register.field.contactMobile')}
+              required
               hint={t('register.hint.emergencyMobile')}
               error={fieldErrors.emergencyContactMobile}
             >
