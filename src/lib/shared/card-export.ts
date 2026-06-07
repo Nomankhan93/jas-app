@@ -10,22 +10,54 @@ type ElementPngOptions = {
   style?: Partial<CSSStyleDeclaration>
 }
 
+async function waitForImages(element: HTMLElement) {
+  const images = Array.from(element.querySelectorAll('img'))
+
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete && image.naturalWidth > 0) return Promise.resolve()
+
+      return new Promise<void>((resolve) => {
+        const done = () => resolve()
+        image.addEventListener('load', done, { once: true })
+        image.addEventListener('error', done, { once: true })
+      })
+    }),
+  )
+}
+
+export async function prepareCardElementForExport(element: HTMLElement) {
+  await waitForImages(element)
+
+  if (document.fonts?.ready) {
+    await document.fonts.ready
+  }
+
+  await new Promise((resolve) => window.requestAnimationFrame(resolve))
+}
+
 export async function elementToPngDataUrl(
   element: HTMLElement,
   options?: ElementPngOptions,
 ) {
   const { toPng } = await import('html-to-image')
 
+  await prepareCardElementForExport(element)
+
   return toPng(element, {
     cacheBust: options?.cacheBust ?? true,
-    pixelRatio: options?.pixelRatio ?? 2,
+    pixelRatio: options?.pixelRatio ?? 2.5,
     backgroundColor: options?.backgroundColor ?? '#ffffff',
-    fontEmbedCSS: options?.fontEmbedCSS,
+    fontEmbedCSS: options?.fontEmbedCSS ?? '',
     width: options?.width,
     height: options?.height,
     canvasWidth: options?.canvasWidth,
     canvasHeight: options?.canvasHeight,
-    style: options?.style,
+    style: {
+      margin: '0',
+      transform: 'none',
+      ...options?.style,
+    },
   })
 }
 

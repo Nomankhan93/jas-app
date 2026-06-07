@@ -1,6 +1,5 @@
 // src/routes/admin/members/$id/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { toPng } from 'html-to-image'
 import QRCode from 'qrcode'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
@@ -28,6 +27,7 @@ import {
   type MembershipCardMember,
 } from '../../../../components/MembershipCard'
 import { supabase } from '../../../../lib/supabase/client'
+import { exportElementAsPng } from '../../../../lib/shared/card-export'
 
 export const Route = createFileRoute('/admin/members/$id/card')({
   component: AdminMemberCardPage,
@@ -37,6 +37,12 @@ const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_FLAG_PATH = '/jas/flag.jpeg'
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
+const PUBLIC_VERIFY_ORIGIN = String(
+  import.meta.env.VITE_PUBLIC_SITE_URL ||
+    import.meta.env.VITE_SITE_URL ||
+    import.meta.env.VITE_APP_URL ||
+    'https://jasofficial.org',
+).replace(/\/+$/, '')
 const MEMBERSHIP_REVIEW_ROLES: Array<
   'admin' | 'super_admin' | 'membership_admin'
 > = ['admin', 'super_admin', 'membership_admin']
@@ -126,7 +132,7 @@ function AdminMemberCardPage() {
           return
         }
 
-        const publicVerifyUrl = `${window.location.origin}/verify/${encodeURIComponent(
+        const publicVerifyUrl = `${PUBLIC_VERIFY_ORIGIN}/verify/${encodeURIComponent(
           data.member_no,
         )}`
 
@@ -179,7 +185,7 @@ function AdminMemberCardPage() {
     const updateScale = () => {
       const stageWidth = visibleStageRef.current?.clientWidth || CARD_WIDTH
       const availableWidth = Math.max(220, stageWidth)
-      const nextScale = Math.min(1, Math.max(0.22, availableWidth / CARD_WIDTH))
+      const nextScale = Math.min(1, Math.max(0.2, availableWidth / CARD_WIDTH))
 
       setCardScale(Number(nextScale.toFixed(4)))
     }
@@ -215,25 +221,16 @@ function AdminMemberCardPage() {
       throw new Error(`Unable to prepare ${side} side for download.`)
     }
 
-    const dataUrl = await toPng(targetRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-      backgroundColor: '#ffffff',
-      fontEmbedCSS: '',
-      width: CARD_WIDTH,
-      height: CARD_HEIGHT,
-      canvasWidth: CARD_WIDTH * 2,
-      canvasHeight: CARD_HEIGHT * 2,
-      style: {
-        margin: '0',
-        transform: 'none',
+    await exportElementAsPng(
+      targetRef.current,
+      `${member.member_no}-JAS-card-${side}.png`,
+      {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        canvasWidth: CARD_WIDTH * 2.5,
+        canvasHeight: CARD_HEIGHT * 2.5,
       },
-    })
-
-    const link = document.createElement('a')
-    link.download = `${member.member_no}-JAS-card-${side}.png`
-    link.href = dataUrl
-    link.click()
+    )
   }
 
   async function handleDownload(side: CardSide) {

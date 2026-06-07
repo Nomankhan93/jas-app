@@ -1,6 +1,5 @@
 // src/routes/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { toPng } from 'html-to-image'
 import QRCode from 'qrcode'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
@@ -28,6 +27,7 @@ import {
 } from '../components/MembershipCard'
 import { supabase } from '../lib/supabase/client'
 import { useI18n, type AppLanguage } from '../lib/i18n'
+import { exportElementAsPng } from '../lib/shared/card-export'
 
 export const Route = createFileRoute('/card')({
   component: CardPage,
@@ -37,8 +37,12 @@ const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_FLAG_PATH = '/jas/flag.jpeg'
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
-const PUBLIC_VERIFY_ORIGIN = 'https://jasofficial.org'
-
+const PUBLIC_VERIFY_ORIGIN = String(
+  import.meta.env.VITE_PUBLIC_SITE_URL ||
+    import.meta.env.VITE_SITE_URL ||
+    import.meta.env.VITE_APP_URL ||
+    'https://jasofficial.org',
+).replace(/\/+$/, '')
 
 type CardPageText = {
   loading: string
@@ -100,7 +104,8 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     backDashboard: 'Back to Dashboard',
     eyebrow: 'Digital Member ID',
     title: 'Digital Membership Card',
-    description: 'Preview, verify and download your official Jatt Alliance Sindh digital membership card.',
+    description:
+      'Preview, verify and download your official Jatt Alliance Sindh digital membership card.',
     refresh: 'Refresh',
     summaryMember: 'Member',
     summaryStatus: 'Status',
@@ -110,16 +115,20 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     ready: 'Ready',
     notAvailable: 'Not available',
     formNotFoundTitle: 'Membership form not found',
-    formNotFoundMessage: 'Please complete your membership registration form first. Your card will be available after admin approval.',
+    formNotFoundMessage:
+      'Please complete your membership registration form first. Your card will be available after admin approval.',
     completeRegistration: 'Complete Registration',
-    swipeHint: 'Swipe sideways to preview the full card.',
+    swipeHint:
+      'Card preview auto-fits your screen. Downloaded PNG remains full-size and print-ready.',
     cardReadyTitle: 'Your card is ready',
-    cardReadyMessage: 'Your membership is approved. The QR code opens your public verification page.',
+    cardReadyMessage:
+      'Your membership is approved. The QR code opens your public verification page.',
     verificationLink: 'Verification Link',
     copyLink: 'Copy Link',
     openVerification: 'Open Verification',
     downloadCard: 'Download Card',
-    downloadGuidance: 'Use front/back PNG downloads for printing or sharing. The official card design remains unchanged.',
+    downloadGuidance:
+      'Use front/back PNG downloads for printing or sharing. The exported card remains full-size and high quality.',
     downloadFront: 'Download Front PNG',
     downloadBack: 'Download Back PNG',
     downloadBoth: 'Download Both Sides',
@@ -142,18 +151,22 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     errorDownloadSide: 'Failed to download {side} side. Please try again.',
     errorDownloadBoth: 'Failed to download both card sides. Please try again.',
     rejectedTitle: 'Application needs correction',
-    rejectedMessage: 'Your application was rejected. Please update your membership form and resubmit it for admin review.',
+    rejectedMessage:
+      'Your application was rejected. Please update your membership form and resubmit it for admin review.',
     noNumberTitle: 'Member number not issued yet',
-    noNumberMessage: 'Your application is approved, but the member number is not available yet. The card will appear after number issuance.',
+    noNumberMessage:
+      'Your application is approved, but the member number is not available yet. The card will appear after number issuance.',
     pendingTitle: 'Digital card is not available yet',
-    pendingMessage: 'Your membership application is still under admin review. Your digital card will be available after approval.',
+    pendingMessage:
+      'Your membership application is still under admin review. Your digital card will be available after approval.',
   },
   ur: {
     loading: 'ڈیجیٹل کارڈ لوڈ ہو رہا ہے...',
     backDashboard: 'ڈیش بورڈ پر واپس',
     eyebrow: 'ڈیجیٹل ممبر آئی ڈی',
     title: 'ڈیجیٹل ممبرشپ کارڈ',
-    description: 'اپنا سرکاری جٹ الائنس سندھ ڈیجیٹل ممبرشپ کارڈ دیکھیں، تصدیق کریں اور ڈاؤن لوڈ کریں۔',
+    description:
+      'اپنا سرکاری جٹ الائنس سندھ ڈیجیٹل ممبرشپ کارڈ دیکھیں، تصدیق کریں اور ڈاؤن لوڈ کریں۔',
     refresh: 'تازہ کریں',
     summaryMember: 'ممبر',
     summaryStatus: 'اسٹیٹس',
@@ -163,16 +176,20 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     ready: 'تیار',
     notAvailable: 'دستیاب نہیں',
     formNotFoundTitle: 'ممبرشپ فارم نہیں ملا',
-    formNotFoundMessage: 'براہِ کرم پہلے ممبرشپ رجسٹریشن فارم مکمل کریں۔ ایڈمن منظوری کے بعد کارڈ دستیاب ہوگا۔',
+    formNotFoundMessage:
+      'براہِ کرم پہلے ممبرشپ رجسٹریشن فارم مکمل کریں۔ ایڈمن منظوری کے بعد کارڈ دستیاب ہوگا۔',
     completeRegistration: 'رجسٹریشن مکمل کریں',
-    swipeHint: 'پورا کارڈ دیکھنے کے لیے سائیڈ پر سوائپ کریں۔',
+    swipeHint:
+      'کارڈ پری ویو خود بخود آپ کی اسکرین میں فٹ ہو جاتا ہے۔ ڈاؤن لوڈ PNG فل سائز اور پرنٹ ریڈی رہے گا۔',
     cardReadyTitle: 'آپ کا کارڈ تیار ہے',
-    cardReadyMessage: 'آپ کی ممبرشپ منظور ہو چکی ہے۔ QR کوڈ آپ کا عوامی تصدیقی صفحہ کھولتا ہے۔',
+    cardReadyMessage:
+      'آپ کی ممبرشپ منظور ہو چکی ہے۔ QR کوڈ آپ کا عوامی تصدیقی صفحہ کھولتا ہے۔',
     verificationLink: 'تصدیقی لنک',
     copyLink: 'لنک کاپی کریں',
     openVerification: 'تصدیق کھولیں',
     downloadCard: 'کارڈ ڈاؤن لوڈ کریں',
-    downloadGuidance: 'پرنٹنگ یا شیئرنگ کے لیے فرنٹ/بیک PNG ڈاؤن لوڈ استعمال کریں۔ سرکاری کارڈ ڈیزائن تبدیل نہیں کیا گیا۔',
+    downloadGuidance:
+      'پرنٹنگ یا شیئرنگ کے لیے فرنٹ/بیک PNG ڈاؤن لوڈ استعمال کریں۔ ایکسپورٹ کارڈ فل سائز اور ہائی کوالٹی رہے گا۔',
     downloadFront: 'فرنٹ PNG ڈاؤن لوڈ کریں',
     downloadBack: 'بیک PNG ڈاؤن لوڈ کریں',
     downloadBoth: 'دونوں سائیڈز ڈاؤن لوڈ کریں',
@@ -192,21 +209,27 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     errorLoad: 'ڈیجیٹل ممبرشپ کارڈ لوڈ نہیں ہو سکا۔',
     errorMemberNoUnavailable: 'ممبر نمبر دستیاب نہیں۔',
     errorPrepareDownload: '{side} سائیڈ ڈاؤن لوڈ کے لیے تیار نہیں ہو سکی۔',
-    errorDownloadSide: '{side} سائیڈ ڈاؤن لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔',
-    errorDownloadBoth: 'دونوں کارڈ سائیڈز ڈاؤن لوڈ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
+    errorDownloadSide:
+      '{side} سائیڈ ڈاؤن لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔',
+    errorDownloadBoth:
+      'دونوں کارڈ سائیڈز ڈاؤن لوڈ نہیں ہو سکیں۔ دوبارہ کوشش کریں۔',
     rejectedTitle: 'درخواست میں درستگی ضروری ہے',
-    rejectedMessage: 'آپ کی درخواست رد ہو چکی ہے۔ فارم اپڈیٹ کر کے دوبارہ ایڈمن جائزے کے لیے جمع کرائیں۔',
+    rejectedMessage:
+      'آپ کی درخواست رد ہو چکی ہے۔ فارم اپڈیٹ کر کے دوبارہ ایڈمن جائزے کے لیے جمع کرائیں۔',
     noNumberTitle: 'ممبر نمبر ابھی جاری نہیں ہوا',
-    noNumberMessage: 'آپ کی درخواست منظور ہے، لیکن ممبر نمبر ابھی دستیاب نہیں۔ نمبر جاری ہونے کے بعد کارڈ ظاہر ہوگا۔',
+    noNumberMessage:
+      'آپ کی درخواست منظور ہے، لیکن ممبر نمبر ابھی دستیاب نہیں۔ نمبر جاری ہونے کے بعد کارڈ ظاہر ہوگا۔',
     pendingTitle: 'ڈیجیٹل کارڈ ابھی دستیاب نہیں',
-    pendingMessage: 'آپ کی ممبرشپ درخواست ابھی ایڈمن جائزے میں ہے۔ منظوری کے بعد ڈیجیٹل کارڈ دستیاب ہوگا۔',
+    pendingMessage:
+      'آپ کی ممبرشپ درخواست ابھی ایڈمن جائزے میں ہے۔ منظوری کے بعد ڈیجیٹل کارڈ دستیاب ہوگا۔',
   },
   sd: {
     loading: 'ڊجيٽل ڪارڊ لوڊ ٿي رهيو آهي...',
     backDashboard: 'ڊيش بورڊ ڏانهن واپس',
     eyebrow: 'ڊجيٽل ميمبر آءِ ڊي',
     title: 'ڊجيٽل ميمبرشپ ڪارڊ',
-    description: 'پنهنجو سرڪاري جٽ الائنس سنڌ ڊجيٽل ميمبرشپ ڪارڊ ڏسو، تصديق ڪريو ۽ ڊائون لوڊ ڪريو.',
+    description:
+      'پنهنجو سرڪاري جٽ الائنس سنڌ ڊجيٽل ميمبرشپ ڪارڊ ڏسو، تصديق ڪريو ۽ ڊائون لوڊ ڪريو.',
     refresh: 'تازو ڪريو',
     summaryMember: 'ميمبر',
     summaryStatus: 'اسٽيٽس',
@@ -216,16 +239,20 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     ready: 'تيار',
     notAvailable: 'دستياب ناهي',
     formNotFoundTitle: 'ميمبرشپ فارم نه مليو',
-    formNotFoundMessage: 'مهرباني ڪري پهرين ميمبرشپ رجسٽريشن فارم مڪمل ڪريو. ايڊمن منظوري کان پوءِ ڪارڊ دستياب ٿيندو.',
+    formNotFoundMessage:
+      'مهرباني ڪري پهرين ميمبرشپ رجسٽريشن فارم مڪمل ڪريو. ايڊمن منظوري کان پوءِ ڪارڊ دستياب ٿيندو.',
     completeRegistration: 'رجسٽريشن مڪمل ڪريو',
-    swipeHint: 'مڪمل ڪارڊ ڏسڻ لاءِ پاسيرو سوائپ ڪريو.',
+    swipeHint:
+      'ڪارڊ پريويو پاڻمرادو توهان جي اسڪرين ۾ فٽ ٿي ويندو. ڊائون لوڊ PNG فل سائيز ۽ پرنٽ ريڊي رهندو.',
     cardReadyTitle: 'توهان جو ڪارڊ تيار آهي',
-    cardReadyMessage: 'توهان جي ميمبرشپ منظور ٿي چڪي آهي. QR ڪوڊ عوامي تصديقي صفحو کولي ٿو.',
+    cardReadyMessage:
+      'توهان جي ميمبرشپ منظور ٿي چڪي آهي. QR ڪوڊ عوامي تصديقي صفحو کولي ٿو.',
     verificationLink: 'تصديقي لنڪ',
     copyLink: 'لنڪ ڪاپي ڪريو',
     openVerification: 'تصديق کوليو',
     downloadCard: 'ڪارڊ ڊائون لوڊ ڪريو',
-    downloadGuidance: 'پرنٽنگ يا شيئرنگ لاءِ فرنٽ/بئڪ PNG ڊائون لوڊ استعمال ڪريو. سرڪاري ڪارڊ ڊيزائن تبديل ناهي ڪيو ويو.',
+    downloadGuidance:
+      'پرنٽنگ يا شيئرنگ لاءِ فرنٽ/بئڪ PNG ڊائون لوڊ استعمال ڪريو. ايڪسپورٽ ڪارڊ فل سائيز ۽ هاءِ ڪوالٽي رهندو.',
     downloadFront: 'فرنٽ PNG ڊائون لوڊ ڪريو',
     downloadBack: 'بئڪ PNG ڊائون لوڊ ڪريو',
     downloadBoth: 'ٻئي پاسا ڊائون لوڊ ڪريو',
@@ -244,18 +271,23 @@ const cardPageText: Record<AppLanguage, CardPageText> = {
     errorCopyLink: 'تصديقي لنڪ ڪاپي نه ٿي سگهي.',
     errorLoad: 'ڊجيٽل ميمبرشپ ڪارڊ لوڊ نه ٿي سگهيو.',
     errorMemberNoUnavailable: 'ميمبر نمبر دستياب ناهي.',
-    errorPrepareDownload: '{side} پاسو ڊائون لوڊ لاءِ تيار نه ٿي سگهيو.',
-    errorDownloadSide: '{side} پاسو ڊائون لوڊ نه ٿي سگهيو. ٻيهر ڪوشش ڪريو.',
-    errorDownloadBoth: 'ٻئي ڪارڊ پاسا ڊائون لوڊ نه ٿي سگهيا. ٻيهر ڪوشش ڪريو.',
+    errorPrepareDownload:
+      '{side} پاسو ڊائون لوڊ لاءِ تيار نه ٿي سگهيو.',
+    errorDownloadSide:
+      '{side} پاسو ڊائون لوڊ نه ٿي سگهيو. ٻيهر ڪوشش ڪريو.',
+    errorDownloadBoth:
+      'ٻئي ڪارڊ پاسا ڊائون لوڊ نه ٿي سگهيا. ٻيهر ڪوشش ڪريو.',
     rejectedTitle: 'درخواست ۾ درستگي ضروري آهي',
-    rejectedMessage: 'توهان جي درخواست رد ٿي چڪي آهي. فارم اپڊيٽ ڪري ٻيهر ايڊمن جائزي لاءِ جمع ڪرايو.',
+    rejectedMessage:
+      'توهان جي درخواست رد ٿي چڪي آهي. فارم اپڊيٽ ڪري ٻيهر ايڊمن جائزي لاءِ جمع ڪرايو.',
     noNumberTitle: 'ميمبر نمبر اڃا جاري ناهي ٿيو',
-    noNumberMessage: 'توهان جي درخواست منظور آهي، پر ميمبر نمبر اڃا دستياب ناهي. نمبر جاري ٿيڻ کان پوءِ ڪارڊ ظاهر ٿيندو.',
+    noNumberMessage:
+      'توهان جي درخواست منظور آهي، پر ميمبر نمبر اڃا دستياب ناهي. نمبر جاري ٿيڻ کان پوءِ ڪارڊ ظاهر ٿيندو.',
     pendingTitle: 'ڊجيٽل ڪارڊ اڃا دستياب ناهي',
-    pendingMessage: 'توهان جي ميمبرشپ درخواست اڃا ايڊمن جائزي هيٺ آهي. منظوري کان پوءِ ڊجيٽل ڪارڊ دستياب ٿيندو.',
+    pendingMessage:
+      'توهان جي ميمبرشپ درخواست اڃا ايڊمن جائزي هيٺ آهي. منظوري کان پوءِ ڊجيٽل ڪارڊ دستياب ٿيندو.',
   },
 }
-
 
 type DownloadTarget = CardSide | 'both' | null
 
@@ -347,7 +379,7 @@ function CardPage() {
         const publicVerifyUrl = buildPublicVerifyUrl(data.member_no)
 
         const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
-          width: 320,
+          width: 360,
           margin: 1,
           errorCorrectionLevel: 'H',
           color: {
@@ -374,11 +406,7 @@ function CardPage() {
           setPhotoUrl(null)
         }
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : text.errorLoad,
-        )
+        setError(err instanceof Error ? err.message : text.errorLoad)
       } finally {
         setLoading(false)
         setRefreshing(false)
@@ -393,17 +421,10 @@ function CardPage() {
 
   useEffect(() => {
     const updateScale = () => {
-      const stageWidth = visibleStageRef.current?.clientWidth || CARD_WIDTH
-      const viewportWidth =
-        typeof window !== 'undefined' ? window.innerWidth : stageWidth
-
-      const minReadableScale =
-        viewportWidth < 420 ? 0.38 : viewportWidth < 640 ? 0.44 : 0.58
-
-      const nextScale = Math.min(
-        1,
-        Math.max(minReadableScale, stageWidth / CARD_WIDTH),
-      )
+      const stageWidth =
+        visibleStageRef.current?.getBoundingClientRect().width || CARD_WIDTH
+      const availableWidth = Math.max(220, Math.floor(stageWidth))
+      const nextScale = Math.min(1, Math.max(0.2, availableWidth / CARD_WIDTH))
 
       setCardScale(Number(nextScale.toFixed(4)))
     }
@@ -436,28 +457,21 @@ function CardPage() {
     const targetRef = side === 'front' ? frontExportRef : backExportRef
 
     if (!targetRef.current) {
-      throw new Error(text.errorPrepareDownload.replace('{side}', getCardSideText(side, text)))
+      throw new Error(
+        text.errorPrepareDownload.replace('{side}', getCardSideText(side, text)),
+      )
     }
 
-    const dataUrl = await toPng(targetRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-      backgroundColor: '#ffffff',
-      fontEmbedCSS: '',
-      width: CARD_WIDTH,
-      height: CARD_HEIGHT,
-      canvasWidth: CARD_WIDTH * 2,
-      canvasHeight: CARD_HEIGHT * 2,
-      style: {
-        margin: '0',
-        transform: 'none',
+    await exportElementAsPng(
+      targetRef.current,
+      `${member.member_no}-JAS-card-${side}.png`,
+      {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+        canvasWidth: CARD_WIDTH * 2.5,
+        canvasHeight: CARD_HEIGHT * 2.5,
       },
-    })
-
-    const link = document.createElement('a')
-    link.download = `${member.member_no}-JAS-card-${side}.png`
-    link.href = dataUrl
-    link.click()
+    )
   }
 
   async function handleDownload(side: CardSide) {
@@ -472,7 +486,10 @@ function CardPage() {
       setError(
         err instanceof Error
           ? err.message
-          : text.errorDownloadSide.replace('{side}', getCardSideText(side, text)),
+          : text.errorDownloadSide.replace(
+              '{side}',
+              getCardSideText(side, text),
+            ),
       )
     } finally {
       setDownloadingTarget(null)
@@ -490,11 +507,7 @@ function CardPage() {
       await exportCardToPng('back')
       setSuccess(text.successBoth)
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : text.errorDownloadBoth,
-      )
+      setError(err instanceof Error ? err.message : text.errorDownloadBoth)
     } finally {
       setDownloadingTarget(null)
     }
@@ -514,7 +527,7 @@ function CardPage() {
 
   if (loading) {
     return (
-      <main className="card-page-shell px-3 py-6 sm:px-4 sm:py-10">
+      <main className="card-page-shell overflow-x-hidden px-3 py-6 sm:px-4 sm:py-10">
         <div className="page-wrap rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
           <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
             <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
@@ -526,8 +539,8 @@ function CardPage() {
   }
 
   return (
-    <main className="card-page-shell px-3 py-6 sm:px-4 sm:py-10">
-      <div className="card-page-wrap page-wrap space-y-5 sm:space-y-6">
+    <main className="card-page-shell overflow-x-hidden px-3 py-6 sm:px-4 sm:py-10">
+      <div className="card-page-wrap page-wrap max-w-full space-y-5 sm:space-y-6">
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 sm:p-7">
             <BackToDashboard />
@@ -625,13 +638,16 @@ function CardPage() {
           />
         ) : cardReady ? (
           <>
-            <section className="card-preview-layout grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
-              <div className="card-visible-panel rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+            <section className="card-preview-layout grid max-w-full gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
+              <div className="card-visible-panel max-w-full rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
                 <p className="mb-3 text-center text-xs font-semibold text-slate-500 sm:hidden">
                   {text.swipeHint}
                 </p>
 
-                <div ref={visibleStageRef} className="card-scroll-stage w-full overflow-x-auto pb-2">
+                <div
+                  ref={visibleStageRef}
+                  className="card-scroll-stage w-full max-w-full overflow-hidden pb-2"
+                >
                   <ScaledCardShell scale={cardScale}>
                     <MembershipCard
                       side={selectedSide}
@@ -699,7 +715,9 @@ function CardPage() {
                     {text.downloadCard}
                   </p>
 
-                  <p className="mt-2 text-xs leading-5 text-slate-500">{text.downloadGuidance}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    {text.downloadGuidance}
+                  </p>
 
                   <div className="card-download-actions mt-3 grid gap-2">
                     <button
@@ -851,20 +869,23 @@ function ScaledCardShell({
   scale: number
   children: ReactNode
 }) {
+  const safeScale = Number.isFinite(scale) ? Math.min(1, Math.max(0.2, scale)) : 1
+
   return (
     <div
-      className="mx-auto"
+      className="mx-auto max-w-full"
       style={{
-        width: `${CARD_WIDTH * scale}px`,
-        height: `${CARD_HEIGHT * scale}px`,
+        width: `${CARD_WIDTH * safeScale}px`,
+        height: `${CARD_HEIGHT * safeScale}px`,
       }}
     >
       <div
         style={{
           width: `${CARD_WIDTH}px`,
           height: `${CARD_HEIGHT}px`,
-          transform: `scale(${scale})`,
+          transform: `scale(${safeScale})`,
           transformOrigin: 'top left',
+          willChange: 'transform',
         }}
       >
         {children}
@@ -1089,7 +1110,6 @@ function getCardSideText(side: CardSide, text: CardPageText) {
   return side === 'front' ? text.sideFront : text.sideBack
 }
 
-
 function buildPublicVerifyUrl(memberNo: string) {
   return `${PUBLIC_VERIFY_ORIGIN}/verify/${encodeURIComponent(memberNo)}`
 }
@@ -1104,7 +1124,6 @@ function formatVerifyUrlForDisplay(value: string) {
     return value.replace(/^https?:\/\//, '')
   }
 }
-
 
 function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms))

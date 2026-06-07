@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ArrowLeft,
   BadgeCheck,
+  BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
   Clock,
@@ -57,6 +58,21 @@ import {
   todayDate,
 } from '../../../lib/shared/formatters'
 import { useAdminMemberDetailCopy } from '../../../lib/admin-member-detail-i18n'
+import {
+  addCommitteeMember,
+  fetchCommitteesForAdmin,
+  fetchDesignations,
+  formatCommitteeDate,
+  getCommitteeLocationLabel,
+  getCommitteeStatusClass,
+  getCommitteeStatusLabel,
+  getCommitteeTypeLabel,
+  type CommitteeMemberRecord,
+  type CommitteeRecord,
+  type CommitteeStatus,
+  type DesignationRecord,
+  type MemberSearchResult,
+} from '../../../lib/committees'
 
 export const Route = createFileRoute('/admin/members/$id')({
   component: AdminMemberDetailPage,
@@ -117,6 +133,21 @@ type AdminEditField = keyof AdminEditFormState | 'photo'
 
 type AdminEditErrors = Partial<Record<AdminEditField, string>>
 
+type OfficeBearerIssueForm = {
+  committeeId: string
+  designationId: string
+  designationTitle: string
+  status: CommitteeStatus
+  sortOrder: string
+  tenureStart: string
+  tenureEnd: string
+  appointmentNotes: string
+}
+
+type AdminOfficeBearerAssignment = CommitteeMemberRecord & {
+  committee: CommitteeRecord | null
+}
+
 type AdminAccessResult =
   | { ok: true }
   | { ok: false; redirectTo: '/login' | '/dashboard' }
@@ -130,6 +161,17 @@ const MIN_REJECTION_REASON_LENGTH = 10
 const MEMBERSHIP_REVIEW_ROLES: Array<
   'admin' | 'super_admin' | 'membership_admin'
 > = ['admin', 'super_admin', 'membership_admin']
+
+const initialOfficeBearerIssueForm: OfficeBearerIssueForm = {
+  committeeId: '',
+  designationId: '',
+  designationTitle: '',
+  status: 'active',
+  sortOrder: '10',
+  tenureStart: todayDate(),
+  tenureEnd: '',
+  appointmentNotes: '',
+}
 
 const MEMBER_SELECT_COLUMNS = [
   'id',
@@ -202,6 +244,22 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const [editPhoto, setEditPhoto] = useState<File | null>(null)
   const [editPhotoPreview, setEditPhotoPreview] = useState<string | null>(null)
   const [receiptUploading, setReceiptUploading] = useState(false)
+  const [officeBearerAssignments, setOfficeBearerAssignments] = useState<
+    AdminOfficeBearerAssignment[]
+  >([])
+  const [officeBearerCommittees, setOfficeBearerCommittees] = useState<
+    CommitteeRecord[]
+  >([])
+  const [officeBearerDesignations, setOfficeBearerDesignations] = useState<
+    DesignationRecord[]
+  >([])
+  const [officeBearerForm, setOfficeBearerForm] = useState<OfficeBearerIssueForm>(
+    initialOfficeBearerIssueForm,
+  )
+  const [officeBearerPanelOpen, setOfficeBearerPanelOpen] = useState(false)
+  const [officeBearerLoading, setOfficeBearerLoading] = useState(false)
+  const [officeBearerSaving, setOfficeBearerSaving] = useState(false)
+  const [officeBearerError, setOfficeBearerError] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -211,6 +269,19 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   )
 
   const canViewCard = member?.status === 'approved' && Boolean(member.member_no)
+  const canIssueOfficeBearer = canViewCard
+  const hasActiveOfficeBearer = officeBearerAssignments.some(
+    (assignment) => assignment.status === 'active',
+  )
+  const selectedOfficeBearerCommittee = officeBearerCommittees.find(
+    (committee) => committee.id === officeBearerForm.committeeId,
+  )
+  const scopedOfficeBearerDesignations = officeBearerDesignations.filter(
+    (designation) =>
+      designation.is_active &&
+      (!selectedOfficeBearerCommittee ||
+        designation.scope === selectedOfficeBearerCommittee.committee_type),
+  )
   const canEditApplication =
     member?.status === 'pending' || member?.status === 'rejected'
   const reasonTooShort =
@@ -302,6 +373,15 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       cancelledRef.current = true
     }
   }, [loadMember])
+
+  useEffect(() => {
+    if (!member?.id || !canIssueOfficeBearer) {
+      setOfficeBearerAssignments([])
+      return
+    }
+
+    void loadOfficeBearerIssueData(member.id)
+  }, [member?.id, canIssueOfficeBearer])
 
   useEffect(() => {
     return () => {
@@ -492,6 +572,155 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       )
     } finally {
       setEditSaving(false)
+    }
+  }
+
+  function openOfficeBearerPanel() {
+    setOfficeBearerPanelOpen(true)
+
+    window.setTimeout(() => {
+      document.getElementById('office-bearer-issue-panel')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 100)
+  }
+
+  async function loadOfficeBearerIssueData(memberId: string) {
+    setOfficeBearerLoading(true)
+    setOfficeBearerError('')
+
+    try {
+      const [committees, designations, assignments] = await Promise.all([
+        fetchCommitteesForAdmin(),
+        fetchDesignations(),
+        fetchOfficeBearerAssignments(memberId),
+      ])
+
+      setOfficeBearerCommittees(committees)
+      setOfficeBearerDesignations(designations)
+      setOfficeBearerAssignments(assignments)
+    } catch (err) {
+      setOfficeBearerError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to load office bearer designation data.',
+      )
+    } finally {
+      setOfficeBearerLoading(false)
+    }
+  }
+
+  function updateOfficeBearerForm(fields: Partial<OfficeBearerIssueForm>) {
+    setOfficeBearerForm((current) => ({ ...current, ...fields }))
+    setOfficeBearerError('')
+    setSuccess('')
+  }
+
+  function handleOfficeBearerCommitteeChange(committeeId: string) {
+    const committee = officeBearerCommittees.find((item) => item.id === committeeId)
+
+    setOfficeBearerForm((current) => ({
+      ...current,
+      committeeId,
+      designationId: '',
+      designationTitle: '',
+      tenureStart: committee?.tenure_start ?? (current.tenureStart || todayDate()),
+      tenureEnd: committee?.tenure_end ?? '',
+    }))
+    setOfficeBearerError('')
+    setSuccess('')
+  }
+
+  function handleOfficeBearerDesignationChange(designationId: string) {
+    const designation = officeBearerDesignations.find((item) => item.id === designationId)
+
+    setOfficeBearerForm((current) => ({
+      ...current,
+      designationId,
+      designationTitle: designation?.title ?? current.designationTitle,
+    }))
+    setOfficeBearerError('')
+    setSuccess('')
+  }
+
+  async function handleIssueOfficeBearerSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!member || !canIssueOfficeBearer || officeBearerSaving) return
+
+    const selectedCommittee = officeBearerCommittees.find(
+      (committee) => committee.id === officeBearerForm.committeeId,
+    )
+    const designationTitle = officeBearerForm.designationTitle.trim()
+    const sortOrder = Number.parseInt(officeBearerForm.sortOrder, 10)
+
+    if (!selectedCommittee) {
+      setOfficeBearerError('Select an active committee first.')
+      return
+    }
+
+    if (selectedCommittee.status !== 'active') {
+      setOfficeBearerError('Designation can only be issued from an active committee.')
+      return
+    }
+
+    if (!designationTitle) {
+      setOfficeBearerError('Designation title is required.')
+      return
+    }
+
+    if (!Number.isFinite(sortOrder) || sortOrder < 0) {
+      setOfficeBearerError('Display order must be a valid positive number.')
+      return
+    }
+
+    const duplicateActiveCommitteeRole = officeBearerAssignments.find(
+      (assignment) =>
+        assignment.committee_id === selectedCommittee.id &&
+        assignment.status === 'active',
+    )
+
+    if (duplicateActiveCommitteeRole) {
+      setOfficeBearerError(
+        `This member already has an active ${duplicateActiveCommitteeRole.designation_title} role in this committee. Open the committee detail page to edit the existing role.`,
+      )
+      return
+    }
+
+    setOfficeBearerSaving(true)
+    setOfficeBearerError('')
+    setError('')
+    setSuccess('')
+
+    try {
+      await addCommitteeMember({
+        committee_id: selectedCommittee.id,
+        member: memberToCommitteeSearchResult(member),
+        designation_id: officeBearerForm.designationId || null,
+        designation_title: designationTitle,
+        status: officeBearerForm.status,
+        sort_order: sortOrder,
+        tenure_start: officeBearerForm.tenureStart || null,
+        tenure_end: officeBearerForm.tenureEnd || null,
+        appointment_notes: officeBearerForm.appointmentNotes.trim() || null,
+      })
+
+      await loadOfficeBearerIssueData(member.id)
+      setOfficeBearerForm({
+        ...initialOfficeBearerIssueForm,
+        tenureStart: todayDate(),
+      })
+      setOfficeBearerPanelOpen(false)
+      setSuccess('Office bearer designation issued successfully. The designation card is now available.')
+    } catch (err) {
+      setOfficeBearerError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to issue office bearer designation.',
+      )
+    } finally {
+      setOfficeBearerSaving(false)
     }
   }
 
@@ -870,6 +1099,15 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                         <BadgeCheck className="h-4 w-4 text-amber-300" />
                         {copy.officeBearerCard}
                       </Link>
+
+                      <button
+                        type="button"
+                        onClick={openOfficeBearerPanel}
+                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
+                      >
+                        <BriefcaseBusiness className="h-4 w-4" />
+                        Issue Designation
+                      </button>
                     </>
                   ) : null}
                 </div>
@@ -990,7 +1228,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               </div>
 
               {canViewCard ? (
-                <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
+                <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
                   <Link
                     to="/admin/members/$id/card"
                     params={{ id: member.id }}
@@ -1010,6 +1248,15 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     <BadgeCheck className="h-4 w-4 text-amber-300" />
                     {copy.officeCard}
                   </Link>
+
+                  <button
+                    type="button"
+                    onClick={openOfficeBearerPanel}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
+                  >
+                    <BriefcaseBusiness className="h-4 w-4" />
+                    Issue Designation
+                  </button>
                 </div>
               ) : null}
             </div>
@@ -1089,6 +1336,28 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
             ) : null}
           </section>
         </section>
+
+        {canViewCard ? (
+          <OfficeBearerIssuePanel
+            member={member}
+            assignments={officeBearerAssignments}
+            committees={officeBearerCommittees}
+            designations={scopedOfficeBearerDesignations}
+            selectedCommittee={selectedOfficeBearerCommittee ?? null}
+            form={officeBearerForm}
+            loading={officeBearerLoading}
+            saving={officeBearerSaving}
+            error={officeBearerError}
+            isOpen={officeBearerPanelOpen}
+            hasActiveOfficeBearer={hasActiveOfficeBearer}
+            onOpenChange={setOfficeBearerPanelOpen}
+            onRefresh={() => void loadOfficeBearerIssueData(member.id)}
+            onCommitteeChange={handleOfficeBearerCommitteeChange}
+            onDesignationChange={handleOfficeBearerDesignationChange}
+            onFormChange={updateOfficeBearerForm}
+            onSubmit={handleIssueOfficeBearerSubmit}
+          />
+        ) : null}
 
         {member.status === 'pending' ? (
           <section className="admin-member-review-panel rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
@@ -1215,6 +1484,336 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   )
 }
 
+
+function OfficeBearerIssuePanel({
+  member,
+  assignments,
+  committees,
+  designations,
+  selectedCommittee,
+  form,
+  loading,
+  saving,
+  error,
+  isOpen,
+  hasActiveOfficeBearer,
+  onOpenChange,
+  onRefresh,
+  onCommitteeChange,
+  onDesignationChange,
+  onFormChange,
+  onSubmit,
+}: {
+  member: Member
+  assignments: AdminOfficeBearerAssignment[]
+  committees: CommitteeRecord[]
+  designations: DesignationRecord[]
+  selectedCommittee: CommitteeRecord | null
+  form: OfficeBearerIssueForm
+  loading: boolean
+  saving: boolean
+  error: string
+  isOpen: boolean
+  hasActiveOfficeBearer: boolean
+  onOpenChange: (value: boolean) => void
+  onRefresh: () => void
+  onCommitteeChange: (committeeId: string) => void
+  onDesignationChange: (designationId: string) => void
+  onFormChange: (fields: Partial<OfficeBearerIssueForm>) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  const activeCommittees = committees.filter((committee) => committee.status === 'active')
+  const selectedActiveCommittee = selectedCommittee?.status === 'active' ? selectedCommittee : null
+  const canSubmit = Boolean(selectedActiveCommittee) && Boolean(form.designationTitle.trim())
+
+  return (
+    <section id="office-bearer-issue-panel" className="scroll-mt-24 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
+            Office Bearer Designation
+          </p>
+          <h2 className="mt-2 text-lg font-black text-slate-950">
+            Issue designation and office bearer card
+          </h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+            Assign this approved member to an active committee. After saving, the office bearer card and QR verification use the same official designation record.
+          </p>
+        </div>
+
+        <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+
+          <Link
+            to="/admin/members/$id/designation-card"
+            params={{ id: member.id }}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-950 px-4 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:bg-emerald-900 hover:!text-white"
+            style={{ color: '#ffffff' }}
+          >
+            <BadgeCheck className="h-4 w-4 text-amber-300" />
+            Open Card
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => onOpenChange(!isOpen)}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
+          >
+            <BriefcaseBusiness className="h-4 w-4" />
+            {isOpen ? 'Close Form' : 'Issue New'}
+          </button>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-800">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)]">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">
+                Current designations
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Active designation is required for a valid office bearer card.
+              </p>
+            </div>
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-xs font-black ring-1 ${
+                hasActiveOfficeBearer
+                  ? 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+                  : 'bg-amber-50 text-amber-900 ring-amber-200'
+              }`}
+            >
+              {hasActiveOfficeBearer ? 'Active Card Ready' : 'No Active Card'}
+            </span>
+          </div>
+
+          {loading ? (
+            <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-4 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
+              <Loader2 className="h-4 w-4 animate-spin text-emerald-700" />
+              Loading office bearer assignments...
+            </div>
+          ) : assignments.length ? (
+            <div className="mt-4 grid gap-3">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-base font-black text-slate-950">
+                        {assignment.designation_title}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-slate-600">
+                        {assignment.committee?.name ?? 'Committee not found'}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {assignment.committee
+                          ? `${getCommitteeTypeLabel(assignment.committee.committee_type)} · ${getCommitteeLocationLabel(assignment.committee)}`
+                          : 'Committee details unavailable'}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-black ring-1 ${getCommitteeStatusClass(
+                        assignment.status,
+                      )}`}
+                    >
+                      {getCommitteeStatusLabel(assignment.status)}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-3">
+                    <span>Start: {formatCommitteeDate(assignment.tenure_start)}</span>
+                    <span>End: {formatCommitteeDate(assignment.tenure_end)}</span>
+                    <span>Order: {assignment.sort_order}</span>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {assignment.committee ? (
+                      <Link
+                        to="/admin/committees/$id"
+                        params={{ id: assignment.committee.id }}
+                        className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 no-underline shadow-sm transition hover:bg-slate-50"
+                      >
+                        Manage Committee
+                      </Link>
+                    ) : null}
+                    {assignment.status === 'active' ? (
+                      <Link
+                        to="/admin/members/$id/designation-card"
+                        params={{ id: member.id }}
+                        className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-900 px-3 text-xs font-black !text-white no-underline shadow-sm transition hover:bg-emerald-800"
+                        style={{ color: '#ffffff' }}
+                      >
+                        Open Office Bearer Card
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-slate-600 ring-1 ring-slate-200">
+              No office bearer designation has been issued to this approved member yet. Use the quick form to assign one.
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+          <p className="font-black">Quick issue process</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5 font-semibold">
+            <li>Select an active committee.</li>
+            <li>Select or type the designation title.</li>
+            <li>Save to activate the office bearer card.</li>
+          </ol>
+          <p className="mt-3 text-xs font-semibold text-amber-800">
+            Member must remain approved and the assigned committee must stay active for QR verification to remain valid.
+          </p>
+        </div>
+      </div>
+
+      {isOpen ? (
+        <form
+          onSubmit={onSubmit}
+          className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4"
+          noValidate
+        >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <AdminEditInput label="Committee" required>
+              <select
+                value={form.committeeId}
+                onChange={(event) => onCommitteeChange(event.target.value)}
+                className="admin-edit-input"
+              >
+                <option value="">Select active committee</option>
+                {activeCommittees.map((committee) => (
+                  <option key={committee.id} value={committee.id}>
+                    {committee.name} · {getCommitteeLocationLabel(committee)}
+                  </option>
+                ))}
+              </select>
+            </AdminEditInput>
+
+            <AdminEditInput label="Designation" required>
+              <select
+                value={form.designationId}
+                onChange={(event) => onDesignationChange(event.target.value)}
+                className="admin-edit-input"
+                disabled={!selectedActiveCommittee}
+              >
+                <option value="">Select designation</option>
+                {designations.map((designation) => (
+                  <option key={designation.id} value={designation.id}>
+                    {designation.title}
+                  </option>
+                ))}
+              </select>
+            </AdminEditInput>
+
+            <AdminEditInput label="Designation title" required>
+              <input
+                value={form.designationTitle}
+                onChange={(event) => onFormChange({ designationTitle: event.target.value })}
+                className="admin-edit-input"
+                placeholder="e.g. District President"
+              />
+            </AdminEditInput>
+
+            <AdminEditInput label="Status" required>
+              <select
+                value={form.status}
+                onChange={(event) => onFormChange({ status: event.target.value as CommitteeStatus })}
+                className="admin-edit-input"
+              >
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="completed">Completed</option>
+                <option value="resigned">Resigned</option>
+              </select>
+            </AdminEditInput>
+
+            <AdminEditInput label="Display order" required>
+              <input
+                type="number"
+                min="0"
+                value={form.sortOrder}
+                onChange={(event) => onFormChange({ sortOrder: event.target.value })}
+                className="admin-edit-input"
+              />
+            </AdminEditInput>
+
+            <AdminEditInput label="Tenure start">
+              <input
+                type="date"
+                value={form.tenureStart}
+                onChange={(event) => onFormChange({ tenureStart: event.target.value })}
+                className="admin-edit-input"
+              />
+            </AdminEditInput>
+
+            <AdminEditInput label="Tenure end">
+              <input
+                type="date"
+                value={form.tenureEnd}
+                onChange={(event) => onFormChange({ tenureEnd: event.target.value })}
+                className="admin-edit-input"
+              />
+            </AdminEditInput>
+
+            <AdminEditInput label="Appointment notes" wide>
+              <textarea
+                value={form.appointmentNotes}
+                onChange={(event) => onFormChange({ appointmentNotes: event.target.value })}
+                className="admin-edit-input min-h-24"
+                placeholder="Optional CWC/committee approval note."
+              />
+            </AdminEditInput>
+          </div>
+
+          {activeCommittees.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">
+              No active committee is available. Create or activate a committee first from Committees & Designations.
+            </div>
+          ) : null}
+
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !canSubmit || activeCommittees.length === 0}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
+              {saving ? 'Issuing...' : 'Issue Designation'}
+            </button>
+          </div>
+        </form>
+      ) : null}
+    </section>
+  )
+}
+
 function AdminMemberEditPanel({
   form,
   errors,
@@ -1240,7 +1839,7 @@ function AdminMemberEditPanel({
   onCancel: () => void
 }) {
   return (
-    <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200 sm:p-6 md:col-span-2">
+    <section id="office-bearer-issue-panel" className="scroll-mt-24 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200 sm:p-6 md:col-span-2">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
@@ -2142,6 +2741,90 @@ async function fetchMembershipPaymentWithReceiptUrl(memberId: string): Promise<{
           ? `Payment record could not be loaded: ${err.message}`
           : 'Payment record could not be loaded.',
     }
+  }
+}
+
+
+async function fetchOfficeBearerAssignments(memberId: string) {
+  const { data, error } = await supabase
+    .from('organization_committee_members' as never)
+    .select([
+      'id',
+      'committee_id',
+      'member_id',
+      'designation_id',
+      'designation_title',
+      'status',
+      'sort_order',
+      'tenure_start',
+      'tenure_end',
+      'appointment_notes',
+      'member_no_snapshot',
+      'full_name_snapshot',
+      'father_name_snapshot',
+      'district_snapshot',
+      'taluka_snapshot',
+      'created_at',
+      'updated_at',
+    ].join(', '))
+    .eq('member_id' as never, memberId as never)
+    .order('status', { ascending: true })
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  const assignments = (data ?? []) as unknown as CommitteeMemberRecord[]
+  const committeeIds = Array.from(new Set(assignments.map((item) => item.committee_id)))
+
+  if (!committeeIds.length) return []
+
+  const { data: committeeData, error: committeeError } = await supabase
+    .from('organization_committees' as never)
+    .select([
+      'id',
+      'committee_type',
+      'name',
+      'division',
+      'district',
+      'taluka',
+      'tenure_start',
+      'tenure_end',
+      'status',
+      'public_display',
+      'notes',
+      'created_by',
+      'updated_by',
+      'created_at',
+      'updated_at',
+    ].join(', '))
+    .in('id' as never, committeeIds as never)
+
+  if (committeeError) throw committeeError
+
+  const committeeMap = new Map(
+    ((committeeData ?? []) as unknown as CommitteeRecord[]).map((committee) => [
+      committee.id,
+      committee,
+    ]),
+  )
+
+  return assignments.map((assignment) => ({
+    ...assignment,
+    committee: committeeMap.get(assignment.committee_id) ?? null,
+  }))
+}
+
+function memberToCommitteeSearchResult(member: Member): MemberSearchResult {
+  return {
+    id: member.id,
+    full_name: member.full_name,
+    father_name: member.father_name,
+    member_no: member.member_no,
+    district: member.district,
+    taluka: member.taluka,
+    mobile: member.mobile,
+    status: member.status,
   }
 }
 

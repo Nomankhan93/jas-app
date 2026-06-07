@@ -37,8 +37,10 @@ export function OfficeBearerCardPackage({
   card: DesignationCardRecord
   adminPreview?: boolean
 }) {
-  const frontRef = useRef<HTMLDivElement>(null)
-  const backRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const frontExportRef = useRef<HTMLDivElement>(null)
+  const backExportRef = useRef<HTMLDivElement>(null)
+  const [cardScale, setCardScale] = useState(1)
   const [selectedSide, setSelectedSide] = useState<CardSide>('front')
   const [qrDataUrl, setQrDataUrl] = useState('')
   const [downloading, setDownloading] = useState<CardSide | 'both' | null>(null)
@@ -50,6 +52,7 @@ export function OfficeBearerCardPackage({
   const displayDesignation = formatOfficeBearerDisplayText(card.designation_title)
   const displayMemberName = formatOfficeBearerDisplayText(card.member.full_name || card.full_name_snapshot)
   const cardTitle = adminPreview ? 'Admin office bearer card preview' : 'My office bearer card'
+  const downloadDisabled = Boolean(downloading) || !qrDataUrl
 
   useEffect(() => {
     let cancelled = false
@@ -57,7 +60,7 @@ export function OfficeBearerCardPackage({
     async function generateQr() {
       try {
         const dataUrl = await generateQrDataUrl(verificationUrl, {
-          width: 340,
+          width: 420,
           margin: 1,
           errorCorrectionLevel: 'H',
           color: {
@@ -79,17 +82,52 @@ export function OfficeBearerCardPackage({
     }
   }, [verificationUrl])
 
+  useEffect(() => {
+    const updateScale = () => {
+      const stageWidth = stageRef.current?.clientWidth || OFFICE_CARD_WIDTH
+      const availableWidth = Math.max(220, stageWidth)
+      const nextScale = Math.min(1, Math.max(0.22, availableWidth / OFFICE_CARD_WIDTH))
+      setCardScale(Number(nextScale.toFixed(4)))
+    }
+
+    updateScale()
+
+    const node = stageRef.current
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScale) : null
+
+    if (node && resizeObserver) {
+      resizeObserver.observe(node)
+    }
+
+    window.addEventListener('resize', updateScale)
+
+    return () => {
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', updateScale)
+    }
+  }, [])
+
   async function downloadSide(side: CardSide) {
-    const target = side === 'front' ? frontRef.current : backRef.current
+    const target = side === 'front' ? frontExportRef.current : backExportRef.current
 
     if (!target) {
       throw new Error(`Unable to prepare ${side} side for download.`)
     }
 
-    await exportElementAsPng(target, `${officeBearerId}-${side}.png`)
+    await exportElementAsPng(target, `${officeBearerId}-${side}.png`, {
+      width: OFFICE_CARD_WIDTH,
+      height: OFFICE_CARD_HEIGHT,
+      canvasWidth: OFFICE_CARD_WIDTH * 2.5,
+      canvasHeight: OFFICE_CARD_HEIGHT * 2.5,
+    })
   }
 
   async function handleDownload(target: CardSide | 'both') {
+    if (!qrDataUrl) {
+      setDownloadError('QR code is still preparing. Please try again in a moment.')
+      return
+    }
+
     setDownloadError('')
     setDownloading(target)
 
@@ -109,7 +147,6 @@ export function OfficeBearerCardPackage({
       setDownloading(null)
     }
   }
-
 
   async function copyVerificationUrl() {
     try {
@@ -154,7 +191,7 @@ export function OfficeBearerCardPackage({
           <button
             type="button"
             onClick={() => void handleDownload(selectedSide)}
-            disabled={Boolean(downloading)}
+            disabled={downloadDisabled}
             className="inline-flex items-center gap-2 rounded-2xl bg-[#f6d56f] px-4 py-2 text-sm font-black text-emerald-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Download size={16} />
@@ -163,11 +200,11 @@ export function OfficeBearerCardPackage({
           <button
             type="button"
             onClick={() => void handleDownload('both')}
-            disabled={Boolean(downloading)}
+            disabled={downloadDisabled}
             className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-4 py-2 text-sm font-black text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Download size={16} />
-            Both Sides
+            {downloading === 'both' ? 'Downloading...' : 'Both Sides'}
           </button>
           <button
             type="button"
@@ -195,15 +232,19 @@ export function OfficeBearerCardPackage({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto rounded-[1.65rem] bg-slate-100 p-3 print:overflow-visible print:bg-white print:p-0">
-        <div className="relative mx-auto w-max">
-          <div className={selectedSide === 'front' ? 'block' : 'absolute left-0 top-0 -z-10 opacity-0 print:static print:z-auto print:mb-6 print:opacity-100'}>
-            <OfficeBearerCardFront ref={frontRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
-          </div>
-          <div className={selectedSide === 'back' ? 'block' : 'absolute left-0 top-0 -z-10 opacity-0 print:static print:z-auto print:opacity-100'}>
-            <OfficeBearerCardBack ref={backRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
-          </div>
-        </div>
+      <div ref={stageRef} className="overflow-hidden rounded-[1.65rem] bg-slate-100 p-3 print:overflow-visible print:bg-white print:p-0">
+        <ScaledOfficeCardShell scale={cardScale}>
+          {selectedSide === 'front' ? (
+            <OfficeBearerCardFront card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
+          ) : (
+            <OfficeBearerCardBack card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
+          )}
+        </ScaledOfficeCardShell>
+      </div>
+
+      <div className="pointer-events-none fixed left-[-10000px] top-0" aria-hidden="true">
+        <OfficeBearerCardFront ref={frontExportRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
+        <OfficeBearerCardBack ref={backExportRef} card={card} qrDataUrl={qrDataUrl} officeBearerId={officeBearerId} verificationUrl={verificationUrl} />
       </div>
     </article>
   )
@@ -211,6 +252,36 @@ export function OfficeBearerCardPackage({
 
 export function DesignationCard({ card }: { card: DesignationCardRecord }) {
   return <OfficeBearerCardPackage card={card} />
+}
+
+
+function ScaledOfficeCardShell({
+  scale,
+  children,
+}: {
+  scale: number
+  children: ReactNode
+}) {
+  return (
+    <div
+      className="mx-auto"
+      style={{
+        width: `${OFFICE_CARD_WIDTH * scale}px`,
+        height: `${OFFICE_CARD_HEIGHT * scale}px`,
+      }}
+    >
+      <div
+        style={{
+          width: `${OFFICE_CARD_WIDTH}px`,
+          height: `${OFFICE_CARD_HEIGHT}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  )
 }
 
 const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
@@ -238,11 +309,11 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
       style={{ width: OFFICE_CARD_WIDTH, height: OFFICE_CARD_HEIGHT }}
     >
       <PremiumCardBackground />
-      <div className="relative z-10 flex h-full flex-col p-[30px]">
+      <div className="relative z-10 flex h-full flex-col p-[28px]">
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="relative flex h-[100px] w-[100px] items-center justify-center rounded-[28px] border border-[#f6d56f]/50 bg-white p-2 shadow-[0_16px_40px_rgba(0,0,0,0.28)]">
-              <img src={JAS_LOGO_PATH} alt="JAS" className="h-full w-full rounded-[22px] object-cover" draggable={false} />
+              <img src={JAS_LOGO_PATH} alt="JAS" className="h-full w-full rounded-[22px] object-cover object-top" draggable={false} />
             </div>
             <div>
               <p className="text-[18px] font-black uppercase tracking-[0.42em] text-[#f6d56f]">Jatt Alliance Sindh</p>
@@ -259,9 +330,9 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
           </div>
         </div>
 
-        <div className="mt-8 grid flex-1 grid-cols-[225px_1fr_210px] gap-6">
+        <div className="mt-7 grid flex-1 grid-cols-[222px_1fr_214px] gap-6">
           <div className="space-y-4">
-            <div className="relative h-[225px] w-[225px] overflow-hidden rounded-[32px] border-[6px] border-white bg-white shadow-[0_22px_55px_rgba(0,0,0,0.33)]">
+            <div className="relative h-[222px] w-[222px] overflow-hidden rounded-[32px] border-[6px] border-white bg-white shadow-[0_22px_55px_rgba(0,0,0,0.33)]">
               {card.photoSignedUrl ? (
                 <img src={card.photoSignedUrl} alt={memberName} className="h-full w-full object-cover object-top" draggable={false} />
               ) : (
@@ -279,10 +350,10 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
 
           <div className="min-w-0 rounded-[34px] border border-white/12 bg-white/[0.08] p-6 backdrop-blur">
             <p className="text-[16px] font-black uppercase tracking-[0.25em] text-[#f6d56f]">{designationTitle}</p>
-            <h4 className="mt-4 text-[50px] font-black leading-[0.95] tracking-[-0.055em] text-white">{memberName}</h4>
-            <p className="mt-3 text-[20px] font-bold text-white/68">Father: {fatherName}</p>
+            <h4 className="mt-4 line-clamp-2 text-[48px] font-black leading-[0.95] tracking-[-0.055em] text-white">{memberName}</h4>
+            <p className="mt-3 line-clamp-1 text-[19px] font-bold text-white/68">Father: {fatherName}</p>
 
-            <div className="mt-7 grid grid-cols-2 gap-4">
+            <div className="mt-6 grid grid-cols-2 gap-4">
               <PremiumInfo label="Committee" value={committeeName} icon={<Landmark className="h-5 w-5" />} />
               <PremiumInfo label="Level" value={level} icon={<ShieldCheck className="h-5 w-5" />} />
               <PremiumInfo label="Location" value={location} icon={<MapPin className="h-5 w-5" />} />
@@ -353,7 +424,7 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
         <div className="flex items-start justify-between gap-5 border-b-4 border-[#d5ad44] pb-4">
           <div className="flex items-center gap-5">
             <div className="flex h-[74px] w-[74px] items-center justify-center rounded-[22px] bg-[#06130f] p-1.5 shadow-xl">
-              <img src={JAS_LOGO_PATH} alt="JAS" className="h-full w-full rounded-[18px] object-cover" draggable={false} />
+              <img src={JAS_LOGO_PATH} alt="JAS" className="h-full w-full rounded-[18px] object-cover object-top" draggable={false} />
             </div>
             <div>
               <p className="text-[12px] font-black uppercase tracking-[0.32em] text-emerald-800">Issuing Authority</p>
@@ -393,8 +464,8 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
 
               <div className="rounded-[24px] border border-slate-200 bg-white/88 p-4 shadow-sm">
                 <p className="text-[12px] font-black uppercase tracking-[0.18em] text-emerald-800">Authorized Signature</p>
-                <div className="mt-2 flex h-[70px] items-center justify-center overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-100">
-                  <img src={JAS_SIGNATURE_PATH} alt="Authorized signature" className="h-[66px] w-[214px] object-contain brightness-75 contrast-150 saturate-0" draggable={false} />
+                <div className="mt-2 flex h-[88px] items-center justify-center overflow-hidden rounded-2xl bg-slate-50 ring-1 ring-slate-100">
+                  <img src={JAS_SIGNATURE_PATH} alt="Authorized signature" className="h-[84px] w-[250px] object-contain brightness-75 contrast-150 saturate-0" draggable={false} />
                 </div>
                 <div className="mt-2 h-[2px] w-full bg-slate-500" />
                 <p className="mt-2 text-[13px] font-black text-slate-950">Authorized Signature</p>
@@ -406,16 +477,16 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
           <aside className="flex flex-col gap-3 rounded-[30px] bg-[#06130f] p-4 text-white shadow-xl">
             <div className="rounded-[24px] bg-white p-3 text-center text-slate-950">
               {qrDataUrl ? (
-                <img src={qrDataUrl} alt="Verification QR" className="mx-auto h-[166px] w-[166px]" draggable={false} />
+                <img src={qrDataUrl} alt="Verification QR" className="mx-auto h-[176px] w-[176px]" draggable={false} />
               ) : (
-                <div className="mx-auto flex h-[166px] w-[166px] items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><QrCode /></div>
+                <div className="mx-auto flex h-[176px] w-[176px] items-center justify-center rounded-2xl bg-slate-100 text-slate-500"><QrCode /></div>
               )}
               <p className="mt-1.5 text-[12px] font-black uppercase tracking-[0.22em] text-slate-500">Scan to verify</p>
             </div>
 
             <div className="rounded-[22px] border border-white/12 bg-white/10 p-3.5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Verification URL</p>
-              <p className="mt-2 break-all text-[10.8px] font-semibold leading-4 text-white/70">{verificationUrl}</p>
+              <p className="mt-2 line-clamp-4 break-all text-[10.8px] font-semibold leading-4 text-white/70">{verificationUrl}</p>
             </div>
 
             <div className="rounded-[22px] border border-[#f6d56f]/40 bg-[#f6d56f] p-3.5 text-emerald-950">
