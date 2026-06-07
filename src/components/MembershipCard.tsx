@@ -639,13 +639,42 @@ function FrontInfoItem({
             </span>
           </div>
         ) : (
-          <p className="mt-2 max-w-full whitespace-nowrap text-[28px] font-black leading-[1.02] tracking-[-0.035em] text-[#073b27]">
+          <p
+            className={`mt-2 max-w-[235px] break-words font-black text-[#073b27] ${getFrontValueClass(value)}`}
+            style={frontValueClampStyle}
+            title={value}
+          >
             {value}
           </p>
         )}
       </div>
     </div>
   )
+}
+
+const frontValueClampStyle = {
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+} as CSSProperties
+
+function getFrontValueClass(value: string) {
+  const length = value.trim().length
+
+  if (length > 28) {
+    return 'text-[21px] leading-[1.02] tracking-[-0.045em]'
+  }
+
+  if (length > 20) {
+    return 'text-[23px] leading-[1.03] tracking-[-0.045em]'
+  }
+
+  if (length > 15) {
+    return 'text-[25px] leading-[1.03] tracking-[-0.04em]'
+  }
+
+  return 'text-[28px] leading-[1.02] tracking-[-0.035em]'
 }
 
 function BackPanel({
