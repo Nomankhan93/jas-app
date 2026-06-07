@@ -282,7 +282,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       (!selectedOfficeBearerCommittee ||
         designation.scope === selectedOfficeBearerCommittee.committee_type),
   )
-  const canEditApplication =
+  const canEditApplication = Boolean(member)
+  const canEditPaymentReceipt =
     member?.status === 'pending' || member?.status === 'rejected'
   const reasonTooShort =
     trimmedRejectionReason.length > 0 &&
@@ -336,7 +337,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           URL.revokeObjectURL(editPhotoPreview)
         }
         setEditPhotoPreview(null)
-        if (!safeMember.status || safeMember.status === 'approved') {
+        if (!safeMember.status) {
           setEditMode(false)
         }
         setPhotoUrl(signedPhotoUrl)
@@ -542,13 +543,12 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         .from('members')
         .update(payload)
         .eq('id', member.id)
-        .in('status', ['pending', 'rejected'])
         .select(MEMBER_SELECT_COLUMNS)
         .maybeSingle()
 
       if (updateError) throw updateError
       if (!updatedMember) {
-        throw new Error('Application could not be updated. It may already be approved.')
+        throw new Error('Application could not be updated. Please refresh and try again.')
       }
 
       const nextMember = updatedMember as unknown as Member
@@ -735,8 +735,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       return
     }
 
-    if (!canEditApplication) {
-      setError('Approved applications cannot receive replacement receipts in this patch.')
+    if (!canEditPaymentReceipt) {
+      setError('Receipt replacement is available only before approval. Use payment status controls for approved members.')
       return
     }
 
@@ -1172,7 +1172,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           onReceiptUpload={handlePaymentReceiptUpload}
           actionLoading={paymentActionLoading}
           receiptUploading={receiptUploading}
-          canEditReceipt={canEditApplication}
+          canEditReceipt={canEditPaymentReceipt}
         />
 
         <section className="grid gap-6 md:grid-cols-3">
@@ -1839,17 +1839,17 @@ function AdminMemberEditPanel({
   onCancel: () => void
 }) {
   return (
-    <section id="office-bearer-issue-panel" className="scroll-mt-24 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200 sm:p-6 md:col-span-2">
+    <section id="admin-member-edit-panel" className="scroll-mt-24 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-amber-200 sm:p-6 md:col-span-2">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-700">
             Admin Edit Mode
           </p>
           <h2 className="mt-2 text-lg font-black text-slate-950">
-            Edit pending application
+            Edit member application
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-            Update member details before approval. Member number, review status and approval fields are still controlled by the review workflow.
+            Update member details when a correction is needed. Member number, review status and approval fields remain controlled by the existing review workflow.
           </p>
         </div>
 
