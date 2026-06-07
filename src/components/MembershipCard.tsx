@@ -251,6 +251,10 @@ function CardBack({
                   label="Education"
                   value={member.education || 'Not provided'}
                 />
+                <MiniInfo
+                  label="Caste"
+                  value={member.caste_branch || 'Not provided'}
+                />
                 <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
                 <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
               </div>
