@@ -55,7 +55,7 @@ export function MembershipCard({
 }: MembershipCardProps) {
   return (
     <article
-      className="relative flex shrink-0 flex-col overflow-hidden rounded-[2rem] border border-yellow-500/30 bg-white text-slate-950 shadow-2xl"
+      className="relative isolate flex shrink-0 flex-col overflow-hidden rounded-[2rem] border border-yellow-500/40 bg-white text-slate-950 shadow-2xl ring-1 ring-emerald-950/10"
       style={{
         width: `${CARD_WIDTH}px`,
         minWidth: `${CARD_WIDTH}px`,
@@ -201,13 +201,13 @@ function CardBack({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-        <div className="relative grid h-full min-h-0 grid-cols-[1fr_250px] gap-4 p-4">
-          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[0.92fr_0.92fr_1.34fr] gap-3">
+        <div className="relative grid h-full min-h-0 grid-cols-[1fr_260px] gap-5 p-5">
+          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[1fr_1.05fr_1.3fr] gap-4">
             <BackPanel title="Residential Address" tone="gold">
-              <p className="font-black text-slate-950">
+              <p className="line-clamp-3 break-words text-[15px] font-black leading-snug text-slate-950">
                 {member.address || 'Full street address not provided.'}
               </p>
-              <p className="mt-1 font-bold text-slate-800">
+              <p className="mt-2 break-words text-[13px] font-bold text-slate-800">
                 {member.taluka || 'Taluka not provided'}, {member.district}
               </p>
             </BackPanel>
@@ -215,46 +215,27 @@ function CardBack({
             <BackPanel title="Emergency Contact">
               {member.emergency_contact_name || member.emergency_contact_mobile ? (
                 <>
-                  <p className="font-black text-slate-950">
+                  <p className="line-clamp-1 break-words text-[15px] font-black text-slate-950">
                     {member.emergency_contact_name || 'Name not provided'}
                   </p>
-                  <p className="mt-0.5">
-                    {member.emergency_contact_relation ||
-                      'Relation not provided'}
+                  <p className="mt-1 text-[13px] font-bold text-slate-700">
+                    {member.emergency_contact_relation || 'Relation not provided'}
                   </p>
-                  <p className="mt-0.5 font-black text-slate-950">
+                  <p className="mt-1 text-[15px] font-black text-slate-950">
                     {formatMobile(member.emergency_contact_mobile)}
                   </p>
                 </>
               ) : (
-                <>
-                  <p className="font-black text-slate-950">Not provided.</p>
-                  <p className="mt-1 text-slate-600">
-                    Emergency contact can be updated later.
-                  </p>
-                </>
+                <p className="text-[14px] font-black text-slate-950">Not provided.</p>
               )}
             </BackPanel>
 
-            <BackPanel title="Member Information">
-              <div className="grid grid-cols-3 gap-x-3 gap-y-2">
+            <BackPanel title="Member Information" contentClassName="flex items-center">
+              <div className="grid w-full grid-cols-3 gap-x-4 gap-y-3">
                 <MiniInfo label="DOB" value={formatDate(member.date_of_birth)} />
-                <MiniInfo
-                  label="Gender"
-                  value={member.gender || 'Not provided'}
-                />
-                <MiniInfo
-                  label="Blood"
-                  value={member.blood_group || 'Not provided'}
-                />
-                <MiniInfo
-                  label="Education"
-                  value={member.education || 'Not provided'}
-                />
-                <MiniInfo
-                  label="Caste"
-                  value={member.caste_branch || 'Not provided'}
-                />
+                <MiniInfo label="Gender" value={member.gender || 'Not provided'} />
+                <MiniInfo label="Blood" value={member.blood_group || 'Not provided'} />
+                <MiniInfo label="Education" value={member.education || 'Not provided'} />
                 <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
                 <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
               </div>
@@ -263,47 +244,46 @@ function CardBack({
             <BackPanel title="Verification Instructions">
               <p>Scan the QR code or open the verification URL.</p>
               <p className="mt-1">
-                Match verified name, member number, district and status before
-                accepting this card as valid.
+                Match verified name, member number, district and approval status
+                before accepting this card as valid.
               </p>
             </BackPanel>
 
             <BackPanel title="Terms and Conditions">
-              <ul className="list-disc space-y-0.5 pl-4">
+              <ul className="list-disc space-y-1 pl-4">
                 <li>This card remains property of Jatt Alliance Sindh.</li>
                 <li>Misuse, alteration or transfer is not permitted.</li>
                 <li>Validity depends on live QR verification status.</li>
-                <li>If found, return it to the issuing authority.</li>
               </ul>
             </BackPanel>
 
             <BackPanel
-  title="Issuing Authority"
-  tone="dark"
-  contentClassName="flex flex-1 flex-col justify-end"
->
-  <div className="flex h-[94px] items-center overflow-hidden">
-    <img
-      src={SIGNATURE_PATH}
-      alt="Authorized signature"
-      className="h-[90px] w-[470px] max-w-full object-contain object-left-center brightness-75 contrast-150 saturate-0"
-      style={{ transform: 'scaleX(1.08)' }}
-      draggable={false}
-    />
-  </div>
+              title="Issuing Authority"
+              tone="dark"
+              contentClassName="flex flex-1 flex-col justify-end"
+            >
+              <div className="flex h-[108px] items-center overflow-hidden rounded-2xl bg-white/80 px-2 ring-1 ring-slate-200">
+                <img
+                  src={SIGNATURE_PATH}
+                  alt="Authorized signature"
+                  className="h-[104px] w-[520px] max-w-full object-contain object-left brightness-75 contrast-150 saturate-0"
+                  style={{ transform: 'scaleX(1.1)', transformOrigin: 'left center' }}
+                  draggable={false}
+                />
+              </div>
 
-  <div className="mt-2 h-[2px] w-[470px] max-w-full bg-slate-500" />
+              <div className="mt-2 h-[2px] w-full bg-slate-500" />
 
-  <p className="mt-2 text-[17px] font-black leading-none text-slate-950">
-    Authorized Signature
-  </p>
-  <p className="mt-1 text-[13px] font-black uppercase tracking-[0.06em] text-slate-600">
-    GENERAL SECRETARY
-  </p>
-</BackPanel>
+              <p className="mt-2 text-[17px] font-black leading-none text-slate-950">
+                Authorized Signature
+              </p>
+              <p className="mt-1 text-[12px] font-black uppercase tracking-[0.08em] text-slate-600">
+                GENERAL SECRETARY
+              </p>
+            </BackPanel>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col justify-between rounded-[1.4rem] border border-slate-200 bg-white/95 p-3 shadow-lg">
+          <aside className="flex h-full min-h-0 flex-col justify-between gap-3 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-lg">
             <div className="rounded-2xl border border-yellow-400 bg-slate-950 px-3 py-3 text-center shadow-sm">
               <p className="text-[11px] font-black uppercase tracking-[0.16em] text-yellow-300">
                 Issue No / Version
@@ -313,16 +293,16 @@ function CardBack({
               </p>
             </div>
 
-            <div className="text-center">
+            <div className="rounded-2xl bg-white p-2 text-center shadow-sm ring-1 ring-slate-200">
               {qrUrl ? (
                 <img
                   src={qrUrl}
                   alt="Verification QR code"
-                  className="mx-auto h-[150px] w-[150px] rounded-xl bg-white p-2 ring-1 ring-slate-200"
+                  className="mx-auto h-[176px] w-[176px] rounded-xl bg-white p-1"
                   draggable={false}
                 />
               ) : (
-                <div className="mx-auto flex h-[150px] w-[150px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
+                <div className="mx-auto flex h-[176px] w-[176px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
                   QR unavailable
                 </div>
               )}
@@ -345,7 +325,7 @@ function CardBack({
               <p className="text-[11px] font-black uppercase tracking-wide text-yellow-800">
                 Organization
               </p>
-              <p className="mt-1 text-[13px] font-black leading-4 text-slate-950">
+              <p className="mt-1 text-[14px] font-black leading-4 text-slate-950">
                 Jatt Alliance Sindh
               </p>
               <p className="text-[11px] font-semibold text-slate-600">
@@ -479,7 +459,7 @@ function MiniInfo({ label, value }: { label: string; value: string }) {
       <p className="text-[10px] font-black uppercase tracking-wide text-emerald-800">
         {label}
       </p>
-      <p className="mt-0.5 break-words text-[12px] font-bold leading-[1.15] text-slate-950">
+      <p className="mt-0.5 break-words text-[13px] font-black leading-[1.15] text-slate-950">
         {value}
       </p>
     </div>
@@ -506,14 +486,14 @@ function BackPanel({
 
   return (
     <section
-      className={`flex min-h-0 flex-col overflow-hidden rounded-[1rem] border p-3 shadow-sm ${toneClass}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-[1.05rem] border p-3.5 shadow-sm ${toneClass}`}
     >
       <h3 className="shrink-0 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">
         {title}
       </h3>
 
       <div
-        className={`mt-2 min-h-0 text-[12.5px] font-semibold leading-[1.45] text-slate-700 ${contentClassName}`}
+        className={`mt-2 min-h-0 text-[13px] font-semibold leading-[1.38] text-slate-700 ${contentClassName}`}
       >
         {children}
       </div>
@@ -530,16 +510,16 @@ function QrPanel({
 }) {
   return (
     <aside className="flex items-center justify-center">
-      <div className="flex h-[350px] w-[210px] flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white/95 px-4 py-5 shadow-lg">
+      <div className="flex h-[365px] w-[220px] flex-col items-center justify-center rounded-[2rem] border border-slate-200 bg-white/95 px-4 py-5 shadow-lg">
         {qrUrl ? (
           <img
             src={qrUrl}
             alt="Verification QR code"
-            className="h-[158px] w-[158px] rounded-xl bg-white p-2 ring-1 ring-slate-200"
+            className="h-[170px] w-[170px] rounded-xl bg-white p-1.5 ring-1 ring-slate-200"
             draggable={false}
           />
         ) : (
-          <div className="flex h-[158px] w-[158px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
+          <div className="flex h-[170px] w-[170px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
             QR unavailable
           </div>
         )}
@@ -548,7 +528,7 @@ function QrPanel({
           Scan to verify
         </p>
 
-        <p className="mt-3 line-clamp-3 break-all text-center text-[10.5px] font-bold leading-4 text-slate-500">
+        <p className="mt-3 line-clamp-3 break-all text-center text-[11px] font-bold leading-4 text-slate-500">
           {formatVerifyUrlForDisplay(verifyUrl) || 'Verification link unavailable'}
         </p>
       </div>
@@ -570,8 +550,8 @@ function formatVerifyUrlForDisplay(value: string | null | undefined) {
 
 function CardFooter({ children }: { children: ReactNode }) {
   return (
-    <footer className="shrink-0 border-t border-slate-200 bg-slate-50 px-8 py-2.5">
-      <p className="text-[12px] font-semibold leading-5 text-slate-500">
+    <footer className="shrink-0 border-t border-slate-200 bg-slate-50 px-8 py-2">
+      <p className="text-[11.5px] font-semibold leading-5 text-slate-500">
         {children}
       </p>
     </footer>
