@@ -117,12 +117,6 @@ type FinanceDonation = {
   created_at: string
 }
 
-type LeaderboardRow = {
-  donor_member_id: string
-  total_donated: number
-  donation_count: number
-}
-
 type DashboardData = {
   member: Member | null
   photoSignedUrl: string | null
@@ -168,6 +162,7 @@ function DashboardPage() {
   const navigate = useNavigate()
   const { t, direction } = useI18n()
   const [loading, setLoading] = useState(true)
+  const [secondaryLoading, setSecondaryLoading] = useState(false)
   const [, setRefreshing] = useState(false)
   const [showSensitive, setShowSensitive] = useState(false)
   const [error, setError] = useState('')
@@ -242,31 +237,51 @@ function DashboardPage() {
       setError(memberError.message)
       setLoading(false)
       setRefreshing(false)
+      setSecondaryLoading(false)
       return
     }
 
-    const [applications, donations, notifications, membershipPayment, photoSignedUrl, donorRank] =
-      await Promise.all([
-        loadProgramApplications(user.id),
-        loadDonations(user.id),
-        loadNotifications(user.id),
-        loadMembershipPayment(memberData?.id),
-        loadMemberPhoto(memberData?.photo_url),
-        loadDonorRank(memberData?.id),
-      ])
+    const [membershipPayment, photoSignedUrl] = await Promise.all([
+      loadMembershipPayment(memberData?.id),
+      loadMemberPhoto(memberData?.photo_url),
+    ])
 
-    setData({
+    setData((current) => ({
+      ...current,
       member: memberData,
       photoSignedUrl,
-      applications,
-      donations,
-      donorRank,
-      notifications,
       membershipPayment,
-    })
+      applications: silent ? current.applications : [],
+      donations: silent ? current.donations : [],
+      notifications: silent ? current.notifications : [],
+      donorRank: null,
+    }))
 
     setLoading(false)
     setRefreshing(false)
+
+    if (!memberData) {
+      setSecondaryLoading(false)
+      return
+    }
+
+    setSecondaryLoading(true)
+
+    const [applications, donations, notifications] = await Promise.all([
+      loadProgramApplications(user.id),
+      loadDonations(user.id),
+      loadNotifications(user.id),
+    ])
+
+    setData((current) => ({
+      ...current,
+      applications,
+      donations,
+      notifications,
+      donorRank: null,
+    }))
+
+    setSecondaryLoading(false)
   }
 
   const member = data.member
@@ -419,7 +434,10 @@ function DashboardPage() {
                 </div>
 
                 <div className="dashboard-mini-grid mt-5 grid grid-cols-2 gap-3">
-                  <MiniMetric label={t('dashboard.notifications')} value={summaries.unreadNotifications} />
+                  <MiniMetric
+                    label={t('dashboard.notifications')}
+                    value={secondaryLoading ? '…' : summaries.unreadNotifications}
+                  />
                   <MiniMetric
                     label={t('dashboard.donorRank')}
                     value={data.donorRank ? `#${data.donorRank}` : '-'}
@@ -444,19 +462,19 @@ function DashboardPage() {
             />
             <OverviewCard
               label={t('dashboard.programsSubmitted')}
-              value={data.applications.length}
+              value={secondaryLoading ? '…' : data.applications.length}
               icon={<BookOpenCheck className="h-5 w-5" />}
               tone="amber"
             />
             <OverviewCard
               label={t('dashboard.totalDonated')}
-              value={formatDonationMoney(summaries.totalDonated)}
+              value={secondaryLoading ? '…' : formatDonationMoney(summaries.totalDonated)}
               icon={<BadgeIndianRupee className="h-5 w-5" />}
               tone="emerald"
             />
             <OverviewCard
               label={t('dashboard.pendingDonations')}
-              value={summaries.pendingDonations}
+              value={secondaryLoading ? '…' : summaries.pendingDonations}
               icon={<Trophy className="h-5 w-5" />}
               tone="slate"
             />
@@ -477,6 +495,12 @@ function DashboardPage() {
                   <p className="mt-1 text-sm text-slate-500">
                     {t('dashboard.programSummaryDesc')}
                   </p>
+                  {secondaryLoading ? (
+                    <p className="mt-2 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-800">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {t('dashboard.loading')}
+                    </p>
+                  ) : null}
                 </div>
                 <Link to="/notifications" className="secondary-btn">
                   <Bell className="h-4 w-4" />
@@ -555,6 +579,7 @@ function DashboardPage() {
               donationCount={summaries.donationCount}
               donorRank={data.donorRank}
               latestDonation={data.donations[0]}
+              loading={secondaryLoading}
             />
             <NotificationsPreview notifications={data.notifications} />
           </aside>
@@ -843,11 +868,13 @@ function DonationPanel({
   donationCount,
   donorRank,
   latestDonation,
+  loading,
 }: {
   totalDonated: number
   donationCount: number
   donorRank: number | null
   latestDonation?: FinanceDonation
+  loading?: boolean
 }) {
   const { t } = useI18n()
 
@@ -857,7 +884,7 @@ function DonationPanel({
         {t('dashboard.myDonations')}
       </p>
       <p className="mt-2 text-3xl font-black text-slate-950">
-        {formatDonationMoney(totalDonated)}
+        {loading ? '…' : formatDonationMoney(totalDonated)}
       </p>
       <div className="mt-4 grid grid-cols-2 gap-3">
         <div className="rounded-2xl bg-white p-3 shadow-sm">
@@ -865,7 +892,7 @@ function DonationPanel({
             {t('dashboard.approved')}
           </p>
           <p className="mt-1 text-xl font-black text-slate-950">
-            {donationCount}
+            {loading ? '…' : donationCount}
           </p>
         </div>
         <div className="rounded-2xl bg-white p-3 shadow-sm">
@@ -873,7 +900,7 @@ function DonationPanel({
             {t('dashboard.rank')}
           </p>
           <p className="mt-1 text-xl font-black text-slate-950">
-            {donorRank ? `#${donorRank}` : '-'}
+            {loading ? '…' : donorRank ? `#${donorRank}` : '-'}
           </p>
         </div>
       </div>
@@ -984,6 +1011,7 @@ async function loadProgramApplications(userId: string) {
     )
     .eq('applicant_user_id', userId)
     .order('created_at', { ascending: false })
+    .limit(20)
     .returns<ProgramApplication[]>()
 
   if (error) return []
@@ -996,6 +1024,7 @@ async function loadDonations(userId: string) {
     .select('id, donation_no, amount, purpose, status, approved_at, created_at')
     .eq('donor_user_id', userId)
     .order('created_at', { ascending: false })
+    .limit(20)
     .returns<FinanceDonation[]>()
 
   if (error) return []
@@ -1064,24 +1093,6 @@ async function loadMemberPhoto(photoUrl?: string | null) {
   return data?.signedUrl ?? null
 }
 
-async function loadDonorRank(memberId?: string | null) {
-  if (!memberId) return null
-
-  const client = supabase as unknown as {
-    rpc: (
-      fn: 'get_donor_leaderboard',
-      args: { _limit: number },
-    ) => Promise<{ data: LeaderboardRow[] | null; error: Error | null }>
-  }
-
-  const { data, error } = await client.rpc('get_donor_leaderboard', {
-    _limit: 100,
-  })
-
-  if (error || !data) return null
-  const index = data.findIndex((row) => row.donor_member_id === memberId)
-  return index >= 0 ? index + 1 : null
-}
 
 function getProgramIcon(programKey: string) {
   switch (programKey) {

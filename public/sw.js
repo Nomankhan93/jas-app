@@ -1,11 +1,9 @@
-const CACHE_NAME = 'jas-pwa-v1'
+const CACHE_NAME = 'jas-pwa-v2'
 const CORE_ASSETS = [
   '/offline.html',
   '/manifest.json',
   '/favicon.ico',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/icon-192.png'
 ]
 
 self.addEventListener('install', (event) => {

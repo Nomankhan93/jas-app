@@ -6,7 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   BadgeCheck,
@@ -100,7 +100,7 @@ type Member = {
 }
 
 type AdminAccessResult =
-  | { ok: true; roles: AdminRoleName[] }
+  | { ok: true; userId: string; roles: AdminRoleName[] }
   | { ok: false; redirectTo: '/login' | '/dashboard' }
 
 type AdminRouteTo =
@@ -125,8 +125,8 @@ type AdminQuickActionConfig = {
   onClick?: () => void
 }
 
-const MEMBER_PHOTO_BUCKET = 'member-photos'
-const SIGNED_URL_TTL_SECONDS = 60 * 60
+const ADMIN_MEMBERS_PAGE_SIZE = 50
+const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200
 
 const adminDashboardDedupeCopy = {
   en: {
@@ -277,18 +277,20 @@ function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
+  const [memberResultCount, setMemberResultCount] = useState(0)
   const [adminRoles, setAdminRoles] = useState<AdminRoleName[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [districtFilter, setDistrictFilter] = useState('all')
   const [talukaFilter, setTalukaFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [sortBy, setSortBy] = useState<SortBy>('newest')
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [showSensitive, setShowSensitive] = useState(false)
   const [error, setError] = useState('')
   const [areaNotice, setAreaNotice] = useState('')
+  const hasLoadedMembersRef = useRef(false)
   const adminCopy = useAdminDashboardCopy()
+  const debouncedSearch = useDebouncedValue(searchInput, 350)
 
   const loadAdmin = useCallback(
     async (
@@ -331,13 +333,15 @@ function AdminPage() {
 
         const areaAccess = await loadCurrentAdminAreaAccess('membership', 'view', {
           requiredRoles: ['admin', 'super_admin', 'membership_admin'],
+          userId: access.userId,
+          roles: access.roles,
         })
 
         if (!areaAccess.ok) {
           throw new Error(areaAccess.message)
         }
 
-        const { data, error: membersError } = await supabase
+        let membersQuery = supabase
           .from('members')
           .select(
             [
@@ -352,18 +356,68 @@ function AdminPage() {
               'member_no',
               'created_at',
             ].join(', '),
+            { count: 'exact' },
           )
-          .order('created_at', { ascending: false })
+
+        if (statusFilter !== 'all') {
+          membersQuery = membersQuery.eq('status', statusFilter)
+        }
+
+        if (districtFilter !== 'all') {
+          membersQuery = membersQuery.eq('district', districtFilter)
+        }
+
+        if (talukaFilter !== 'all') {
+          membersQuery = membersQuery.eq('taluka', talukaFilter)
+        }
+
+        const dateStart = getDateFilterStart(dateFilter)
+
+        if (dateStart) {
+          membersQuery = membersQuery.gte('created_at', dateStart)
+        }
+
+        const searchFilter = buildMemberSearchOrFilter(debouncedSearch)
+
+        if (searchFilter) {
+          membersQuery = membersQuery.or(searchFilter)
+        }
+
+        if (sortBy === 'oldest') {
+          membersQuery = membersQuery.order('created_at', { ascending: true })
+        } else if (sortBy === 'name') {
+          membersQuery = membersQuery
+            .order('full_name', { ascending: true })
+            .order('created_at', { ascending: false })
+        } else if (sortBy === 'district') {
+          membersQuery = membersQuery
+            .order('district', { ascending: true })
+            .order('taluka', { ascending: true })
+            .order('created_at', { ascending: false })
+        } else {
+          membersQuery = membersQuery.order('created_at', { ascending: false })
+        }
+
+        const fetchLimit = areaAccess.isRestricted
+          ? ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT
+          : ADMIN_MEMBERS_PAGE_SIZE
+
+        const { data, error: membersError, count } = await membersQuery
+          .limit(fetchLimit)
           .returns<Member[]>()
 
         if (membersError) throw membersError
 
-        const safeMembers = filterRowsByAreaAccess(data ?? [], areaAccess)
-        const signedUrls = await createSignedPhotoUrls(safeMembers)
+        const safeMembers = filterRowsByAreaAccess(data ?? [], areaAccess).slice(
+          0,
+          ADMIN_MEMBERS_PAGE_SIZE,
+        )
 
         if (!cancelledRef?.current) {
           setMembers(safeMembers)
-          setPhotoUrls(signedUrls)
+          setMemberResultCount(
+            areaAccess.isRestricted ? safeMembers.length : count ?? safeMembers.length,
+          )
           setAreaNotice(getAreaAccessSummaryText(areaAccess))
         }
       } catch (err) {
@@ -376,10 +430,19 @@ function AdminPage() {
         if (!cancelledRef?.current) {
           setLoading(false)
           setRefreshing(false)
+          hasLoadedMembersRef.current = true
         }
       }
     },
-    [navigate],
+    [
+      dateFilter,
+      debouncedSearch,
+      districtFilter,
+      navigate,
+      sortBy,
+      statusFilter,
+      talukaFilter,
+    ],
   )
 
   useEffect(() => {
@@ -387,7 +450,7 @@ function AdminPage() {
 
     const cancelledRef = { current: false }
 
-    void loadAdmin(cancelledRef)
+    void loadAdmin(cancelledRef, { silent: hasLoadedMembersRef.current })
 
     return () => {
       cancelledRef.current = true
@@ -432,7 +495,7 @@ function AdminPage() {
   }, [districtFilter, members])
 
   const filteredMembers = useMemo(() => {
-    const query = search.trim().toLowerCase()
+    const query = debouncedSearch.trim().toLowerCase()
 
     const result = members.filter((member) => {
       const matchesStatus =
@@ -463,7 +526,7 @@ function AdminPage() {
     dateFilter,
     districtFilter,
     members,
-    search,
+    debouncedSearch,
     sortBy,
     statusFilter,
     talukaFilter,
@@ -474,7 +537,7 @@ function AdminPage() {
     districtFilter !== 'all' ||
     talukaFilter !== 'all' ||
     dateFilter !== 'all' ||
-    search.trim().length > 0
+    searchInput.trim().length > 0
 
   function resetFilters() {
     setStatusFilter('all')
@@ -482,7 +545,7 @@ function AdminPage() {
     setTalukaFilter('all')
     setDateFilter('all')
     setSortBy('newest')
-    setSearch('')
+    setSearchInput('')
   }
 
   function handleDistrictFilter(value: string) {
@@ -682,8 +745,17 @@ function AdminPage() {
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                {adminCopy.membership.showing(filteredMembers.length, members.length)}
+                {adminCopy.membership.showing(
+                  filteredMembers.length,
+                  memberResultCount || members.length,
+                )}
               </p>
+
+              {memberResultCount > ADMIN_MEMBERS_PAGE_SIZE ? (
+                <p className="mt-1 text-xs font-medium text-slate-400">
+                  Latest {ADMIN_MEMBERS_PAGE_SIZE} matching records are loaded for faster performance. Use search or filters to narrow results.
+                </p>
+              ) : null}
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -713,8 +785,8 @@ function AdminPage() {
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
                 className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-base font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 md:text-sm"
                 placeholder={adminCopy.membership.searchPlaceholder}
                 aria-label={adminCopy.membership.searchAria}
@@ -799,7 +871,6 @@ function AdminPage() {
               <MobileMemberCard
                 key={member.id}
                 member={member}
-                photoUrl={photoUrls[member.id]}
                 showSensitive={showSensitive}
               />
             ))}
@@ -836,7 +907,7 @@ function AdminPage() {
                   >
                     <td className="px-4 py-3">
                       <MemberPhoto
-                        src={photoUrls[member.id]}
+                        src={undefined}
                         alt={member.full_name}
                         className="h-12 w-12 rounded-xl object-cover object-top ring-1 ring-slate-200"
                         fallbackClassName="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
@@ -1199,11 +1270,9 @@ function getQuickActionTone(tone: AdminQuickActionConfig['tone']) {
 
 function MobileMemberCard({
   member,
-  photoUrl,
   showSensitive,
 }: {
   member: Member
-  photoUrl?: string
   showSensitive: boolean
 }) {
   const copy = useAdminDashboardCopy()
@@ -1212,7 +1281,7 @@ function MobileMemberCard({
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <MemberPhoto
-          src={photoUrl}
+          src={undefined}
           alt={member.full_name}
           className="h-14 w-14 shrink-0 rounded-xl object-cover object-top ring-1 ring-slate-200"
           fallbackClassName="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
@@ -1518,7 +1587,7 @@ async function ensureAdminAccess(): Promise<AdminAccessResult> {
     return { ok: false, redirectTo: '/dashboard' }
   }
 
-  return { ok: true, roles: safeRoles }
+  return { ok: true, userId: user.id, roles: safeRoles }
 }
 
 function canAccessAdminModule(
@@ -1583,26 +1652,56 @@ function getPrimaryAdminRoute(
   return '/dashboard'
 }
 
-async function createSignedPhotoUrls(
-  members: Member[],
-): Promise<Record<string, string>> {
-  const entries = await Promise.all(
-    members.map(async (member) => {
-      if (!member.photo_url) return null
 
-      const { data, error } = await supabase.storage
-        .from(MEMBER_PHOTO_BUCKET)
-        .createSignedUrl(member.photo_url, SIGNED_URL_TTL_SECONDS)
+function useDebouncedValue<T>(value: T, delayMs: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value)
 
-      if (error || !data?.signedUrl) return null
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedValue(value)
+    }, delayMs)
 
-      return [member.id, data.signedUrl] as const
-    }),
-  )
+    return () => window.clearTimeout(timeoutId)
+  }, [delayMs, value])
 
-  return Object.fromEntries(
-    entries.filter(Boolean) as Array<readonly [string, string]>,
-  )
+  return debouncedValue
+}
+
+function getDateFilterStart(filter: DateFilter) {
+  if (filter === 'all') return null
+
+  const date = new Date()
+
+  if (filter === 'today') {
+    date.setHours(0, 0, 0, 0)
+  } else if (filter === '7d') {
+    date.setDate(date.getDate() - 7)
+  } else if (filter === '30d') {
+    date.setDate(date.getDate() - 30)
+  }
+
+  return date.toISOString()
+}
+
+function buildMemberSearchOrFilter(search: string) {
+  const value = search
+    .trim()
+    .replace(/[%,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .slice(0, 80)
+
+  if (!value) return ''
+
+  const pattern = `%${value}%`
+
+  return [
+    `full_name.ilike.${pattern}`,
+    `cnic.ilike.${pattern}`,
+    `mobile.ilike.${pattern}`,
+    `district.ilike.${pattern}`,
+    `taluka.ilike.${pattern}`,
+    `member_no.ilike.${pattern}`,
+  ].join(',')
 }
 
 function buildMemberSearchText(member: Member) {

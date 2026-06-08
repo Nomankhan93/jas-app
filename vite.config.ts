@@ -55,23 +55,27 @@ function manualChunks(id: string) {
   return 'vendor'
 }
 
-const config = defineConfig({
-  resolve: { tsconfigPaths: true },
-  build: {
-    chunkSizeWarningLimit: 750,
-    rollupOptions: {
-      output: {
-        manualChunks,
+const config = defineConfig(({ mode }) => {
+  const isDev = mode === 'development'
+
+  return {
+    resolve: { tsconfigPaths: true },
+    build: {
+      chunkSizeWarningLimit: 750,
+      rollupOptions: {
+        output: {
+          manualChunks,
+        },
       },
     },
-  },
-  plugins: [
-    devtools(),
-    tailwindcss(),
-    tanstackStart(),
-    nitro(),
-    viteReact(),
-  ],
+    plugins: [
+      ...(isDev ? [devtools()] : []),
+      tailwindcss(),
+      tanstackStart(),
+      nitro(),
+      viteReact(),
+    ],
+  }
 })
 
 export default config

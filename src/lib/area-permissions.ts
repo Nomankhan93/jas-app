@@ -225,30 +225,46 @@ export function canAccessArea(
 export async function loadCurrentAdminAreaAccess(
   moduleKey: AreaPermissionModule,
   action: AreaPermissionAction = 'view',
-  options?: { requiredRoles?: string[]; allowAreaPermissionOnly?: boolean },
+  options?: {
+    requiredRoles?: string[]
+    allowAreaPermissionOnly?: boolean
+    userId?: string | null
+    roles?: readonly string[]
+  },
 ): Promise<AdminAreaAccessContext> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+  let userId = options?.userId ?? null
+  let roles = options?.roles ? Array.from(options.roles) : null
 
-  if (userError || !user) {
-    return emptyAreaAccess(moduleKey, action, 'Admin area dekhne ke liye pehle login karen.')
+  if (!userId || !roles) {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
+
+    if (userError || !user) {
+      return emptyAreaAccess(moduleKey, action, 'Admin area dekhne ke liye pehle login karen.')
+    }
+
+    userId = user.id
+
+    if (!roles) {
+      const { data: roleRows, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+
+      if (roleError) {
+        return emptyAreaAccess(moduleKey, action, roleError.message, userId)
+      }
+
+      roles = ((roleRows ?? []) as Array<{ role: string }>).map((item) => item.role)
+    }
   }
 
-  const { data: roleRows, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-
-  if (roleError) {
-    return emptyAreaAccess(moduleKey, action, roleError.message, user.id)
-  }
-
-  const roles = ((roleRows ?? []) as Array<{ role: string }>).map((item) => item.role)
-  const isGlobalAdmin = hasGlobalAdminRole(roles)
+  const safeRoles = roles ?? []
+  const isGlobalAdmin = hasGlobalAdminRole(safeRoles)
   const requiredRoles = options?.requiredRoles ?? [...globalAdminRoles, ...getModuleAdminRoles(moduleKey)]
-  const hasRequiredRole = roles.some((role) => requiredRoles.includes(role))
+  const hasRequiredRole = safeRoles.some((role) => requiredRoles.includes(role))
   const permissions = isGlobalAdmin ? [] : await safeFetchMyAreaPermissions()
   const relevantPermissions = permissions.filter((permission) =>
     permissionMatchesModuleAndAction(permission, moduleKey, action),
@@ -258,10 +274,10 @@ export async function loadCurrentAdminAreaAccess(
     return {
       ok: true,
       message: '',
-      userId: user.id,
+      userId: userId,
       moduleKey,
       action,
-      roles,
+      roles: safeRoles,
       permissions: [],
       isGlobalAdmin: true,
       isRestricted: false,
@@ -273,10 +289,10 @@ export async function loadCurrentAdminAreaAccess(
     return {
       ok: true,
       message: '',
-      userId: user.id,
+      userId: userId,
       moduleKey,
       action,
-      roles,
+      roles: safeRoles,
       permissions: relevantPermissions,
       isGlobalAdmin: false,
       isRestricted: true,
@@ -289,8 +305,8 @@ export async function loadCurrentAdminAreaAccess(
       moduleKey,
       action,
       `${getAreaPermissionModuleLabel(moduleKey)} admin access required.`,
-      user.id,
-      roles,
+      userId,
+      safeRoles,
     )
   }
 
@@ -299,8 +315,8 @@ export async function loadCurrentAdminAreaAccess(
       moduleKey,
       action,
       `No active ${getAreaPermissionModuleLabel(moduleKey)} area permission assigned. Super admin must assign district/taluka access first.`,
-      user.id,
-      roles,
+      userId,
+      safeRoles,
     )
   }
 
@@ -308,8 +324,8 @@ export async function loadCurrentAdminAreaAccess(
     moduleKey,
     action,
     `${getAreaPermissionModuleLabel(moduleKey)} area access required.`,
-    user.id,
-    roles,
+    userId,
+    safeRoles,
   )
 }
 
