@@ -17,6 +17,7 @@ import {
   type TranslationKey,
 } from '../../lib/i18n'
 import { AccountMenuButton, AccountMenuPanel } from './AccountMenu'
+import { supabase } from '../../lib/supabase/client'
 import { MoreDropdown } from './MoreDropdown'
 import { NavLink } from './NavLink'
 import { ProgramsDropdown } from './ProgramsDropdown'
@@ -26,6 +27,7 @@ export function Header({ compact }: { compact: boolean }) {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [openMenu, setOpenMenu] = useState<HeaderMenuKey>(null)
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0)
   const headerRef = useRef<HTMLElement | null>(null)
 
   const {
@@ -101,6 +103,58 @@ export function Header({ compact }: { compact: boolean }) {
     }
   }, [openMenu])
 
+  useEffect(() => {
+    let active = true
+
+    async function loadUnreadNotifications() {
+      if (!isLoggedIn) {
+        if (active) setUnreadNotificationCount(0)
+        return
+      }
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        if (active) setUnreadNotificationCount(0)
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, is_read')
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+
+      if (!active) return
+
+      if (error) {
+        setUnreadNotificationCount(0)
+        return
+      }
+
+      setUnreadNotificationCount(data?.length ?? 0)
+    }
+
+    void loadUnreadNotifications()
+
+    function refreshUnreadNotifications() {
+      void loadUnreadNotifications()
+    }
+
+    window.addEventListener('focus', refreshUnreadNotifications)
+    window.addEventListener('jas-notifications-updated', refreshUnreadNotifications as EventListener)
+
+    return () => {
+      active = false
+      window.removeEventListener('focus', refreshUnreadNotifications)
+      window.removeEventListener('jas-notifications-updated', refreshUnreadNotifications as EventListener)
+    }
+  }, [isLoggedIn, pathname])
+
   const localizedPublicPageItems = useMemo(() => {
     return publicPageItems.map((item) => {
       const key = publicPageTranslationKeys[item.to]
@@ -146,14 +200,17 @@ export function Header({ compact }: { compact: boolean }) {
       })
     }
 
-    const memberItems = getMemberAccountItems({
-      dashboard: t('nav.dashboard'),
-      digitalCard: t('nav.digitalCard'),
-      officeBearerCard: t('nav.officeBearerCard'),
-      updates: t('nav.updates'),
-      donors: t('nav.donors'),
-      register: t('nav.register'),
-    })
+    const memberItems = getMemberAccountItems(
+      {
+        dashboard: t('nav.dashboard'),
+        digitalCard: t('nav.digitalCard'),
+        officeBearerCard: t('nav.officeBearerCard'),
+        updates: t('nav.updates'),
+        donors: t('nav.donors'),
+        register: t('nav.register'),
+      },
+      unreadNotificationCount,
+    )
 
     if (!isAdmin) return memberItems
 
@@ -169,7 +226,7 @@ export function Header({ compact }: { compact: boolean }) {
       },
       ...memberOnlyItems,
     ]
-  }, [authLoading, isAdmin, isLoggedIn, t])
+  }, [authLoading, isAdmin, isLoggedIn, t, unreadNotificationCount])
 
   function toggleMenu(menu: Exclude<HeaderMenuKey, null>) {
     setOpenMenu((current) => (current === menu ? null : menu))
@@ -270,6 +327,7 @@ export function Header({ compact }: { compact: boolean }) {
                   accountInitial={accountInitial}
                   accountOpen={accountOpen}
                   isLoggedIn={isLoggedIn}
+                  unreadCount={unreadNotificationCount}
                   onToggle={() => toggleMenu('account')}
                 />
                 <AccountMenuPanel
@@ -309,6 +367,7 @@ export function Header({ compact }: { compact: boolean }) {
                 accountInitial={accountInitial}
                 accountOpen={accountOpen}
                 isLoggedIn={isLoggedIn}
+                unreadCount={unreadNotificationCount}
                 mobile
                 onToggle={() => toggleMenu('account')}
               />

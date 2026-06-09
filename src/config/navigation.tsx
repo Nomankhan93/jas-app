@@ -22,6 +22,7 @@ export type NavItem = {
   to: string
   label: string
   icon: ReactNode
+  badgeCount?: number
 }
 
 export type ProgramItem = NavItem & { description: string }
@@ -151,19 +152,27 @@ export function getLoggedOutAccountItems(labels: { login: string; joinNow: strin
   ] satisfies NavItem[]
 }
 
-export function getMemberAccountItems(labels: {
-  dashboard: string
-  digitalCard: string
-  officeBearerCard: string
-  updates: string
-  donors: string
-  register: string
-}) {
+export function getMemberAccountItems(
+  labels: {
+    dashboard: string
+    digitalCard: string
+    officeBearerCard: string
+    updates: string
+    donors: string
+    register: string
+  },
+  unreadNotificationCount = 0,
+) {
   return [
     { to: '/dashboard', label: labels.dashboard, icon: <ShieldCheck size={16} /> },
     { to: '/card', label: labels.digitalCard, icon: <IdCard size={16} /> },
     { to: '/designation-card', label: labels.officeBearerCard, icon: <ShieldCheck size={16} /> },
-    { to: '/notifications', label: labels.updates, icon: <Bell size={16} /> },
+    {
+      to: '/notifications',
+      label: labels.updates,
+      icon: <Bell size={16} />,
+      badgeCount: unreadNotificationCount,
+    },
     { to: '/donors', label: labels.donors, icon: <Trophy size={16} /> },
     { to: '/register', label: labels.register, icon: <UserPlus size={16} /> },
   ] satisfies NavItem[]

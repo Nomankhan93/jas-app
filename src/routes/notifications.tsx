@@ -78,8 +78,19 @@ function NotificationsPage() {
     }
 
     const nextItems = (data || []) as UserNotification[]
-    const nextCount = count ?? (append ? items.length + nextItems.length : nextItems.length)
-    const mergedItems = append ? [...items, ...nextItems] : nextItems
+    const readAt = new Date().toISOString()
+    const hasUnreadItems = nextItems.some((item) => !item.is_read)
+    const displayItems = nextItems.map((item) =>
+      item.is_read
+        ? item
+        : {
+            ...item,
+            is_read: true,
+            read_at: item.read_at || readAt,
+          },
+    )
+    const nextCount = count ?? (append ? items.length + displayItems.length : displayItems.length)
+    const mergedItems = append ? [...items, ...displayItems] : displayItems
 
     setItems(mergedItems)
     setTotalCount(nextCount)
@@ -87,6 +98,20 @@ function NotificationsPage() {
     setLoading(false)
     setRefreshing(false)
     setLoadingMore(false)
+
+    if (hasUnreadItems) {
+      const { error: readError } = await supabase
+        .from('notifications')
+        .update({ is_read: true, read_at: readAt })
+        .eq('user_id', user.id)
+        .eq('is_read', false)
+
+      if (readError) {
+        setMessage(readError.message)
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('jas-notifications-updated'))
   }
 
   async function markAllRead() {
@@ -114,6 +139,7 @@ function NotificationsPage() {
         read_at: item.read_at || new Date().toISOString(),
       })),
     )
+    window.dispatchEvent(new CustomEvent('jas-notifications-updated'))
   }
 
   const unreadCount = useMemo(
@@ -288,7 +314,7 @@ function NotificationCard({ item }: { item: UserNotification }) {
         {item.action_url ? (
           <a
             href={item.action_url}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white no-underline transition hover:bg-emerald-900"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-900 px-4 text-sm font-black text-white no-underline shadow-sm ring-1 ring-emerald-900/10 transition hover:bg-emerald-800 visited:text-white"
           >
             Open
           </a>
