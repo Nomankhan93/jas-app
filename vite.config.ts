@@ -5,6 +5,8 @@ import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
 
+const srcPath = new URL('./src', import.meta.url).pathname
+
 function manualChunks(id: string) {
   if (!id.includes('node_modules')) return undefined
 
@@ -59,7 +61,31 @@ const config = defineConfig(({ mode }) => {
   const isDev = mode === 'development'
 
   return {
-    resolve: { tsconfigPaths: true },
+    resolve: {
+      alias: {
+        '#': srcPath,
+        '@': srcPath,
+      },
+      dedupe: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        '@tanstack/react-router',
+        '@tanstack/router-core',
+      ],
+    },
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        '@tanstack/react-router',
+        '@tanstack/router-core',
+        '@tanstack/router-core/isServer',
+        '@tanstack/router-core/ssr/client',
+        'seroval',
+      ],
+    },
     build: {
       chunkSizeWarningLimit: 750,
       rollupOptions: {
@@ -72,8 +98,8 @@ const config = defineConfig(({ mode }) => {
       ...(isDev ? [devtools()] : []),
       tailwindcss(),
       tanstackStart(),
-      nitro(),
       viteReact(),
+      nitro(),
     ],
   }
 })
