@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { supabase } from '../../lib/supabase/client'
 
 type BeforeInstallPromptEvent = Event & {
   platforms?: string[]
@@ -7,6 +8,60 @@ type BeforeInstallPromptEvent = Event & {
     outcome: 'accepted' | 'dismissed'
     platform: string
   }>
+}
+
+
+type PushClient = {
+  from: (table: 'push_subscriptions') => {
+    upsert: (
+      values: {
+        user_id: string
+        endpoint: string
+        p256dh: string
+        auth: string
+        user_agent: string
+        enabled: boolean
+        last_seen_at: string
+      },
+      options: { onConflict: string },
+    ) => Promise<{ error: Error | null }>
+  }
+}
+
+type PushSubscriptionJson = {
+  endpoint?: string
+  keys?: {
+    p256dh?: string
+    auth?: string
+  }
+}
+
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as
+  | string
+  | undefined
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = '='.repeat((4 - (value.length % 4)) % 4)
+  const base64 = `${value}${padding}`.replace(/-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+
+  for (let index = 0; index < rawData.length; index += 1) {
+    outputArray[index] = rawData.charCodeAt(index)
+  }
+
+  return outputArray
+}
+
+function supportsWebPush() {
+  if (typeof window === 'undefined') return false
+
+  return (
+    'Notification' in window &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    window.isSecureContext
+  )
 }
 
 const DEV_SW_RELOAD_FLAG = 'jas-pwa-dev-sw-unregistered'
@@ -63,6 +118,14 @@ export function PwaBootstrap() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [dismissedUpdate, setDismissedUpdate] = useState(false)
   const [dismissedInstall, setDismissedInstall] = useState(false)
+  const [dismissedPush, setDismissedPush] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushPermission, setPushPermission] =
+    useState<NotificationPermission>('default')
+  const [pushSubscribed, setPushSubscribed] = useState(false)
+  const [pushLoading, setPushLoading] = useState(false)
+  const [pushMessage, setPushMessage] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -91,6 +154,57 @@ export function PwaBootstrap() {
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    let mounted = true
+
+    async function syncAuthState() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!mounted) return
+      setIsLoggedIn(Boolean(user))
+    }
+
+    void syncAuthState()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return
+      setIsLoggedIn(Boolean(session?.user))
+    })
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const isSupported = supportsWebPush()
+    setPushSupported(isSupported)
+
+    if (!isSupported) return
+
+    setPushPermission(Notification.permission)
+
+    if (import.meta.env.DEV || !VAPID_PUBLIC_KEY) return
+
+    navigator.serviceWorker.ready
+      .then((registration) => registration.pushManager.getSubscription())
+      .then((subscription) => {
+        setPushSubscribed(Boolean(subscription))
+      })
+      .catch((error) => {
+        console.warn('JAS push subscription check failed:', error)
+      })
+  }, [isLoggedIn])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -214,6 +328,97 @@ export function PwaBootstrap() {
     window.location.reload()
   }
 
+  async function handleEnablePushClick() {
+    if (!VAPID_PUBLIC_KEY) {
+      setPushMessage('Push notifications are not configured yet.')
+      return
+    }
+
+    if (!supportsWebPush()) {
+      setPushMessage('This browser does not support web push notifications.')
+      return
+    }
+
+    if (!isLoggedIn) {
+      setPushMessage('Please login first to enable member notifications.')
+      return
+    }
+
+    setPushLoading(true)
+    setPushMessage('')
+
+    try {
+      const permission = await Notification.requestPermission()
+      setPushPermission(permission)
+
+      if (permission !== 'granted') {
+        setPushMessage('Notification permission was not allowed.')
+        return
+      }
+
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
+
+      if (userError || !user) {
+        setPushMessage('Please login again to enable notifications.')
+        return
+      }
+
+      const registration = await navigator.serviceWorker.ready
+      let subscription = await registration.pushManager.getSubscription()
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        })
+      }
+
+      const subscriptionJson = subscription.toJSON() as PushSubscriptionJson
+      const endpoint = subscription.endpoint || subscriptionJson.endpoint
+      const p256dh = subscriptionJson.keys?.p256dh
+      const auth = subscriptionJson.keys?.auth
+
+      if (!endpoint || !p256dh || !auth) {
+        setPushMessage('Browser did not return a complete push subscription.')
+        return
+      }
+
+      const pushClient = supabase as unknown as PushClient
+      const { error } = await pushClient.from('push_subscriptions').upsert(
+        {
+          user_id: user.id,
+          endpoint,
+          p256dh,
+          auth,
+          user_agent: navigator.userAgent,
+          enabled: true,
+          last_seen_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,endpoint' },
+      )
+
+      if (error) {
+        setPushMessage(error.message)
+        return
+      }
+
+      setPushSubscribed(true)
+      setDismissedPush(false)
+      setPushMessage('Browser notifications enabled.')
+    } catch (error) {
+      setPushMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to enable browser notifications.',
+      )
+    } finally {
+      setPushLoading(false)
+    }
+  }
+
   const shouldShowUpdate = updateAvailable && !dismissedUpdate
   const shouldShowInstall =
     !shouldShowUpdate &&
@@ -221,8 +426,18 @@ export function PwaBootstrap() {
     !isStandaloneDisplay() &&
     canInstall &&
     Boolean(installPrompt)
+  const shouldShowPush =
+    !shouldShowUpdate &&
+    !shouldShowInstall &&
+    !dismissedPush &&
+    isLoggedIn &&
+    pushSupported &&
+    !pushSubscribed &&
+    pushPermission !== 'denied' &&
+    !import.meta.env.DEV &&
+    Boolean(VAPID_PUBLIC_KEY)
 
-  if (!shouldShowUpdate && !shouldShowInstall) return null
+  if (!shouldShowUpdate && !shouldShowInstall && !shouldShowPush) return null
 
   return (
     <div className="pwa-toast-stack" role="status" aria-live="polite">
@@ -286,6 +501,42 @@ export function PwaBootstrap() {
               type="button"
               className="pwa-toast__button pwa-toast__button--ghost"
               onClick={() => setDismissedInstall(true)}
+            >
+              Not now
+            </button>
+          </div>
+        </section>
+      ) : null}
+
+      {shouldShowPush ? (
+        <section className="pwa-toast pwa-toast--push">
+          <div className="pwa-toast__icon" aria-hidden="true">
+            🔔
+          </div>
+          <div className="pwa-toast__body">
+            <p className="pwa-toast__eyebrow">JAS notifications</p>
+            <h2 className="pwa-toast__title">Enable browser notifications</h2>
+            <p className="pwa-toast__text">
+              Get membership approval, payment and important update alerts even
+              when the JAS app is installed or running in the background.
+            </p>
+            {pushMessage ? (
+              <p className="pwa-toast__note">{pushMessage}</p>
+            ) : null}
+          </div>
+          <div className="pwa-toast__actions">
+            <button
+              type="button"
+              className="pwa-toast__button pwa-toast__button--primary"
+              onClick={handleEnablePushClick}
+              disabled={pushLoading}
+            >
+              {pushLoading ? 'Enabling…' : 'Enable notifications'}
+            </button>
+            <button
+              type="button"
+              className="pwa-toast__button pwa-toast__button--ghost"
+              onClick={() => setDismissedPush(true)}
             >
               Not now
             </button>
@@ -363,6 +614,14 @@ const pwaStyles = `
     font-size: 0.84rem;
     font-weight: 600;
     line-height: 1.45;
+  }
+
+  .pwa-toast__note {
+    margin: 0.45rem 0 0;
+    color: #1b5e3b;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.4;
   }
 
   .pwa-toast__actions {
