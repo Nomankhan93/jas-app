@@ -1,6 +1,5 @@
 // src/routes/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import QRCode from 'qrcode'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import {
@@ -28,6 +27,7 @@ import {
 import { supabase } from '../lib/supabase/client'
 import { useI18n, type AppLanguage } from '../lib/i18n'
 import { exportElementAsPng } from '../lib/shared/card-export'
+import { generateQrDataUrl } from '../lib/shared/qrcode'
 
 export const Route = createFileRoute('/card')({
   component: CardPage,
@@ -351,7 +351,7 @@ function CardPage() {
 
         const publicVerifyUrl = buildPublicVerifyUrl(data.member_no)
 
-        const generatedQr = await QRCode.toDataURL(publicVerifyUrl, {
+        const generatedQr = await generateQrDataUrl(publicVerifyUrl, {
           width: 320,
           margin: 1,
           errorCorrectionLevel: 'H',
