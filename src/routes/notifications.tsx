@@ -20,41 +20,30 @@ export const Route = createFileRoute('/notifications')({
   component: NotificationsPage,
 })
 
-type NotificationClient = {
-  from: (table: 'notifications') => {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        order: (
-          column: string,
-          options: { ascending: boolean },
-        ) => Promise<{ data: UserNotification[] | null; error: Error | null }>
-      }
-    }
-    update: (values: Partial<UserNotification>) => {
-      eq: (column: string, value: string | boolean) => {
-        eq: (
-          column: string,
-          value: string | boolean,
-        ) => Promise<{ error: Error | null }>
-      }
-    }
-  }
-}
+const NOTIFICATIONS_PAGE_SIZE = 50
 
 function NotificationsPage() {
   const navigate = useNavigate()
   const [items, setItems] = useState<UserNotification[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [message, setMessage] = useState('')
+  const [totalCount, setTotalCount] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
 
   useEffect(() => {
     void loadNotifications()
   }, [])
 
-  async function loadNotifications(options?: { silent?: boolean }) {
+  async function loadNotifications(options?: { silent?: boolean; append?: boolean }) {
     const silent = options?.silent ?? false
-    if (silent) setRefreshing(true)
+    const append = options?.append ?? false
+    const from = append ? items.length : 0
+    const to = from + NOTIFICATIONS_PAGE_SIZE - 1
+
+    if (append) setLoadingMore(true)
+    else if (silent) setRefreshing(true)
     else setLoading(true)
 
     setMessage('')
@@ -69,26 +58,35 @@ function NotificationsPage() {
       return
     }
 
-    const client = supabase as unknown as NotificationClient
-    const { data, error } = await client
+    const { data, error, count } = await supabase
       .from('notifications')
       .select(
         'id, user_id, title, message, category, related_type, related_id, action_url, is_read, read_at, created_at',
+        { count: 'exact' },
       )
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
+      .range(from, to)
 
     if (error) {
       setMessage(error.message)
-      setItems([])
+      if (!append) setItems([])
       setLoading(false)
       setRefreshing(false)
+      setLoadingMore(false)
       return
     }
 
-    setItems(data || [])
+    const nextItems = (data || []) as UserNotification[]
+    const nextCount = count ?? (append ? items.length + nextItems.length : nextItems.length)
+    const mergedItems = append ? [...items, ...nextItems] : nextItems
+
+    setItems(mergedItems)
+    setTotalCount(nextCount)
+    setHasMore(mergedItems.length < nextCount)
     setLoading(false)
     setRefreshing(false)
+    setLoadingMore(false)
   }
 
   async function markAllRead() {
@@ -98,8 +96,7 @@ function NotificationsPage() {
 
     if (!user) return
 
-    const client = supabase as unknown as NotificationClient
-    const { error } = await client
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('user_id', user.id)
@@ -183,9 +180,9 @@ function NotificationsPage() {
           </div>
 
           <div className="grid gap-4 p-5 md:grid-cols-3 md:p-6">
-            <StatCard title="Total Updates" value={items.length} />
+            <StatCard title="Total Updates" value={totalCount} />
             <StatCard title="Unread" value={unreadCount} />
-            <StatCard title="Read" value={items.length - unreadCount} />
+            <StatCard title="Loaded" value={items.length} />
           </div>
         </section>
 
@@ -198,10 +195,39 @@ function NotificationsPage() {
 
         <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           {items.length ? (
-            <div className="grid gap-4">
-              {items.map((item) => (
-                <NotificationCard key={item.id} item={item} />
-              ))}
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-600">
+                <span>
+                  Showing latest {items.length} of {totalCount || items.length} notifications
+                </span>
+                {refreshing ? <span>Refreshing...</span> : null}
+              </div>
+
+              <div className="grid gap-4">
+                {items.map((item) => (
+                  <NotificationCard key={item.id} item={item} />
+                ))}
+              </div>
+
+              {hasMore ? (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => void loadNotifications({ append: true })}
+                    disabled={loadingMore}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-black text-white transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {loadingMore ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Load More'
+                    )}
+                  </button>
+                </div>
+              ) : null}
             </div>
           ) : (
             <div className="rounded-3xl bg-slate-50 p-10 text-center">
@@ -251,7 +277,7 @@ function NotificationCard({ item }: { item: UserNotification }) {
           <h2 className="mt-3 text-xl font-black text-slate-950">
             {item.title}
           </h2>
-          <p className="mt-2 text-sm font-semibold leading-7 text-slate-600">
+          <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-7 text-slate-600">
             {item.message}
           </p>
           <p className="mt-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
