@@ -278,6 +278,7 @@ function AdminPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
   const [memberResultCount, setMemberResultCount] = useState(0)
+  const [memberPage, setMemberPage] = useState(0)
   const [adminRoles, setAdminRoles] = useState<AdminRoleName[]>([])
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [districtFilter, setDistrictFilter] = useState('all')
@@ -398,26 +399,40 @@ function AdminPage() {
           membersQuery = membersQuery.order('created_at', { ascending: false })
         }
 
-        const fetchLimit = areaAccess.isRestricted
-          ? ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT
-          : ADMIN_MEMBERS_PAGE_SIZE
+        const pageFrom = memberPage * ADMIN_MEMBERS_PAGE_SIZE
+        const pageTo = pageFrom + ADMIN_MEMBERS_PAGE_SIZE - 1
 
-        const { data, error: membersError, count } = await membersQuery
-          .limit(fetchLimit)
+        const pagedMembersQuery = areaAccess.isRestricted
+          ? membersQuery.limit(
+              Math.max(
+                ADMIN_MEMBERS_PAGE_SIZE,
+                Math.min(ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT, pageTo + 1),
+              ),
+            )
+          : membersQuery.range(pageFrom, pageTo)
+
+        const { data, error: membersError, count } = await pagedMembersQuery
           .returns<Member[]>()
 
         if (membersError) throw membersError
 
-        const safeMembers = filterRowsByAreaAccess(data ?? [], areaAccess).slice(
-          0,
-          ADMIN_MEMBERS_PAGE_SIZE,
-        )
+        const safeMembers = areaAccess.isRestricted
+          ? filterRowsByAreaAccess(data ?? [], areaAccess).slice(pageFrom, pageTo + 1)
+          : filterRowsByAreaAccess(data ?? [], areaAccess)
+
+        const resultCount = count ?? safeMembers.length
+
+        if (resultCount > 0 && pageFrom >= resultCount && memberPage > 0) {
+          if (!cancelledRef?.current) {
+            setMemberPage(0)
+          }
+
+          return
+        }
 
         if (!cancelledRef?.current) {
           setMembers(safeMembers)
-          setMemberResultCount(
-            areaAccess.isRestricted ? safeMembers.length : count ?? safeMembers.length,
-          )
+          setMemberResultCount(resultCount)
           setAreaNotice(getAreaAccessSummaryText(areaAccess))
         }
       } catch (err) {
@@ -438,12 +453,17 @@ function AdminPage() {
       dateFilter,
       debouncedSearch,
       districtFilter,
+      memberPage,
       navigate,
       sortBy,
       statusFilter,
       talukaFilter,
     ],
   )
+
+  useEffect(() => {
+    setMemberPage(0)
+  }, [dateFilter, debouncedSearch, districtFilter, sortBy, statusFilter, talukaFilter])
 
   useEffect(() => {
     if (isNestedAdminPage) return
@@ -532,6 +552,20 @@ function AdminPage() {
     talukaFilter,
   ])
 
+  const totalMemberPages = Math.max(
+    1,
+    Math.ceil((memberResultCount || filteredMembers.length) / ADMIN_MEMBERS_PAGE_SIZE),
+  )
+  const currentMemberPage = Math.min(memberPage + 1, totalMemberPages)
+  const pageStartNumber =
+    memberResultCount > 0 ? memberPage * ADMIN_MEMBERS_PAGE_SIZE + 1 : 0
+  const pageEndNumber = Math.min(
+    (memberPage + 1) * ADMIN_MEMBERS_PAGE_SIZE,
+    memberResultCount || filteredMembers.length,
+  )
+  const canGoToPreviousMembersPage = memberPage > 0
+  const canGoToNextMembersPage = memberPage + 1 < totalMemberPages
+
   const hasActiveFilters =
     statusFilter !== 'all' ||
     districtFilter !== 'all' ||
@@ -551,6 +585,14 @@ function AdminPage() {
   function handleDistrictFilter(value: string) {
     setDistrictFilter(value)
     setTalukaFilter('all')
+  }
+
+  function goToPreviousMembersPage() {
+    setMemberPage((page) => Math.max(0, page - 1))
+  }
+
+  function goToNextMembersPage() {
+    setMemberPage((page) => Math.min(totalMemberPages - 1, page + 1))
   }
 
   function exportCsv() {
@@ -753,7 +795,7 @@ function AdminPage() {
 
               {memberResultCount > ADMIN_MEMBERS_PAGE_SIZE ? (
                 <p className="mt-1 text-xs font-medium text-slate-400">
-                  Latest {ADMIN_MEMBERS_PAGE_SIZE} matching records are loaded for faster performance. Use search or filters to narrow results.
+                  Use Next/Previous to browse more records, or search/filter to narrow the list.
                 </p>
               ) : null}
             </div>
@@ -865,6 +907,33 @@ function AdminPage() {
               <option value="district">{adminCopy.membership.sortDistrict}</option>
             </select>
           </div>
+
+          {memberResultCount > ADMIN_MEMBERS_PAGE_SIZE ? (
+            <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-slate-600">
+                Showing {pageStartNumber}-{pageEndNumber} of {memberResultCount} records · Page {currentMemberPage} of {totalMemberPages}
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={goToPreviousMembersPage}
+                  disabled={!canGoToPreviousMembersPage || refreshing}
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous 50
+                </button>
+                <button
+                  type="button"
+                  onClick={goToNextMembersPage}
+                  disabled={!canGoToNextMembersPage || refreshing}
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next 50
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-5 grid gap-3 md:hidden">
             {filteredMembers.map((member) => (
