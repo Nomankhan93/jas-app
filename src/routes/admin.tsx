@@ -94,6 +94,7 @@ type Member = {
   district: string
   taluka: string | null
   photo_url: string | null
+  photoSignedUrl?: string | null
   status: MemberStatus
   member_no: string | null
   created_at: string
@@ -127,6 +128,8 @@ type AdminQuickActionConfig = {
 
 const ADMIN_MEMBERS_PAGE_SIZE = 50
 const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200
+const MEMBER_PHOTO_BUCKET = 'member-photos'
+const MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 30
 
 const adminDashboardDedupeCopy = {
   en: {
@@ -430,8 +433,10 @@ function AdminPage() {
           return
         }
 
+        const membersWithPhotos = await attachSignedMemberPhotoUrls(safeMembers)
+
         if (!cancelledRef?.current) {
-          setMembers(safeMembers)
+          setMembers(membersWithPhotos)
           setMemberResultCount(resultCount)
           setAreaNotice(getAreaAccessSummaryText(areaAccess))
         }
@@ -976,7 +981,7 @@ function AdminPage() {
                   >
                     <td className="px-4 py-3">
                       <MemberPhoto
-                        src={undefined}
+                        src={member.photoSignedUrl ?? undefined}
                         alt={member.full_name}
                         className="h-12 w-12 rounded-xl object-cover object-top ring-1 ring-slate-200"
                         fallbackClassName="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
@@ -1350,7 +1355,7 @@ function MobileMemberCard({
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <MemberPhoto
-          src={undefined}
+          src={member.photoSignedUrl ?? undefined}
           alt={member.full_name}
           className="h-14 w-14 shrink-0 rounded-xl object-cover object-top ring-1 ring-slate-200"
           fallbackClassName="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
@@ -1552,6 +1557,44 @@ function ViewApplicationLink({
   )
 }
 
+async function attachSignedMemberPhotoUrls(members: Member[]) {
+  const uniquePhotoPaths = Array.from(
+    new Set(
+      members
+        .map((member) => member.photo_url)
+        .filter((path): path is string => Boolean(path)),
+    ),
+  )
+
+  if (!uniquePhotoPaths.length) {
+    return members.map((member) => ({ ...member, photoSignedUrl: null }))
+  }
+
+  const { data, error } = await supabase.storage
+    .from(MEMBER_PHOTO_BUCKET)
+    .createSignedUrls(uniquePhotoPaths, MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS)
+
+  if (error || !data) {
+    console.warn('Admin member photo signed URLs failed:', error?.message)
+    return members.map((member) => ({ ...member, photoSignedUrl: null }))
+  }
+
+  const signedUrlByPath = new Map<string, string>()
+
+  data.forEach((item, index) => {
+    if (item.signedUrl) {
+      signedUrlByPath.set(uniquePhotoPaths[index], item.signedUrl)
+    }
+  })
+
+  return members.map((member) => ({
+    ...member,
+    photoSignedUrl: member.photo_url
+      ? signedUrlByPath.get(member.photo_url) ?? null
+      : null,
+  }))
+}
+
 function MemberPhoto({
   src,
   alt,
@@ -1565,11 +1608,27 @@ function MemberPhoto({
   fallbackClassName: string
   fallbackText: ReactNode
 }) {
-  if (!src) {
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    setFailed(false)
+  }, [src])
+
+  if (!src || failed) {
     return <div className={fallbackClassName}>{fallbackText}</div>
   }
 
-  return <img src={src} alt={alt} className={className} />
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 function EmptyState({

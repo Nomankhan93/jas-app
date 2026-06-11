@@ -184,8 +184,12 @@ function AdminMemberCardPage() {
   useEffect(() => {
     const updateScale = () => {
       const stageWidth = visibleStageRef.current?.clientWidth || CARD_WIDTH
-      const availableWidth = Math.max(220, stageWidth)
-      const nextScale = Math.min(1, Math.max(0.2, availableWidth / CARD_WIDTH))
+      const viewportWidth =
+        typeof window !== 'undefined'
+          ? Math.max(220, window.innerWidth - 56)
+          : CARD_WIDTH
+      const availableWidth = Math.max(220, Math.min(stageWidth, viewportWidth))
+      const nextScale = Math.min(1, Math.max(0.18, availableWidth / CARD_WIDTH))
 
       setCardScale(Number(nextScale.toFixed(4)))
     }
@@ -399,13 +403,13 @@ function AdminMemberCardPage() {
           />
         ) : cardReady ? (
           <>
-            <section className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
-              <div className="rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+            <section className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
+              <div className="min-w-0 overflow-hidden rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
                 <p className="mb-3 text-center text-xs font-semibold text-slate-500 sm:hidden">
                   Card preview auto-fits your screen. Use the buttons to switch sides.
                 </p>
 
-                <div ref={visibleStageRef} className="w-full overflow-hidden pb-2">
+                <div ref={visibleStageRef} className="min-w-0 w-full overflow-hidden pb-2">
                   <ScaledCardShell scale={cardScale}>
                     <MembershipCard
                       side={selectedSide}
@@ -479,7 +483,7 @@ function AdminMemberCardPage() {
                       type="button"
                       onClick={() => void handleDownload('front')}
                       disabled={downloadingTarget !== null}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-center text-sm font-black leading-tight text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60" style={{ color: '#ffffff' }}
                     >
                       {downloadingTarget === 'front' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -495,8 +499,7 @@ function AdminMemberCardPage() {
                       type="button"
                       onClick={() => void handleDownload('back')}
                       disabled={downloadingTarget !== null}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                      style={{ color: '#ffffff' }}
+                      className="inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-center text-sm font-black leading-tight text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" style={{ color: '#ffffff' }}
                     >
                       {downloadingTarget === 'back' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -512,7 +515,7 @@ function AdminMemberCardPage() {
                       type="button"
                       onClick={() => void handleDownloadBoth()}
                       disabled={downloadingTarget !== null}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-400 px-5 py-2 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex min-h-11 w-full min-w-0 items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-2 text-center text-sm font-black leading-tight text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60" style={{ color: '#020617' }}
                     >
                       {downloadingTarget === 'both' ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -619,7 +622,7 @@ function ScaledCardShell({
 }) {
   return (
     <div
-      className="mx-auto"
+      className="mx-auto max-w-full overflow-visible"
       style={{
         width: `${CARD_WIDTH * scale}px`,
         height: `${CARD_HEIGHT * scale}px`,
