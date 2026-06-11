@@ -31,3 +31,12 @@ dist/
 # Safe export output
 exports/
 *.zip
+
+# Android / Play Store generated package outputs
+*.apk
+*.aab
+*.keystore
+signing-key-info.txt
+JAS-test.apk
+JAS.apk
+JAS.aab

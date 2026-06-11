@@ -2,15 +2,22 @@
   "id": "/",
   "short_name": "JAS",
   "name": "Jatt Alliance Sindh Member Platform",
-  "description": "JAS membership, digital card, programs, donations and verified member services.",
-  "start_url": "/?source=pwa",
+  "description": "Official JAS membership portal for registration, digital cards, member updates, donations and support programs.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "theme_color": "#0b2a1d",
   "background_color": "#f8f4ee",
-  "categories": ["community", "productivity", "utilities"],
+  "categories": [
+    "social",
+    "productivity",
+    "utilities"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -31,21 +38,51 @@
       "short_name": "Dashboard",
       "description": "Open your JAS member dashboard.",
       "url": "/dashboard",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Digital Card",
       "short_name": "Card",
       "description": "Open the JAS digital membership card.",
       "url": "/card",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Donate",
       "short_name": "Donate",
       "description": "Submit a JAS donation record.",
       "url": "/donate",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Member Updates",
+      "short_name": "Updates",
+      "description": "Open JAS in-app updates and notifications.",
+      "url": "/notifications",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
-  ]
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false
 }
