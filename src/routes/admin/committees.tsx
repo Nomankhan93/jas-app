@@ -26,6 +26,7 @@ export const Route = createFileRoute('/admin/committees')({
 type FormState = {
   committeeType: CommitteeType
   name: string
+  division: string
   district: string
   taluka: string
   tenureStart: string
@@ -38,6 +39,7 @@ type FormState = {
 const emptyForm: FormState = {
   committeeType: 'central',
   name: '',
+  division: '',
   district: '',
   taluka: '',
   tenureStart: '',
@@ -74,14 +76,14 @@ function AdminCommitteesPage() {
     try {
       const allowed = await currentUserCanManageCommittees()
       if (!allowed) {
-        setMessage('Only admin or super admin can manage committees and designations.')
+        setMessage('Only admin or super admin can manage organization levels and designations.')
         setCommittees([])
         return
       }
 
       setCommittees(await fetchCommitteesForAdmin())
     } catch (err) {
-      setMessage(getErrorMessage(err, 'Failed to load committees. Please confirm the committee/designation migration and RLS grants are applied.'))
+      setMessage(getErrorMessage(err, 'Failed to load organization level units. Please confirm the organization/designation migration and RLS grants are applied.'))
     } finally {
       setLoading(false)
     }
@@ -94,23 +96,30 @@ function AdminCommitteesPage() {
 
     try {
       if (!form.name.trim()) {
-        throw new Error('Committee name is required.')
+        throw new Error('Unit name is required.')
+      }
+
+      if (form.committeeType === 'divisional' && !form.division.trim()) {
+        throw new Error('Division is required for divisional level unit.')
       }
 
       if (form.committeeType === 'district' && !form.district.trim()) {
-        throw new Error('District is required for district committee.')
+        throw new Error('District is required for district level unit.')
       }
 
       if (form.committeeType === 'taluka' && (!form.district.trim() || !form.taluka.trim())) {
-        throw new Error('District and taluka are required for taluka committee.')
+        throw new Error('District and taluka are required for taluka level unit.')
       }
 
       const id = await createCommittee({
         committee_type: form.committeeType,
         name: form.name.trim(),
-        division: null,
-        district: form.district.trim() || null,
-        taluka: form.taluka.trim() || null,
+        division: form.committeeType === 'divisional' ? form.division.trim() : null,
+        district:
+          form.committeeType === 'district' || form.committeeType === 'taluka'
+            ? form.district.trim()
+            : null,
+        taluka: form.committeeType === 'taluka' ? form.taluka.trim() : null,
         tenure_start: form.tenureStart || null,
         tenure_end: form.tenureEnd || null,
         status: form.status,
@@ -121,7 +130,7 @@ function AdminCommitteesPage() {
       setForm(emptyForm)
       await navigate({ to: '/admin/committees/$id', params: { id } })
     } catch (err) {
-      setMessage(getErrorMessage(err, 'Failed to create committee.'))
+      setMessage(getErrorMessage(err, 'Failed to create level unit.'))
     } finally {
       setSaving(false)
     }
@@ -135,7 +144,7 @@ function AdminCommitteesPage() {
       const matchesStatus = statusFilter === 'all' || committee.status === statusFilter
       const matchesSearch =
         query.length === 0 ||
-        [committee.name, committee.district ?? '', committee.taluka ?? '', committee.notes ?? '']
+        [committee.name, committee.division ?? '', committee.district ?? '', committee.taluka ?? '', committee.notes ?? '']
           .join(' ')
           .toLowerCase()
           .includes(query)
@@ -152,7 +161,7 @@ function AdminCommitteesPage() {
         if (committee.status === 'active') acc.active += 1
         return acc
       },
-      { total: 0, central: 0, divisional: 0, district: 0, taluka: 0, active: 0 },
+      { total: 0, central: 0, provincial: 0, divisional: 0, district: 0, taluka: 0, active: 0 },
     )
   }, [committees])
 
@@ -161,7 +170,7 @@ function AdminCommitteesPage() {
   }
 
   return (
-    <AdminShell title="Committees" subtitle="Manage central, divisional, district and taluka committees.">
+    <AdminShell title="Organization Levels" subtitle="Manage level units used for designation assignment.">
       <div className="admin-nested-page">
       <div className="page-wrap space-y-6">
         <header className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200/70">
@@ -191,9 +200,10 @@ function AdminCommitteesPage() {
           </div>
         </header>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
           <SummaryCard label={copy.page.totalCommittees} value={stats.total} />
           <SummaryCard label={copy.page.central} value={stats.central} />
+          <SummaryCard label={copy.page.provincial} value={stats.provincial} />
           <SummaryCard label={copy.page.divisional} value={stats.divisional} />
           <SummaryCard label={copy.page.district} value={stats.district} />
           <SummaryCard label={copy.page.taluka} value={stats.taluka} />
@@ -216,24 +226,63 @@ function AdminCommitteesPage() {
 
             <div className="space-y-4">
               <Field label={copy.page.committeeType}>
-                <select value={form.committeeType} onChange={(event) => setForm((current) => ({ ...current, committeeType: event.target.value as CommitteeType }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+                <select
+                  value={form.committeeType}
+                  onChange={(event) => {
+                    const committeeType = event.target.value as CommitteeType
+                    setForm((current) => ({
+                      ...current,
+                      committeeType,
+                      division: committeeType === 'divisional' ? current.division : '',
+                      district:
+                        committeeType === 'district' || committeeType === 'taluka'
+                          ? current.district
+                          : '',
+                      taluka: committeeType === 'taluka' ? current.taluka : '',
+                    }))
+                  }}
+                  className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                >
                   {committeeTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
               </Field>
 
               <Field label={copy.page.committeeName}>
-                <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Central Working Committee" />
+                <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Central Executive Committee" />
               </Field>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <Field label={copy.page.district}>
-                  <input value={form.district} onChange={(event) => setForm((current) => ({ ...current, district: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Umerkot" />
-                </Field>
+              {form.committeeType === 'central' || form.committeeType === 'provincial' ? (
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold leading-6 text-emerald-900">
+                  {form.committeeType === 'central'
+                    ? 'Central Executive Committee covers Sindh / Central level, so no area field is required.'
+                    : 'Provincial level covers Sindh / Provincial level, so no district or taluka field is required.'}
+                </div>
+              ) : null}
 
-                <Field label={copy.page.taluka}>
-                  <input value={form.taluka} onChange={(event) => setForm((current) => ({ ...current, taluka: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Kunri" />
+              {form.committeeType === 'divisional' ? (
+                <Field label={copy.page.division}>
+                  <input
+                    value={form.division}
+                    onChange={(event) => setForm((current) => ({ ...current, division: event.target.value }))}
+                    className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                    placeholder="Mirpurkhas Division"
+                  />
                 </Field>
-              </div>
+              ) : null}
+
+              {form.committeeType === 'district' || form.committeeType === 'taluka' ? (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <Field label={copy.page.district}>
+                    <input value={form.district} onChange={(event) => setForm((current) => ({ ...current, district: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Umerkot" />
+                  </Field>
+
+                  {form.committeeType === 'taluka' ? (
+                    <Field label={copy.page.taluka}>
+                      <input value={form.taluka} onChange={(event) => setForm((current) => ({ ...current, taluka: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Kunri" />
+                    </Field>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                 <Field label={copy.page.tenureStart}>
@@ -253,7 +302,7 @@ function AdminCommitteesPage() {
 
               <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-bold text-slate-700">
                 <input type="checkbox" checked={form.publicDisplay} onChange={(event) => setForm((current) => ({ ...current, publicDisplay: event.target.checked }))} />
-                Show this committee publicly later
+                Show this level unit publicly later
               </label>
 
               <Field label="Notes">
@@ -269,8 +318,8 @@ function AdminCommitteesPage() {
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
             <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h2 className="text-xl font-black text-slate-950">Committee Records</h2>
-                <p className="mt-1 text-sm text-slate-500">Showing {filteredCommittees.length} of {committees.length} committees.</p>
+                <h2 className="text-xl font-black text-slate-950">Level Units</h2>
+                <p className="mt-1 text-sm text-slate-500">Showing {filteredCommittees.length} of {committees.length} level units.</p>
               </div>
 
               <div className="grid gap-2 sm:grid-cols-3 lg:w-[560px]">
@@ -279,7 +328,7 @@ function AdminCommitteesPage() {
                   <input value={search} onChange={(event) => setSearch(event.target.value)} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 pl-10" placeholder="Search..." />
                 </div>
                 <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as 'all' | CommitteeType)} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
-                  <option value="all">All types</option>
+                  <option value="all">All levels</option>
                   {committeeTypeOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                 </select>
                 <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'all' | CommitteeStatus)} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
@@ -315,15 +364,25 @@ function AdminCommitteesPage() {
                   </div>
 
                   <div className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                    <Info label={copy.page.district} value={committee.district ?? 'N/A'} />
-                    <Info label={copy.page.taluka} value={committee.taluka ?? 'N/A'} />
+                    {committee.committee_type === 'divisional' ? (
+                      <Info label={copy.page.division} value={committee.division ?? 'N/A'} />
+                    ) : null}
+                    {committee.committee_type === 'district' || committee.committee_type === 'taluka' ? (
+                      <Info label={copy.page.district} value={committee.district ?? 'N/A'} />
+                    ) : null}
+                    {committee.committee_type === 'taluka' ? (
+                      <Info label={copy.page.taluka} value={committee.taluka ?? 'N/A'} />
+                    ) : null}
+                    {committee.committee_type === 'central' || committee.committee_type === 'provincial' ? (
+                      <Info label="Area" value={committee.committee_type === 'central' ? 'Sindh / Central' : 'Sindh / Provincial'} />
+                    ) : null}
                     <Info label="Tenure" value={`${formatCommitteeDate(committee.tenure_start)} → ${formatCommitteeDate(committee.tenure_end)}`} />
                     <Info label="Members" value={String(committee.member_count ?? 0)} />
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2">
                     <Link to="/admin/committees/$id" params={{ id: committee.id }} className="jas-dark-action-link inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-black no-underline">
-                      Manage Committee <ArrowRight size={15} />
+                      Manage Unit <ArrowRight size={15} />
                     </Link>
                     {committee.public_display ? (
                       <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800 ring-1 ring-emerald-100">

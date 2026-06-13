@@ -156,7 +156,6 @@ export function getMemberAccountItems(
   labels: {
     dashboard: string
     digitalCard: string
-    officeBearerCard: string
     updates: string
     donors: string
     register: string
@@ -166,7 +165,6 @@ export function getMemberAccountItems(
   return [
     { to: '/dashboard', label: labels.dashboard, icon: <ShieldCheck size={16} /> },
     { to: '/card', label: labels.digitalCard, icon: <IdCard size={16} /> },
-    { to: '/designation-card', label: labels.officeBearerCard, icon: <ShieldCheck size={16} /> },
     {
       to: '/notifications',
       label: labels.updates,

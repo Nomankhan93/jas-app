@@ -60,6 +60,7 @@ import {
 import { useAdminMemberDetailCopy } from '../../../lib/admin-member-detail-i18n'
 import {
   addCommitteeMember,
+  currentUserCanManageCommittees,
   fetchCommitteesForAdmin,
   fetchDesignations,
   formatCommitteeDate,
@@ -146,6 +147,86 @@ type OfficeBearerIssueForm = {
 
 type AdminOfficeBearerAssignment = CommitteeMemberRecord & {
   committee: CommitteeRecord | null
+}
+
+type DesignationAssignmentLevel =
+  | 'central-executive'
+  | 'provincial'
+  | 'divisional'
+  | 'district'
+  | 'taluka'
+
+const designationAssignmentLevelOptions: Array<{
+  value: DesignationAssignmentLevel
+  label: string
+}> = [
+  { value: 'central-executive', label: 'Central Executive Committee' },
+  { value: 'provincial', label: 'Provincial' },
+  { value: 'divisional', label: 'Divisional' },
+  { value: 'district', label: 'District' },
+  { value: 'taluka', label: 'Taluka' },
+]
+
+type DesignationDropdownOption = {
+  value: string
+  label: string
+  source: 'recommended' | 'configured'
+  designationId?: string
+}
+
+const recommendedDesignationsByLevel: Record<DesignationAssignmentLevel, string[]> = {
+  'central-executive': [
+    'Chairman',
+    'Senior Vice Chairman',
+    'Vice Chairman',
+    'General Secretary',
+    'Information Secretary',
+    'Finance Secretary',
+    'Joint Secretary',
+    'Deputy General Secretary',
+    'Office Secretary',
+    'Media Coordinator',
+  ],
+  provincial: [
+    'Provincial President',
+    'Provincial Senior Vice President',
+    'Provincial Vice President',
+    'Provincial General Secretary',
+    'Provincial Information Secretary',
+    'Provincial Finance Secretary',
+    'Provincial Joint Secretary',
+    'Provincial Coordinator',
+  ],
+  divisional: [
+    'Divisional President',
+    'Divisional Senior Vice President',
+    'Divisional Vice President',
+    'Divisional General Secretary',
+    'Divisional Information Secretary',
+    'Divisional Finance Secretary',
+    'Divisional Joint Secretary',
+    'Divisional Coordinator',
+  ],
+  district: [
+    'District President',
+    'District Senior Vice President',
+    'District Vice President',
+    'District General Secretary',
+    'District Information Secretary',
+    'District Finance Secretary',
+    'District Joint Secretary',
+    'District Coordinator',
+  ],
+  taluka: [
+    'Taluka President',
+    'Taluka Senior Vice President',
+    'Taluka Vice President',
+    'Taluka General Secretary',
+    'Taluka Information Secretary',
+    'Taluka Finance Secretary',
+    'Taluka Joint Secretary',
+    'Taluka Coordinator',
+  ],
 }
 
 type AdminAccessResult =
@@ -260,6 +341,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   const [officeBearerLoading, setOfficeBearerLoading] = useState(false)
   const [officeBearerSaving, setOfficeBearerSaving] = useState(false)
   const [officeBearerError, setOfficeBearerError] = useState('')
+  const [canManageOrganization, setCanManageOrganization] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -269,7 +351,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   )
 
   const canViewCard = member?.status === 'approved' && Boolean(member.member_no)
-  const canIssueOfficeBearer = canViewCard
+  const canIssueOfficeBearer = canViewCard && canManageOrganization
   const hasActiveOfficeBearer = officeBearerAssignments.some(
     (assignment) => assignment.status === 'active',
   )
@@ -316,6 +398,12 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           return
         }
 
+        const canManageOrg = await currentUserCanManageCommittees().catch(() => false)
+
+        if (!cancelledRef?.current) {
+          setCanManageOrganization(canManageOrg)
+        }
+
         const safeMember = await fetchMemberById(id)
 
         if (!safeMember) {
@@ -354,6 +442,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           setReceiptSignedUrl(null)
           setPaymentAdminNote('')
           setPaymentLoadError('')
+          setCanManageOrganization(false)
         }
       } finally {
         if (!cancelledRef?.current) {
@@ -576,6 +665,8 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
   }
 
   function openOfficeBearerPanel() {
+    if (!canIssueOfficeBearer) return
+
     setOfficeBearerPanelOpen(true)
 
     window.setTimeout(() => {
@@ -604,7 +695,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
       setOfficeBearerError(
         err instanceof Error
           ? err.message
-          : 'Unable to load office bearer designation data.',
+          : 'Unable to load designation assignment data.',
       )
     } finally {
       setOfficeBearerLoading(false)
@@ -656,12 +747,12 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
     const sortOrder = Number.parseInt(officeBearerForm.sortOrder, 10)
 
     if (!selectedCommittee) {
-      setOfficeBearerError('Select an active committee first.')
+      setOfficeBearerError('Select a level first.')
       return
     }
 
     if (selectedCommittee.status !== 'active') {
-      setOfficeBearerError('Designation can only be issued from an active committee.')
+      setOfficeBearerError('Designation can only be assigned from an active level.')
       return
     }
 
@@ -712,12 +803,12 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
         tenureStart: todayDate(),
       })
       setOfficeBearerPanelOpen(false)
-      setSuccess('Office bearer designation issued successfully. The designation card is now available.')
+      setSuccess('Designation assigned successfully. It will now appear on the member’s membership card.')
     } catch (err) {
       setOfficeBearerError(
         err instanceof Error
           ? err.message
-          : 'Failed to issue office bearer designation.',
+          : 'Failed to assign designation.',
       )
     } finally {
       setOfficeBearerSaving(false)
@@ -1090,24 +1181,16 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                         {copy.viewCard}
                       </Link>
 
-                      <Link
-                        to="/admin/members/$id/designation-card"
-                        params={{ id: member.id }}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-950 to-slate-950 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:from-emerald-900 hover:to-slate-900 hover:!text-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-                        style={{ color: '#ffffff' }}
-                      >
-                        <BadgeCheck className="h-4 w-4 text-amber-300" />
-                        {copy.officeBearerCard}
-                      </Link>
-
-                      <button
-                        type="button"
-                        onClick={openOfficeBearerPanel}
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
-                      >
-                        <BriefcaseBusiness className="h-4 w-4" />
-                        Issue Designation
-                      </button>
+                      {canIssueOfficeBearer ? (
+                        <button
+                          type="button"
+                          onClick={openOfficeBearerPanel}
+                          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-2 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
+                        >
+                          <BriefcaseBusiness className="h-4 w-4" />
+                          Assign Designation
+                        </button>
+                      ) : null}
                     </>
                   ) : null}
                 </div>
@@ -1228,7 +1311,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
               </div>
 
               {canViewCard ? (
-                <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-3">
+                <div className="grid w-full gap-2 sm:w-auto sm:grid-cols-2">
                   <Link
                     to="/admin/members/$id/card"
                     params={{ id: member.id }}
@@ -1239,24 +1322,16 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     {copy.openCard}
                   </Link>
 
-                  <Link
-                    to="/admin/members/$id/designation-card"
-                    params={{ id: member.id }}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-950 px-4 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:bg-emerald-900 hover:!text-white focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2"
-                    style={{ color: '#ffffff' }}
-                  >
-                    <BadgeCheck className="h-4 w-4 text-amber-300" />
-                    {copy.officeCard}
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={openOfficeBearerPanel}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
-                  >
-                    <BriefcaseBusiness className="h-4 w-4" />
-                    Issue Designation
-                  </button>
+                  {canIssueOfficeBearer ? (
+                    <button
+                      type="button"
+                      onClick={openOfficeBearerPanel}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
+                    >
+                      <BriefcaseBusiness className="h-4 w-4" />
+                      Assign Designation
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -1337,7 +1412,7 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
           </section>
         </section>
 
-        {canViewCard ? (
+        {canIssueOfficeBearer ? (
           <OfficeBearerIssuePanel
             member={member}
             assignments={officeBearerAssignments}
@@ -1455,16 +1530,6 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
                     <CreditCard className="h-4 w-4" />
                     {copy.viewCard}
                   </Link>
-
-                  <Link
-                    to="/admin/members/$id/designation-card"
-                    params={{ id: member.id }}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-950 px-5 py-2 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:bg-emerald-900 hover:!text-white"
-                    style={{ color: '#ffffff' }}
-                  >
-                    <BadgeCheck className="h-4 w-4 text-amber-300" />
-                    {copy.officeCard}
-                  </Link>
                 </div>
               ) : (
                 <Link
@@ -1482,6 +1547,156 @@ function AdminMemberApplicationPage({ id }: { id: string }) {
     </div>
     </AdminShell>
   )
+}
+
+
+function normalizeDesignationLevelText(value: string | null | undefined) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function sameTextValue(a: string | null | undefined, b: string | null | undefined) {
+  const left = normalizeDesignationLevelText(a)
+  const right = normalizeDesignationLevelText(b)
+
+  return Boolean(left && right && left === right)
+}
+
+function scoreCommitteeForMember(committee: CommitteeRecord, member: Member) {
+  let score = 0
+
+  if (sameTextValue(committee.district, member.district)) score += 4
+  if (sameTextValue(committee.taluka, member.taluka)) score += 6
+
+  return score
+}
+
+function isCentralExecutiveCommittee(committee: CommitteeRecord) {
+  const name = normalizeDesignationLevelText(committee.name)
+
+  return (
+    committee.committee_type === 'central' &&
+    (name.includes('central executive') ||
+      name.includes('central working') ||
+      name.includes('cwc') ||
+      name.includes('cec') ||
+      name.includes('markaz'))
+  )
+}
+
+function isProvincialCommittee(committee: CommitteeRecord) {
+  const name = normalizeDesignationLevelText(committee.name)
+
+  return (
+    committee.committee_type === 'provincial' ||
+    (committee.committee_type === 'central' &&
+      (name.includes('provincial') ||
+        name.includes('province') ||
+        name.includes('sindh')))
+  )
+}
+
+function pickBestCommittee(candidates: CommitteeRecord[], member: Member) {
+  return [...candidates].sort((a, b) => {
+    const scoreDifference = scoreCommitteeForMember(b, member) - scoreCommitteeForMember(a, member)
+
+    if (scoreDifference !== 0) return scoreDifference
+
+    return a.name.localeCompare(b.name)
+  })[0] ?? null
+}
+
+function findCommitteeForDesignationLevel(
+  level: DesignationAssignmentLevel,
+  activeCommittees: CommitteeRecord[],
+  member: Member,
+) {
+  if (!level) return null
+
+  if (level === 'central-executive') {
+    const centralExecutive = activeCommittees.filter(isCentralExecutiveCommittee)
+    return pickBestCommittee(centralExecutive, member)
+  }
+
+  if (level === 'provincial') {
+    const provincial = activeCommittees.filter(isProvincialCommittee)
+    return pickBestCommittee(provincial, member)
+  }
+
+  if (level === 'divisional') {
+    return pickBestCommittee(
+      activeCommittees.filter((committee) => committee.committee_type === 'divisional'),
+      member,
+    )
+  }
+
+  if (level === 'district') {
+    return pickBestCommittee(
+      activeCommittees.filter((committee) => committee.committee_type === 'district'),
+      member,
+    )
+  }
+
+  return pickBestCommittee(
+    activeCommittees.filter((committee) => committee.committee_type === 'taluka'),
+    member,
+  )
+}
+
+function getSelectedDesignationLevel(
+  selectedCommittee: CommitteeRecord | null,
+  activeCommittees: CommitteeRecord[],
+  member: Member,
+): DesignationAssignmentLevel | '' {
+  if (!selectedCommittee) return ''
+
+  const matchedLevel = designationAssignmentLevelOptions.find((level) => {
+    const committee = findCommitteeForDesignationLevel(level.value, activeCommittees, member)
+    return committee?.id === selectedCommittee.id
+  })
+
+  return matchedLevel?.value ?? ''
+}
+
+function getRecommendedDesignationOptions(level: DesignationAssignmentLevel | '') {
+  if (!level) return []
+
+  return recommendedDesignationsByLevel[level].map((title) => ({
+    value: `recommended:${level}:${title}`,
+    label: title,
+    source: 'recommended' as const,
+  }))
+}
+
+function getConfiguredDesignationOptions(designations: DesignationRecord[]) {
+  return designations
+    .filter((designation) => designation.is_active)
+    .map((designation) => ({
+      value: `configured:${designation.id}`,
+      label: designation.title,
+      source: 'configured' as const,
+      designationId: designation.id,
+    }))
+}
+
+function getDesignationDropdownOptions(
+  level: DesignationAssignmentLevel | '',
+  designations: DesignationRecord[],
+): DesignationDropdownOption[] {
+  const optionMap = new Map<string, DesignationDropdownOption>()
+
+  for (const option of getRecommendedDesignationOptions(level)) {
+    optionMap.set(option.label.toLowerCase(), option)
+  }
+
+  for (const option of getConfiguredDesignationOptions(designations)) {
+    const key = option.label.toLowerCase()
+
+    if (!optionMap.has(key)) {
+      optionMap.set(key, option)
+    }
+  }
+
+  return Array.from(optionMap.values())
 }
 
 
@@ -1524,6 +1739,21 @@ function OfficeBearerIssuePanel({
 }) {
   const activeCommittees = committees.filter((committee) => committee.status === 'active')
   const selectedActiveCommittee = selectedCommittee?.status === 'active' ? selectedCommittee : null
+  const selectedLevel = getSelectedDesignationLevel(
+    selectedActiveCommittee,
+    activeCommittees,
+    member,
+  )
+  const designationDropdownOptions = getDesignationDropdownOptions(
+    selectedLevel,
+    designations,
+  )
+  const selectedDesignationValue =
+    designationDropdownOptions.find(
+      (option) =>
+        (option.designationId && option.designationId === form.designationId) ||
+        option.label === form.designationTitle,
+    )?.value ?? ''
   const canSubmit = Boolean(selectedActiveCommittee) && Boolean(form.designationTitle.trim())
 
   return (
@@ -1531,17 +1761,17 @@ function OfficeBearerIssuePanel({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">
-            Office Bearer Designation
+            Member Designation
           </p>
           <h2 className="mt-2 text-lg font-black text-slate-950">
-            Issue designation and office bearer card
+            Assign designation to membership card
           </h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
-            Assign this approved member to an active committee. After saving, the office bearer card and QR verification use the same official designation record.
+            Select a level for this approved member. After saving, the designation will appear on the standard JAS membership card and membership QR verification page.
           </p>
         </div>
 
-        <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-auto">
+        <div className="grid w-full gap-2 sm:grid-cols-2 lg:w-auto">
           <button
             type="button"
             onClick={onRefresh}
@@ -1553,13 +1783,13 @@ function OfficeBearerIssuePanel({
           </button>
 
           <Link
-            to="/admin/members/$id/designation-card"
+            to="/admin/members/$id/card"
             params={{ id: member.id }}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-950 px-4 text-sm font-bold !text-white no-underline shadow-sm ring-1 ring-amber-300/40 transition hover:bg-emerald-900 hover:!text-white"
             style={{ color: '#ffffff' }}
           >
             <BadgeCheck className="h-4 w-4 text-amber-300" />
-            Open Card
+            Open Membership Card
           </Link>
 
           <button
@@ -1568,7 +1798,7 @@ function OfficeBearerIssuePanel({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100"
           >
             <BriefcaseBusiness className="h-4 w-4" />
-            {isOpen ? 'Close Form' : 'Issue New'}
+            {isOpen ? 'Close Form' : 'Assign Designation'}
           </button>
         </div>
       </div>
@@ -1584,10 +1814,10 @@ function OfficeBearerIssuePanel({
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-black uppercase tracking-wide text-slate-700">
-                Current designations
+                Current member designations
               </h3>
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                Active designation is required for a valid office bearer card.
+                Active designation will be printed on the standard membership card.
               </p>
             </div>
             <span
@@ -1597,14 +1827,14 @@ function OfficeBearerIssuePanel({
                   : 'bg-amber-50 text-amber-900 ring-amber-200'
               }`}
             >
-              {hasActiveOfficeBearer ? 'Active Card Ready' : 'No Active Card'}
+              {hasActiveOfficeBearer ? 'Active Designation' : 'No Active Designation'}
             </span>
           </div>
 
           {loading ? (
             <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-4 text-sm font-bold text-slate-600 ring-1 ring-slate-200">
               <Loader2 className="h-4 w-4 animate-spin text-emerald-700" />
-              Loading office bearer assignments...
+              Loading designation assignments...
             </div>
           ) : assignments.length ? (
             <div className="mt-4 grid gap-3">
@@ -1637,7 +1867,7 @@ function OfficeBearerIssuePanel({
                     </span>
                   </div>
 
-                  <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-3">
+                  <div className="mt-3 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-2">
                     <span>Start: {formatCommitteeDate(assignment.tenure_start)}</span>
                     <span>End: {formatCommitteeDate(assignment.tenure_end)}</span>
                     <span>Order: {assignment.sort_order}</span>
@@ -1655,12 +1885,12 @@ function OfficeBearerIssuePanel({
                     ) : null}
                     {assignment.status === 'active' ? (
                       <Link
-                        to="/admin/members/$id/designation-card"
+                        to="/admin/members/$id/card"
                         params={{ id: member.id }}
                         className="inline-flex h-9 items-center justify-center rounded-xl bg-emerald-900 px-3 text-xs font-black !text-white no-underline shadow-sm transition hover:bg-emerald-800"
                         style={{ color: '#ffffff' }}
                       >
-                        Open Office Bearer Card
+                        Open Membership Card
                       </Link>
                     ) : null}
                   </div>
@@ -1669,20 +1899,20 @@ function OfficeBearerIssuePanel({
             </div>
           ) : (
             <div className="mt-4 rounded-xl bg-white p-4 text-sm font-semibold leading-6 text-slate-600 ring-1 ring-slate-200">
-              No office bearer designation has been issued to this approved member yet. Use the quick form to assign one.
+              No designation has been assigned to this approved member yet. Use the quick form to assign one.
             </div>
           )}
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-          <p className="font-black">Quick issue process</p>
+          <p className="font-black">Designation assignment process</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 font-semibold">
-            <li>Select an active committee.</li>
+            <li>Select a level.</li>
             <li>Select or type the designation title.</li>
-            <li>Save to activate the office bearer card.</li>
+            <li>Save to show the designation on the standard membership card.</li>
           </ol>
           <p className="mt-3 text-xs font-semibold text-amber-800">
-            Member must remain approved and the assigned committee must stay active for QR verification to remain valid.
+            Member must remain approved and the assigned level/designation must stay active for QR verification to remain valid.
           </p>
         </div>
       </div>
@@ -1694,43 +1924,88 @@ function OfficeBearerIssuePanel({
           noValidate
         >
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <AdminEditInput label="Committee" required>
+            <AdminEditInput label="Level" required>
               <select
-                value={form.committeeId}
-                onChange={(event) => onCommitteeChange(event.target.value)}
+                value={selectedLevel}
+                onChange={(event) => {
+                  const committee = findCommitteeForDesignationLevel(
+                    event.target.value as DesignationAssignmentLevel,
+                    activeCommittees,
+                    member,
+                  )
+
+                  onCommitteeChange(committee?.id ?? '')
+                }}
                 className="admin-edit-input"
               >
-                <option value="">Select active committee</option>
-                {activeCommittees.map((committee) => (
-                  <option key={committee.id} value={committee.id}>
-                    {committee.name} · {getCommitteeLocationLabel(committee)}
-                  </option>
-                ))}
+                <option value="">Select level</option>
+                {designationAssignmentLevelOptions.map((level) => {
+                  const committee = findCommitteeForDesignationLevel(
+                    level.value,
+                    activeCommittees,
+                    member,
+                  )
+
+                  return (
+                    <option
+                      key={level.value}
+                      value={level.value}
+                      disabled={!committee}
+                    >
+                      {level.label}
+                      {committee ? '' : ' — not configured'}
+                    </option>
+                  )
+                })}
               </select>
             </AdminEditInput>
 
             <AdminEditInput label="Designation" required>
               <select
-                value={form.designationId}
-                onChange={(event) => onDesignationChange(event.target.value)}
+                value={selectedDesignationValue}
+                onChange={(event) => {
+                  const option = designationDropdownOptions.find(
+                    (item) => item.value === event.target.value,
+                  )
+
+                  if (!option) {
+                    onFormChange({ designationId: '', designationTitle: '' })
+                    return
+                  }
+
+                  if (option.designationId) {
+                    onDesignationChange(option.designationId)
+                    return
+                  }
+
+                  onFormChange({
+                    designationId: '',
+                    designationTitle: option.label,
+                  })
+                }}
                 className="admin-edit-input"
                 disabled={!selectedActiveCommittee}
               >
                 <option value="">Select designation</option>
-                {designations.map((designation) => (
-                  <option key={designation.id} value={designation.id}>
-                    {designation.title}
+                {designationDropdownOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                    {option.source === 'configured' ? ' — configured' : ''}
                   </option>
                 ))}
               </select>
             </AdminEditInput>
 
-            <AdminEditInput label="Designation title" required>
+            <AdminEditInput label="Final card title" required>
               <input
                 value={form.designationTitle}
                 onChange={(event) => onFormChange({ designationTitle: event.target.value })}
                 className="admin-edit-input"
-                placeholder="e.g. District President"
+                placeholder={
+                  selectedLevel
+                    ? `e.g. ${recommendedDesignationsByLevel[selectedLevel][0]}`
+                    : 'Select level first'
+                }
               />
             </AdminEditInput>
 
@@ -1787,7 +2062,7 @@ function OfficeBearerIssuePanel({
 
           {activeCommittees.length === 0 ? (
             <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">
-              No active committee is available. Create or activate a committee first from Committees & Designations.
+              No active level is available. Create or activate the required level first from Committees & Designations.
             </div>
           ) : null}
 
@@ -1805,7 +2080,7 @@ function OfficeBearerIssuePanel({
               className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
-              {saving ? 'Issuing...' : 'Issue Designation'}
+              {saving ? 'Assigning...' : 'Assign Designation'}
             </button>
           </div>
         </form>

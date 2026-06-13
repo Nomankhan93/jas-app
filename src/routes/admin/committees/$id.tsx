@@ -141,6 +141,7 @@ function AdminCommitteeDetailPage() {
 
     if (
       committeeForm.committeeType === 'central' ||
+      committeeForm.committeeType === 'provincial' ||
       committeeForm.committeeType === 'divisional'
     ) {
       return { requireMemberNo: true }
@@ -161,13 +162,17 @@ function AdminCommitteeDetailPage() {
   }, [committeeForm.committeeType, committeeForm.division, committeeForm.district, committeeForm.taluka, limitSearchToCommitteeArea])
 
   const searchScopeLabel = useMemo(() => {
-    if (!limitSearchToCommitteeArea || committeeForm.committeeType === 'central') {
+    if (
+      !limitSearchToCommitteeArea ||
+      committeeForm.committeeType === 'central' ||
+      committeeForm.committeeType === 'provincial'
+    ) {
       return 'Searching all approved JAS members with issued member numbers.'
     }
 
     if (committeeForm.committeeType === 'divisional') {
       return committeeForm.division.trim()
-        ? `Searching all approved members for ${committeeForm.division.trim()} committee assignment.`
+        ? `Searching approved members for ${committeeForm.division.trim()} level assignment.`
         : 'Add committee division first or turn off area filter.'
     }
 
@@ -261,7 +266,7 @@ function AdminCommitteeDetailPage() {
 
       const details = await fetchCommitteeDetails(id)
       if (!details) {
-        setMessage('Committee not found.')
+        setMessage('Level unit not found.')
         setCommittee(null)
         return
       }
@@ -300,16 +305,16 @@ function AdminCommitteeDetailPage() {
     try {
       if (!committeeForm.name.trim()) throw new Error('Committee name is required.')
       if (committeeForm.committeeType === 'divisional' && !committeeForm.division.trim()) {
-        throw new Error('Division is required for divisional committees.')
+        throw new Error('Division is required for divisional level unit.')
       }
       if (
         (committeeForm.committeeType === 'district' || committeeForm.committeeType === 'taluka') &&
         !committeeForm.district.trim()
       ) {
-        throw new Error('District is required for district/taluka committees.')
+        throw new Error('District is required for district/taluka level units.')
       }
       if (committeeForm.committeeType === 'taluka' && !committeeForm.taluka.trim()) {
-        throw new Error('Taluka is required for taluka committees.')
+        throw new Error('Taluka is required for taluka level unit.')
       }
 
       await updateCommittee(id, {
@@ -435,13 +440,13 @@ function AdminCommitteeDetailPage() {
 
       if (editingMemberId) {
         await updateCommitteeMember(editingMemberId, payload)
-        setMessage('Committee member updated successfully.')
+        setMessage('Assigned designation updated successfully.')
       } else {
         if (!selectedMember) throw new Error('Select an approved member first.')
         if (!selectedMember.member_no) throw new Error('Selected member must have an issued member number.')
         if (selectedMemberAlreadyAssigned) {
           throw new Error(
-            `${selectedMember.full_name} is already active in this committee as ${selectedMemberAlreadyAssigned.designation_title}. Edit that record or remove it first.`,
+            `${selectedMember.full_name} already has an active designation in this unit as ${selectedMemberAlreadyAssigned.designation_title}. Edit that record or remove it first.`,
           )
         }
 
@@ -450,39 +455,39 @@ function AdminCommitteeDetailPage() {
           member: selectedMember,
           ...payload,
         })
-        setMessage('Committee member added successfully.')
+        setMessage('Designation assigned successfully.')
       }
 
       resetMemberForm()
       await loadDetails()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to save committee member.')
+      setMessage(err instanceof Error ? err.message : 'Failed to save designation assignment.')
     } finally {
       setMemberSaving(false)
     }
   }
 
   async function handleRemoveMember(memberId: string) {
-    const confirmed = window.confirm('Remove this member from the committee record?')
+    const confirmed = window.confirm('Remove this member from this level unit record?')
     if (!confirmed) return
 
     setMessage('')
 
     try {
       await removeCommitteeMember(memberId)
-      setMessage('Committee member removed.')
+      setMessage('Designation assignment removed.')
       await loadDetails()
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : 'Failed to remove committee member.')
+      setMessage(err instanceof Error ? err.message : 'Failed to remove designation assignment.')
     }
   }
 
   if (loading) {
     return (
-      <AdminShell title="Committee Detail" subtitle="Manage committee information, members and designations.">
+      <AdminShell title="Level Unit Detail" subtitle="Manage level unit information and member designation assignments.">
         <div className="admin-nested-page">
           <div className="page-wrap py-10">
-            <StateCard message="Loading committee details..." />
+            <StateCard message="Loading level unit details..." />
           </div>
         </div>
       </AdminShell>
@@ -491,10 +496,10 @@ function AdminCommitteeDetailPage() {
 
   if (!committee) {
     return (
-      <AdminShell title="Committee Detail" subtitle="Manage committee information, members and designations.">
+      <AdminShell title="Level Unit Detail" subtitle="Manage level unit information and member designation assignments.">
         <div className="admin-nested-page">
           <div className="page-wrap py-10">
-            <StateCard message={message || 'Committee not found.'} tone="error" />
+            <StateCard message={message || 'Level unit not found.'} tone="error" />
           </div>
         </div>
       </AdminShell>
@@ -502,7 +507,7 @@ function AdminCommitteeDetailPage() {
   }
 
   return (
-    <AdminShell title="Committee Detail" subtitle="Manage committee information, members and designations.">
+    <AdminShell title="Level Unit Detail" subtitle="Manage level unit information and member designation assignments.">
       <div className="admin-nested-page">
         <div className="px-3 py-6 sm:px-4 sm:py-10">
           <div className="page-wrap space-y-6">
@@ -510,7 +515,7 @@ function AdminCommitteeDetailPage() {
           to="/admin/committees"
           className="inline-flex items-center gap-2 text-sm font-black text-emerald-800 no-underline"
         >
-          <ArrowLeft size={16} /> Back to Committees
+          <ArrowLeft size={16} /> Back to Organization Levels
         </Link>
 
         <header className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-7">
@@ -551,13 +556,13 @@ function AdminCommitteeDetailPage() {
                   <Save size={22} />
                 </span>
                 <div>
-                  <h2 className="text-xl font-black text-slate-950">Committee Details</h2>
-                  <p className="text-sm text-slate-500">Update structure, location and tenure.</p>
+                  <h2 className="text-xl font-black text-slate-950">Level Unit Details</h2>
+                  <p className="text-sm text-slate-500">Update level, location and tenure.</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <Field label="Committee Type">
+                <Field label="Level">
                   <select
                     value={committeeForm.committeeType}
                     onChange={(event) => handleCommitteeTypeChange(event.target.value as CommitteeType)}
@@ -576,6 +581,14 @@ function AdminCommitteeDetailPage() {
                     className={inputClass}
                   />
                 </Field>
+
+                {committeeForm.committeeType === 'central' || committeeForm.committeeType === 'provincial' ? (
+                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold leading-6 text-emerald-900">
+                    {committeeForm.committeeType === 'central'
+                      ? 'Central Executive Committee covers Sindh / Central level, so no area field is required.'
+                      : 'Provincial level covers Sindh / Provincial level, so no district or taluka field is required.'}
+                  </div>
+                ) : null}
 
                 {committeeForm.committeeType === 'divisional' ? (
                   <Field label="Division">
@@ -663,7 +676,7 @@ function AdminCommitteeDetailPage() {
                   disabled={saving}
                   className="primary-btn w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {saving ? 'Saving...' : 'Save Committee'}
+                  {saving ? 'Saving...' : 'Save Unit'}
                 </button>
               </div>
             </form>
@@ -678,10 +691,10 @@ function AdminCommitteeDetailPage() {
                 </span>
                 <div>
                   <h2 className="text-xl font-black text-slate-950">
-                    {editingMemberId ? 'Edit Office Bearer' : 'Add Office Bearer'}
+                    {editingMemberId ? 'Edit Designation Assignment' : 'Assign Designation'}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Select an approved member and assign a designation.
+                    Select an approved member and assign their JAS designation.
                   </p>
                 </div>
               </div>
@@ -705,7 +718,7 @@ function AdminCommitteeDetailPage() {
                 />
               ) : (
                 <div className="mb-4 rounded-2xl bg-amber-50 p-4 text-sm font-bold text-amber-900 ring-1 ring-amber-100">
-                  Editing designation details only. To change the person, remove this record and add the correct approved member again.
+                  Editing designation details only. To change the person, remove this assignment and add the correct approved member again.
                 </div>
               )}
 
@@ -797,7 +810,7 @@ function AdminCommitteeDetailPage() {
                     className="primary-btn disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {memberSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    {editingMemberId ? 'Update Office Bearer' : 'Add Office Bearer'}
+                    {editingMemberId ? 'Update Assignment' : 'Assign Designation'}
                   </button>
                   <button type="button" onClick={() => resetMemberForm()} className="secondary-btn">
                     {editingMemberId ? 'Cancel Edit' : 'Clear Selection'}
@@ -810,17 +823,17 @@ function AdminCommitteeDetailPage() {
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70">
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-black text-slate-950">Office Bearers</h2>
+                <h2 className="text-xl font-black text-slate-950">Assigned Designations</h2>
                 <p className="mt-1 text-sm text-slate-500">
                   {committeeMembers.length} assigned member{committeeMembers.length === 1 ? '' : 's'} · {activeOfficeBearers.length} active.
                 </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-black uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-100">
-                <Users className="h-4 w-4" /> Committee List
+                <Users className="h-4 w-4" /> Level Unit List
               </div>
             </div>
 
-            {committeeMembers.length === 0 ? <StateCard message="No office bearers assigned yet. Use the form on the left to search an approved member and add the first office bearer." /> : null}
+            {committeeMembers.length === 0 ? <StateCard message="No designations assigned yet. Use the form on the left to search an approved member and add the first designation assignment." /> : null}
 
             <div className="grid gap-4 lg:grid-cols-2">
               {committeeMembers.map((member) => (
@@ -900,7 +913,7 @@ function MemberPicker({
           className="mt-0.5"
         />
         <span>
-          Limit search to committee area.
+          Limit search to level unit area.
           <span className="mt-1 block font-semibold text-slate-500">{searchScopeLabel}</span>
         </span>
       </label>
@@ -924,7 +937,7 @@ function MemberPicker({
 
       {alreadyAssignedMemberId ? (
         <div className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-800 ring-1 ring-red-100">
-          This member is already active in this committee. Edit/remove the existing record first.
+          This member already has an active designation in this level unit. Edit/remove the existing record first.
         </div>
       ) : null}
 

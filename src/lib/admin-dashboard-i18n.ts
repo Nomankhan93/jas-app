@@ -298,10 +298,10 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
           badgeLabel: 'Super Admin',
         },
         committees: {
-          title: 'Committees & Designations',
+          title: 'Organization Levels & Designations',
           description:
-            'Manage Central, Divisional, District and Taluka committees, office bearers, designations and tenure records.',
-          actionLabel: 'Open Committees',
+            'Manage organization level units, designations and assignment records.',
+          actionLabel: 'Open Levels',
           badgeLabel: 'Phase 1',
         },
       },

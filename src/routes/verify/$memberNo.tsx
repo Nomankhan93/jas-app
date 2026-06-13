@@ -237,6 +237,12 @@ type VerifyResult = {
     approved_at: string | null
   } | null
   photoSignedUrl: string | null
+  activeDesignation: {
+    title: string
+    committeeName: string | null
+    level: string | null
+    location: string | null
+  } | null
 }
 
 function VerifyMemberPage() {
@@ -480,6 +486,23 @@ function VerifyMemberPage() {
                     value={result.member.member_no ?? text.notAvailable}
                   />
                   <Info label={text.status} value={text.approvedVerified} />
+                  {result.activeDesignation ? (
+                    <>
+                      <Info
+                        label="Designation"
+                        value={result.activeDesignation.title}
+                      />
+                      <Info
+                        label="Designation Area"
+                        value={[
+                          result.activeDesignation.level,
+                          result.activeDesignation.location,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      />
+                    </>
+                  ) : null}
                   <Info label={text.district} value={result.member.district} />
                   <Info
                     label={text.taluka}

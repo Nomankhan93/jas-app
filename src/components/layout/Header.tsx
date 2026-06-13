@@ -204,7 +204,6 @@ export function Header({ compact }: { compact: boolean }) {
       {
         dashboard: t('nav.dashboard'),
         digitalCard: t('nav.digitalCard'),
-        officeBearerCard: t('nav.officeBearerCard'),
         updates: t('nav.updates'),
         donors: t('nav.donors'),
         register: t('nav.register'),

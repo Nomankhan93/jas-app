@@ -1,10 +1,11 @@
 import { supabase } from './supabase/client'
 
 export const committeeTypeOptions = [
-  { value: 'central', label: 'Central / Markaz' },
-  { value: 'divisional', label: 'Divisional Committee' },
-  { value: 'district', label: 'District Committee' },
-  { value: 'taluka', label: 'Taluka Committee' },
+  { value: 'central', label: 'Central Executive Committee' },
+  { value: 'provincial', label: 'Provincial' },
+  { value: 'divisional', label: 'Divisional' },
+  { value: 'district', label: 'District' },
+  { value: 'taluka', label: 'Taluka' },
 ] as const
 
 export const committeeStatusOptions = [
@@ -16,6 +17,7 @@ export const committeeStatusOptions = [
 
 export const designationScopeOptions = [
   { value: 'central', label: 'Central' },
+  { value: 'provincial', label: 'Provincial' },
   { value: 'divisional', label: 'Divisional' },
   { value: 'district', label: 'District' },
   { value: 'taluka', label: 'Taluka' },
@@ -134,7 +136,7 @@ const committeeMemberSelect = [
 ].join(', ')
 
 export function getCommitteeTypeLabel(value: string | null | undefined) {
-  return committeeTypeOptions.find((item) => item.value === value)?.label ?? 'Committee'
+  return committeeTypeOptions.find((item) => item.value === value)?.label ?? 'Level'
 }
 
 export function getCommitteeStatusLabel(value: string | null | undefined) {
@@ -160,6 +162,7 @@ export function getCommitteeLocationLabel(
   committee: Pick<CommitteeRecord, 'committee_type' | 'division' | 'district' | 'taluka'>,
 ) {
   if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'provincial') return 'Sindh / Provincial'
   if (committee.committee_type === 'divisional') {
     return committee.division || 'Division not set'
   }

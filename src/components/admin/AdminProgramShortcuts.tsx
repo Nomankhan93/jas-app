@@ -228,11 +228,11 @@ export function AdminProgramShortcuts({
     },
     {
       key: 'committees',
-      title: 'Committees & Designations',
+      title: 'Organization Levels & Designations',
       description:
-        'Manage Central, District and Taluka committees, office bearers, designations and tenure records.',
+        'Manage organization level units, designations and assignment records.',
       to: '/admin/committees',
-      actionLabel: 'Open Committees',
+      actionLabel: 'Open Levels',
       icon: Network,
       tone: 'committees',
       badgeLabel: 'Phase 1',

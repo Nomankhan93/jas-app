@@ -823,15 +823,6 @@ function QuickActions({ member }: { member: Member }) {
               <CreditCard className="h-4 w-4" />
               {t('dashboard.openDigitalCard')}
             </Link>
-
-            <Link
-              to="/designation-card"
-              className="inline-flex min-h-[2.75rem] w-full items-center justify-center gap-2 rounded-[var(--r-lg)] bg-slate-950 px-5 py-3 text-sm font-black !text-white no-underline shadow-sm transition hover:bg-emerald-950 hover:!text-white"
-              style={{ color: '#ffffff' }}
-            >
-              <BadgeCheck className="h-4 w-4" />
-              {t('dashboard.officeBearerCard')}
-            </Link>
           </>
         ) : canEditApplication ? (
           <>

@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router'
 import {
-  BadgeCheck,
   BadgeIndianRupee,
   CreditCard,
   IdCard,
@@ -41,15 +40,6 @@ export function QuickActions({ member }: { member: MemberForQuickActions }) {
             <Link to="/card" className="primary-btn w-full">
               <CreditCard className="h-4 w-4" />
               Open Digital Card
-            </Link>
-
-            <Link
-              to="/designation-card"
-              className="inline-flex min-h-[2.75rem] w-full items-center justify-center gap-2 rounded-[var(--r-lg)] bg-slate-950 px-5 py-3 text-sm font-black !text-white no-underline shadow-sm transition hover:bg-emerald-950 hover:!text-white"
-              style={{ color: '#ffffff' }}
-            >
-              <BadgeCheck className="h-4 w-4" />
-              Office Bearer Card
             </Link>
           </>
         ) : (

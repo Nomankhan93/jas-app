@@ -13,6 +13,13 @@ type VerifyMemberInput = {
   memberNo: string
 }
 
+type VerifyMemberDesignation = {
+  title: string
+  committeeName: string | null
+  level: string | null
+  location: string | null
+}
+
 type VerifyMemberResult = {
   found: boolean
   verified: boolean
@@ -26,6 +33,7 @@ type VerifyMemberResult = {
     approved_at: string | null
   } | null
   photoSignedUrl: string | null
+  activeDesignation: VerifyMemberDesignation | null
 }
 
 type MemberVerificationRow = {
@@ -111,6 +119,7 @@ function buildPublicMemberPayload(member: MemberVerificationRow) {
         approved_at: null,
       },
       photoSignedUrl: null,
+      activeDesignation: null,
     } satisfies VerifyMemberResult
   }
 
@@ -127,7 +136,99 @@ function buildPublicMemberPayload(member: MemberVerificationRow) {
       approved_at: member.approved_at,
     },
     photoSignedUrl: null,
+    activeDesignation: null,
   } satisfies VerifyMemberResult
+}
+
+
+function getCommitteeLocationLabel(committee: {
+  committee_type: string | null
+  division: string | null
+  district: string | null
+  taluka: string | null
+}) {
+  if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'divisional') return committee.division || 'Division not set'
+  if (committee.committee_type === 'district') return committee.district || 'District not set'
+
+  return [committee.taluka, committee.district].filter(Boolean).join(', ') || 'Taluka not set'
+}
+
+function getCommitteeLevelLabel(value: string | null) {
+  switch (value) {
+    case 'central':
+      return 'Central / Markaz'
+    case 'divisional':
+      return 'Divisional Committee'
+    case 'district':
+      return 'District Committee'
+    case 'taluka':
+      return 'Taluka Committee'
+    default:
+      return 'Committee'
+  }
+}
+
+async function fetchActiveMemberDesignation(
+  memberId: string,
+  supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
+) {
+  const { data, error } = await supabaseAdmin
+    .from('organization_committee_members')
+    .select(
+      [
+        'designation_title',
+        'sort_order',
+        'created_at',
+        'committee:organization_committees(id, committee_type, name, division, district, taluka, status)',
+      ].join(', '),
+    )
+    .eq('member_id', memberId)
+    .eq('status', 'active')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  if (error) return null
+
+  const rows = (data ?? []) as unknown as Array<{
+    designation_title: string | null
+    committee:
+      | {
+          committee_type: string | null
+          name: string | null
+          division: string | null
+          district: string | null
+          taluka: string | null
+          status: string | null
+        }
+      | Array<{
+          committee_type: string | null
+          name: string | null
+          division: string | null
+          district: string | null
+          taluka: string | null
+          status: string | null
+        }>
+      | null
+  }>
+
+  const row = rows.find((item) => {
+    const committee = Array.isArray(item.committee) ? item.committee[0] : item.committee
+    return Boolean(item.designation_title?.trim()) && committee?.status === 'active'
+  })
+
+  if (!row) return null
+
+  const committee = Array.isArray(row.committee) ? row.committee[0] : row.committee
+  if (!committee) return null
+
+  return {
+    title: row.designation_title?.trim() || 'Designation',
+    committeeName: committee.name,
+    level: getCommitteeLevelLabel(committee.committee_type),
+    location: getCommitteeLocationLabel(committee),
+  } satisfies VerifyMemberDesignation
 }
 
 export const verifyMemberAction = createServerFn({ method: 'POST' })
@@ -163,6 +264,7 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
         verified: false,
         member: null,
         photoSignedUrl: null,
+        activeDesignation: null,
       }
     }
 
@@ -173,13 +275,14 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
       return result
     }
 
-    const photoSignedUrl = await createMemberPhotoSignedUrl(
-      safeMember.photo_url,
-      supabaseAdmin,
-    )
+    const [photoSignedUrl, activeDesignation] = await Promise.all([
+      createMemberPhotoSignedUrl(safeMember.photo_url, supabaseAdmin),
+      fetchActiveMemberDesignation(safeMember.id, supabaseAdmin),
+    ])
 
     return {
       ...result,
       photoSignedUrl,
+      activeDesignation,
     }
   })

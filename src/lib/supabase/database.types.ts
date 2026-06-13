@@ -165,6 +165,72 @@ export type Database = {
         }
         Relationships: []
       }
+      complaints: {
+        Row: {
+          area: string
+          assigned_department: string | null
+          assigned_to: string | null
+          category: Database["public"]["Enums"]["complaint_category"]
+          cnic: string | null
+          created_at: string
+          details: string
+          full_name: string
+          id: string
+          internal_remarks: string | null
+          mobile: string
+          photo_path: string | null
+          priority: Database["public"]["Enums"]["complaint_priority"]
+          public_remarks: string | null
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["complaint_status"]
+          tracking_no: string
+          updated_at: string
+          ward: string | null
+        }
+        Insert: {
+          area: string
+          assigned_department?: string | null
+          assigned_to?: string | null
+          category: Database["public"]["Enums"]["complaint_category"]
+          cnic?: string | null
+          created_at?: string
+          details: string
+          full_name: string
+          id?: string
+          internal_remarks?: string | null
+          mobile: string
+          photo_path?: string | null
+          priority?: Database["public"]["Enums"]["complaint_priority"]
+          public_remarks?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          tracking_no: string
+          updated_at?: string
+          ward?: string | null
+        }
+        Update: {
+          area?: string
+          assigned_department?: string | null
+          assigned_to?: string | null
+          category?: Database["public"]["Enums"]["complaint_category"]
+          cnic?: string | null
+          created_at?: string
+          details?: string
+          full_name?: string
+          id?: string
+          internal_remarks?: string | null
+          mobile?: string
+          photo_path?: string | null
+          priority?: Database["public"]["Enums"]["complaint_priority"]
+          public_remarks?: string | null
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["complaint_status"]
+          tracking_no?: string
+          updated_at?: string
+          ward?: string | null
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           cover_image_path: string | null
@@ -1166,6 +1232,45 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          enabled: boolean
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          enabled?: boolean
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          enabled?: boolean
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1388,6 +1493,19 @@ export type Database = {
           user_agent: string
         }[]
       }
+      get_complaint_public: {
+        Args: { p_mobile: string; p_tracking_no: string }
+        Returns: {
+          area: string
+          category: Database["public"]["Enums"]["complaint_category"]
+          created_at: string
+          public_remarks: string
+          status: Database["public"]["Enums"]["complaint_status"]
+          tracking_no: string
+          updated_at: string
+          ward: string
+        }[]
+      }
       get_donor_leaderboard: {
         Args: { _limit?: number }
         Returns: {
@@ -1430,6 +1548,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      is_admin: { Args: never; Returns: boolean }
       reject_member: {
         Args: {
           _member_id: string
@@ -1514,6 +1633,21 @@ export type Database = {
           user_id: string
         }[]
       }
+      submit_complaint: {
+        Args: {
+          p_area: string
+          p_category: Database["public"]["Enums"]["complaint_category"]
+          p_cnic: string
+          p_details: string
+          p_full_name: string
+          p_mobile: string
+          p_photo_path: string
+          p_ward: string
+        }
+        Returns: {
+          tracking_no: string
+        }[]
+      }
       upsert_admin_area_permission: {
         Args: {
           _can_approve: boolean
@@ -1565,6 +1699,25 @@ export type Database = {
         | "ration_admin"
         | "welfare_admin"
         | "finance_admin"
+        | "chairman"
+        | "staff"
+      complaint_category:
+        | "sanitation"
+        | "street_lights"
+        | "drainage"
+        | "water_supply"
+        | "roads"
+        | "encroachment"
+        | "parks"
+        | "birth_death_record"
+        | "other"
+      complaint_priority: "low" | "normal" | "high" | "urgent"
+      complaint_status:
+        | "submitted"
+        | "received"
+        | "in_progress"
+        | "resolved"
+        | "rejected"
       member_relationship:
         | "self"
         | "son"
@@ -1743,6 +1896,27 @@ export const Constants = {
         "ration_admin",
         "welfare_admin",
         "finance_admin",
+        "chairman",
+        "staff",
+      ],
+      complaint_category: [
+        "sanitation",
+        "street_lights",
+        "drainage",
+        "water_supply",
+        "roads",
+        "encroachment",
+        "parks",
+        "birth_death_record",
+        "other",
+      ],
+      complaint_priority: ["low", "normal", "high", "urgent"],
+      complaint_status: [
+        "submitted",
+        "received",
+        "in_progress",
+        "resolved",
+        "rejected",
       ],
       member_relationship: [
         "self",

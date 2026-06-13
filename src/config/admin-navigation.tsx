@@ -119,7 +119,7 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
     title: 'Organization',
     items: [
       {
-        label: 'Committees',
+        label: 'Organization Levels',
         to: '/admin/committees',
         icon: <Network size={17} />,
       },
