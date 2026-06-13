@@ -1,5 +1,9 @@
 // src/components/MembershipCard.tsx
 import type { ReactNode } from 'react'
+import {
+  getMemberDesignationTitle,
+  type MemberCardDesignation,
+} from '../lib/member-card-designation'
 
 export const CARD_WIDTH = 1280
 export const CARD_HEIGHT = 760
@@ -30,6 +34,7 @@ export type MembershipCardMember = {
   emergency_contact_relation: string | null
   emergency_contact_mobile: string | null
   declaration_accepted: boolean
+  activeDesignation?: MemberCardDesignation | null
 }
 
 type MembershipCardProps = {
@@ -93,6 +98,7 @@ function CardFront({
   verifyUrl,
 }: Omit<MembershipCardProps, 'side'>) {
   const profession = member.profession || 'Not provided'
+  const designationTitle = getMemberDesignationTitle(member.activeDesignation)
 
   return (
     <>
@@ -132,6 +138,17 @@ function CardFront({
                 {member.member_no || 'Not issued'}
               </p>
             </div>
+
+            {designationTitle ? (
+              <div className="rounded-[1.1rem] border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-center shadow-sm">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
+                  JAS Designation
+                </p>
+                <p className="mt-1 line-clamp-2 break-words text-[18px] font-black leading-tight text-slate-950">
+                  {designationTitle}
+                </p>
+              </div>
+            ) : null}
           </section>
 
           <section className="flex flex-col justify-between">
@@ -144,6 +161,7 @@ function CardFront({
               </h3>
 
               <div className="mt-5 h-[3px] w-28 rounded-full bg-gradient-to-r from-slate-950 via-yellow-500 to-yellow-300" />
+
             </div>
 
             <div className="grid grid-cols-2 gap-x-12 gap-y-6">
@@ -169,7 +187,10 @@ function CardFront({
             </div>
           </section>
 
-          <QrPanel qrUrl={qrUrl} verifyUrl={verifyUrl} />
+          <QrPanel
+            qrUrl={qrUrl}
+            verifyUrl={verifyUrl}
+          />
         </div>
       </div>
 
@@ -236,6 +257,10 @@ function CardBack({
                 <MiniInfo label="Gender" value={member.gender || 'Not provided'} />
                 <MiniInfo label="Blood" value={member.blood_group || 'Not provided'} />
                 <MiniInfo label="Education" value={member.education || 'Not provided'} />
+                <MiniInfo
+                  label="Designation"
+                  value={getMemberDesignationTitle(member.activeDesignation) || 'Member'}
+                />
                 <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
                 <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
               </div>
