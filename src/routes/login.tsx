@@ -10,7 +10,6 @@ import {
   KeyRound,
   Loader2,
   Mail,
-  RotateCcw,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -23,7 +22,6 @@ export const Route = createFileRoute('/login')({
 })
 
 type LoginMethod = 'email' | 'phone'
-type PhoneStep = 'phone' | 'otp'
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -36,8 +34,6 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const [phone, setPhone] = useState('')
-  const [otp, setOtp] = useState('')
-  const [phoneStep, setPhoneStep] = useState<PhoneStep>('phone')
 
   const [checkingSession, setCheckingSession] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -76,8 +72,6 @@ function LoginPage() {
 
   function switchMethod(nextMethod: LoginMethod) {
     setMethod(nextMethod)
-    setPhoneStep('phone')
-    setOtp('')
     resetAlerts()
   }
 
@@ -114,89 +108,33 @@ function LoginPage() {
     await navigate({ to: '/dashboard', replace: true })
   }
 
-  async function sendOtp(phoneInput: string) {
-    const phoneNumber = normalizePakistanPhone(phoneInput)
+  async function handlePhoneLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    resetAlerts()
+
+    const phoneNumber = normalizePakistanPhone(phone)
 
     if (!isValidPakistanMobile(phoneNumber)) {
-      throw new Error(
-        t('login.error.invalidPhone'),
-      )
+      setError(t('login.error.invalidPhone'))
+      return
     }
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      phone: phoneNumber,
-      options: {
-        channel: 'sms',
-        shouldCreateUser: false,
-      },
-    })
-
-    if (otpError) {
-      throw new Error(toFriendlyAuthError(otpError.message, t))
-    }
-
-    return phoneNumber
-  }
-
-  async function handleSendOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    resetAlerts()
-    setLoading(true)
-
-    try {
-      const phoneNumber = await sendOtp(phone)
-      setPhone(phoneNumber)
-      setPhoneStep('otp')
-      setMessage(
-        t('login.message.otpSent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.error.sendOtpFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleResendOtp() {
-    resetAlerts()
-    setLoading(true)
-
-    try {
-      const phoneNumber = await sendOtp(phone)
-      setPhone(phoneNumber)
-      setMessage(
-        t('login.message.otpResent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.error.resendOtpFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleVerifyOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    resetAlerts()
-
-    const cleanOtp = otp.replace(/\D/g, '')
-
-    if (cleanOtp.length !== 6) {
-      setError(t('login.error.otpLength'))
+    if (!password.trim()) {
+      setError(t('login.error.passwordRequired'))
       return
     }
 
     setLoading(true)
 
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: normalizePakistanPhone(phone),
-      token: cleanOtp,
-      type: 'sms',
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      phone: phoneNumber,
+      password,
     })
 
     setLoading(false)
 
-    if (verifyError) {
-      setError(toFriendlyAuthError(verifyError.message, t))
+    if (loginError) {
+      setError(toFriendlyAuthError(loginError.message, t))
       return
     }
 
@@ -317,7 +255,7 @@ function LoginPage() {
                   onClick={() => switchMethod('phone')}
                   icon={<Smartphone size={15} />}
                 >
-                  {t('authPage.common.mobileOtp')}
+                  {t('authPage.common.mobilePassword')}
                 </MethodTab>
               </div>
             </div>
@@ -380,11 +318,11 @@ function LoginPage() {
               </form>
             ) : null}
 
-            {method === 'phone' && phoneStep === 'phone' ? (
-              <form onSubmit={handleSendOtp} className="space-y-4">
+            {method === 'phone' ? (
+              <form onSubmit={handlePhoneLogin} className="space-y-4">
                 <div className="rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-stone-500">
-                    {t('authPage.common.step1')}
+                    {t('authPage.common.mobilePassword')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-stone-900">
                     {t('login.phone.step1Text')}
@@ -411,6 +349,33 @@ function LoginPage() {
                   </p>
                 </FormField>
 
+                <FormField label={t('authPage.common.password')} htmlFor="phonePassword">
+                  <div className="relative">
+                    <input
+                      id="phonePassword"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(event) => {
+                        setPassword(event.target.value)
+                        resetAlerts()
+                      }}
+                      required
+                      className="input-clean pr-12"
+                      placeholder={t('login.password.placeholder')}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
+                      aria-label={showPassword ? t('authPage.common.hidePassword') : t('authPage.common.showPassword')}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </FormField>
+
                 <AlertBlock error={error} message={message} />
 
                 <button
@@ -418,77 +383,9 @@ function LoginPage() {
                   disabled={loading}
                   className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Smartphone size={16} />}
-                  {loading ? t('authPage.common.sendingOtp') : t('authPage.common.sendOtp')}
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
+                  {loading ? t('login.submit.loading') : t('login.submit.cta')}
                 </button>
-              </form>
-            ) : null}
-
-            {method === 'phone' && phoneStep === 'otp' ? (
-              <form onSubmit={handleVerifyOtp} className="space-y-4">
-                <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
-                    {t('authPage.common.step2')}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-emerald-900">
-                    {t('login.otp.step2Text').replace('{phone}', formatPakistanPhoneForDisplay(phone))}
-                  </p>
-                </div>
-
-                <FormField label={t('authPage.common.enterOtp')} htmlFor="otp">
-                  <input
-                    id="otp"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={otp}
-                    onChange={(event) => {
-                      setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))
-                      resetAlerts()
-                    }}
-                    required
-                    minLength={6}
-                    maxLength={6}
-                    className="input-clean text-center text-xl tracking-[0.35em]"
-                    placeholder="123456"
-                  />
-                </FormField>
-
-                <AlertBlock error={error} message={message} />
-
-                <button
-                  type="submit"
-                  disabled={loading || otp.length !== 6}
-                  className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                  {loading ? t('authPage.common.verifying') : t('login.otp.verifyCta')}
-                </button>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={loading}
-                    className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <RotateCcw size={16} />
-                    {t('authPage.common.resendOtp')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtp('')
-                      setPhoneStep('phone')
-                      resetAlerts()
-                    }}
-                    disabled={loading}
-                    className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {t('authPage.common.changeNumber')}
-                  </button>
-                </div>
               </form>
             ) : null}
 
@@ -614,26 +511,16 @@ function FeaturePill({
 function normalizePakistanPhone(value: string) {
   const digits = value.replace(/\D/g, '')
 
-  if (digits.startsWith('0092')) return `92${digits.slice(4, 14)}`
-  if (digits.startsWith('92')) return digits.slice(0, 12)
-  if (digits.startsWith('0')) return `92${digits.slice(1, 11)}`
-  if (digits.startsWith('3')) return `92${digits.slice(0, 10)}`
+  if (digits.startsWith('0092')) return `+92${digits.slice(4, 14)}`
+  if (digits.startsWith('92')) return `+${digits.slice(0, 12)}`
+  if (digits.startsWith('0')) return `+92${digits.slice(1, 11)}`
+  if (digits.startsWith('3')) return `+92${digits.slice(0, 10)}`
 
-  return digits
+  return digits.startsWith('+') ? digits : `+${digits}`
 }
 
 function isValidPakistanMobile(value: string) {
-  return /^923\d{9}$/.test(value)
-}
-
-function formatPakistanPhoneForDisplay(value: string) {
-  const phone = normalizePakistanPhone(value)
-
-  if (/^923\d{9}$/.test(phone)) {
-    return `0${phone.slice(2)}`
-  }
-
-  return value
+  return /^\+923\d{9}$/.test(value)
 }
 
 function isValidEmail(value: string) {
@@ -649,10 +536,6 @@ function toFriendlyAuthError(message: string, t: (key: TranslationKey) => string
 
   if (lower.includes('email not confirmed')) {
     return t('login.auth.emailNotConfirmed')
-  }
-
-  if (lower.includes('otp')) {
-    return t('login.auth.invalidOtp')
   }
 
   if (lower.includes('phone')) {

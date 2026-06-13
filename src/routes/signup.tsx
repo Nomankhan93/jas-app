@@ -9,7 +9,6 @@ import {
   EyeOff,
   Loader2,
   Mail,
-  RotateCcw,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -27,7 +26,6 @@ export const Route = createFileRoute('/signup')({
 })
 
 type SignupMethod = 'email' | 'phone'
-type PhoneStep = 'phone' | 'otp'
 
 function SignupPage() {
   const navigate = useNavigate()
@@ -42,8 +40,6 @@ function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const [phone, setPhone] = useState('')
-  const [otp, setOtp] = useState('')
-  const [phoneStep, setPhoneStep] = useState<PhoneStep>('phone')
 
   const [checkingSession, setCheckingSession] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -82,8 +78,6 @@ function SignupPage() {
 
   function switchMethod(nextMethod: SignupMethod) {
     setMethod(nextMethod)
-    setPhoneStep('phone')
-    setOtp('')
     resetAlerts()
   }
 
@@ -160,102 +154,61 @@ function SignupPage() {
     }, 1200)
   }
 
-  async function sendSignupOtp(phoneInput: string) {
+  async function handlePhoneSignup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    resetAlerts()
+
     const name = validateFullName()
+    if (!name) return
 
-    if (!name) {
-      throw new Error(t('signup.error.fullNameRequired'))
-    }
-
-    const phoneNumber = normalizePakistanPhone(phoneInput)
+    const phoneNumber = normalizePakistanPhone(phone)
 
     if (!isValidPakistanMobile(phoneNumber)) {
-      throw new Error(
-        t('signup.error.invalidPhone'),
-      )
+      setError(t('signup.error.invalidPhone'))
+      return
     }
 
-    const { error: otpError } = await supabase.auth.signInWithOtp({
+    if (password.length < 6) {
+      setError(t('signup.error.passwordShort'))
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError(t('signup.error.passwordMismatch'))
+      return
+    }
+
+    setLoading(true)
+
+    const { data, error: signupError } = await supabase.auth.signUp({
       phone: phoneNumber,
+      password,
       options: {
-        channel: 'sms',
-        shouldCreateUser: true,
         data: {
           full_name: name,
+          login_method: 'phone_password',
         },
       },
     })
 
-    if (otpError) {
-      throw new Error(toFriendlyAuthError(otpError.message, t))
-    }
-
-    return phoneNumber
-  }
-
-  async function handleSendSignupOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    resetAlerts()
-    setLoading(true)
-
-    try {
-      const phoneNumber = await sendSignupOtp(phone)
-      setPhone(phoneNumber)
-      setPhoneStep('otp')
-      setMessage(
-        t('login.message.otpSent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('signup.error.sendOtpFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleResendOtp() {
-    resetAlerts()
-    setLoading(true)
-
-    try {
-      const phoneNumber = await sendSignupOtp(phone)
-      setPhone(phoneNumber)
-      setMessage(
-        t('login.message.otpResent').replace('{phone}', formatPakistanPhoneForDisplay(phoneNumber)),
-      )
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('signup.error.resendOtpFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleVerifySignupOtp(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    resetAlerts()
-
-    const cleanOtp = otp.replace(/\D/g, '')
-
-    if (cleanOtp.length !== 6) {
-      setError(t('signup.error.otpLength'))
-      return
-    }
-
-    setLoading(true)
-
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      phone: normalizePakistanPhone(phone),
-      token: cleanOtp,
-      type: 'sms',
-    })
-
     setLoading(false)
 
-    if (verifyError) {
-      setError(toFriendlyAuthError(verifyError.message, t))
+    if (signupError) {
+      setError(toFriendlyAuthError(signupError.message, t))
       return
     }
 
-    await navigate({ to: '/dashboard', replace: true })
+    if (data.session) {
+      await navigate({ to: '/dashboard', replace: true })
+      return
+    }
+
+    setPhone(phoneNumber)
+    setMessage(t('signup.message.created'))
+
+    window.setTimeout(() => {
+      void navigate({ to: '/login', replace: true })
+    }, 1200)
   }
 
   if (checkingSession) {
@@ -385,7 +338,7 @@ function SignupPage() {
                   onClick={() => switchMethod('phone')}
                   icon={<Smartphone size={15} />}
                 >
-                  {t('authPage.common.mobileOtp')}
+                  {t('authPage.common.mobilePassword')}
                 </MethodTab>
               </div>
             </div>
@@ -485,11 +438,11 @@ function SignupPage() {
               </form>
             ) : null}
 
-            {method === 'phone' && phoneStep === 'phone' ? (
-              <form onSubmit={handleSendSignupOtp} className="space-y-4">
+            {method === 'phone' ? (
+              <form onSubmit={handlePhoneSignup} className="space-y-4">
                 <div className="rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-4">
                   <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-stone-500">
-                    {t('authPage.common.step1')}
+                    {t('authPage.common.mobilePassword')}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-stone-900">
                     {t('signup.phone.step1Text')}
@@ -531,6 +484,51 @@ function SignupPage() {
                   </p>
                 </FormField>
 
+                <FormField label={t('authPage.common.password')} htmlFor="phonePassword">
+                  <div className="relative">
+                    <input
+                      id="phonePassword"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(event) => {
+                        setPassword(event.target.value)
+                        resetAlerts()
+                      }}
+                      required
+                      minLength={6}
+                      className="input-clean pr-12"
+                      placeholder={t('signup.password.placeholder')}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-3 top-1/2 inline-flex -translate-y-1/2 items-center justify-center rounded-lg p-2 text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
+                      aria-label={showPassword ? t('authPage.common.hidePassword') : t('authPage.common.showPassword')}
+                    >
+                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </FormField>
+
+                <FormField label={t('authPage.common.confirmPassword')} htmlFor="phoneConfirmPassword">
+                  <input
+                    id="phoneConfirmPassword"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(event) => {
+                      setConfirmPassword(event.target.value)
+                      resetAlerts()
+                    }}
+                    required
+                    minLength={6}
+                    className="input-clean"
+                    placeholder={t('signup.confirmPassword.placeholder')}
+                  />
+                </FormField>
+
                 <AlertBlock error={error} message={message} />
 
                 <button
@@ -541,82 +539,10 @@ function SignupPage() {
                   {loading ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
-                    <Smartphone size={16} />
+                    <ShieldCheck size={16} />
                   )}
-                  {loading ? t('authPage.common.sendingOtp') : t('authPage.common.sendOtp')}
+                  {loading ? t('signup.submit.loading') : t('signup.submit.cta')}
                 </button>
-              </form>
-            ) : null}
-
-            {method === 'phone' && phoneStep === 'otp' ? (
-              <form onSubmit={handleVerifySignupOtp} className="space-y-4">
-                <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-[0.72rem] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
-                    {t('authPage.common.step2')}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-emerald-900">
-                    {t('signup.otp.step2Text').replace('{phone}', formatPakistanPhoneForDisplay(phone))}
-                  </p>
-                </div>
-
-                <FormField label={t('authPage.common.enterOtp')} htmlFor="otp">
-                  <input
-                    id="otp"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    value={otp}
-                    onChange={(event) => {
-                      setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))
-                      resetAlerts()
-                    }}
-                    required
-                    minLength={6}
-                    maxLength={6}
-                    className="input-clean text-center text-xl tracking-[0.35em]"
-                    placeholder="123456"
-                  />
-                </FormField>
-
-                <AlertBlock error={error} message={message} />
-
-                <button
-                  type="submit"
-                  disabled={loading || otp.length !== 6}
-                  className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {loading ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : (
-                    <CheckCircle2 size={16} />
-                  )}
-                  {loading ? t('authPage.common.verifying') : t('signup.otp.verifyCta')}
-                </button>
-
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={loading}
-                    className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <RotateCcw size={16} />
-                    {t('authPage.common.resendOtp')}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOtp('')
-                      setPhoneStep('phone')
-                      resetAlerts()
-                    }}
-                    disabled={loading}
-                    className="secondary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {t('authPage.common.changeNumber')}
-                  </button>
-                </div>
               </form>
             ) : null}
 
@@ -742,26 +668,16 @@ function FeaturePill({
 function normalizePakistanPhone(value: string) {
   const digits = value.replace(/\D/g, '')
 
-  if (digits.startsWith('0092')) return `92${digits.slice(4, 14)}`
-  if (digits.startsWith('92')) return digits.slice(0, 12)
-  if (digits.startsWith('0')) return `92${digits.slice(1, 11)}`
-  if (digits.startsWith('3')) return `92${digits.slice(0, 10)}`
+  if (digits.startsWith('0092')) return `+92${digits.slice(4, 14)}`
+  if (digits.startsWith('92')) return `+${digits.slice(0, 12)}`
+  if (digits.startsWith('0')) return `+92${digits.slice(1, 11)}`
+  if (digits.startsWith('3')) return `+92${digits.slice(0, 10)}`
 
-  return digits
+  return digits.startsWith('+') ? digits : `+${digits}`
 }
 
 function isValidPakistanMobile(value: string) {
-  return /^923\d{9}$/.test(value)
-}
-
-function formatPakistanPhoneForDisplay(value: string) {
-  const phone = normalizePakistanPhone(value)
-
-  if (/^923\d{9}$/.test(phone)) {
-    return `0${phone.slice(2)}`
-  }
-
-  return value
+  return /^\+923\d{9}$/.test(value)
 }
 
 function isValidEmail(value: string) {
@@ -781,10 +697,6 @@ function toFriendlyAuthError(message: string, t: (key: TranslationKey) => string
 
   if (lower.includes('password')) {
     return t('signup.auth.passwordInvalid')
-  }
-
-  if (lower.includes('otp')) {
-    return t('signup.auth.invalidOtp')
   }
 
   if (lower.includes('phone')) {

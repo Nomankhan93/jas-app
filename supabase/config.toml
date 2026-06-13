@@ -250,9 +250,9 @@ otp_expiry = 3600
 # content_path = "./templates/password_changed_notification.html"
 
 [auth.sms]
-# Allow/disallow new user signups via SMS to your project.
-enable_signup = false
-# If enabled, users need to confirm their phone number before signing in.
+# Allow/disallow new user signups via SMS/phone to your project.
+enable_signup = true
+# If enabled, users need to confirm their phone number before signing in. Keep false for mobile + password without OTP.
 enable_confirmations = false
 # Template for sending OTP to users
 template = "Your code is {{ .Code }}"
