@@ -18,7 +18,8 @@
     "qa": "bash scripts/verify-project.sh",
     "qa:archive": "bash scripts/check-safe-archive.sh",
     "verify:production": "bash scripts/verify-production-readiness.sh",
-    "verify:android": "bash scripts/verify-android-twa.sh"
+    "verify:android": "bash scripts/verify-android-twa.sh",
+    "clean:cache": "bash scripts/clear-local-cache.sh"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",
