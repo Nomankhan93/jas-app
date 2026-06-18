@@ -48,12 +48,27 @@ export function addYearsToIsoDate(value: string | Date | null | undefined, years
   return date.toISOString().slice(0, 10)
 }
 
+export function addYearsMinusOneDayToIsoDate(
+  value: string | Date | null | undefined,
+  years = DESIGNATION_VALIDITY_YEARS,
+): string | null {
+  const isoDate = toIsoDateString(value)
+  if (!isoDate) return null
+
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  date.setUTCFullYear(date.getUTCFullYear() + years)
+  date.setUTCDate(date.getUTCDate() - 1)
+
+  return date.toISOString().slice(0, 10)
+}
+
 export function getDefaultDesignationValidity(assignDate: string | Date | null | undefined = new Date()): { validFrom: string; expiresOn: string } {
   const validFrom = toIsoDateString(assignDate) ?? getTodayIsoDate()
 
   return {
     validFrom,
-    expiresOn: addYearsToIsoDate(validFrom) ?? validFrom,
+    expiresOn: addYearsMinusOneDayToIsoDate(validFrom) ?? validFrom,
   }
 }
 
@@ -69,11 +84,11 @@ export function getDesignationValidityStart(source: DesignationValiditySource): 
 }
 
 export function getDesignationExpiryDate(source: DesignationValiditySource): string | null {
-  const explicitExpiry = toIsoDateString(source.tenure_end) || toIsoDateString(source.tenureEnd)
-  if (explicitExpiry) return explicitExpiry
-
   const validFrom = getDesignationValidityStart(source)
-  return addYearsToIsoDate(validFrom)
+  const calculatedExpiry = addYearsMinusOneDayToIsoDate(validFrom)
+  if (calculatedExpiry) return calculatedExpiry
+
+  return toIsoDateString(source.tenure_end) || toIsoDateString(source.tenureEnd)
 }
 
 export function isDesignationCurrentlyValid(source: DesignationValiditySource, today = getTodayIsoDate()) {

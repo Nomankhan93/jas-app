@@ -447,7 +447,7 @@ export async function addCommitteeMember(input: {
     status: input.status,
     sort_order: input.sort_order,
     tenure_start: input.tenure_start || validity.validFrom,
-    tenure_end: input.tenure_end || validity.expiresOn,
+    tenure_end: validity.expiresOn,
     appointment_notes: input.appointment_notes,
     member_no_snapshot: input.member.member_no,
     full_name_snapshot: input.member.full_name,
@@ -481,7 +481,7 @@ export async function updateCommitteeMember(
     .update({
       ...input,
       tenure_start: input.tenure_start || validity.validFrom,
-      tenure_end: input.tenure_end || validity.expiresOn,
+      tenure_end: validity.expiresOn,
       updated_by: userId,
       updated_at: new Date().toISOString(),
     } as never)
