@@ -295,8 +295,9 @@ export function Header({ compact }: { compact: boolean }) {
             isActive={isActive}
           />
 
-          <NavLink to="/donate" label={t('nav.donate')} active={isActive('/donate')} delayClass="delay-3" />
-          <NavLink to="/news" label={t('nav.news')} active={isActive('/news')} delayClass="delay-4" />
+          <NavLink to="/designation-holders" label={t('nav.designationHolders')} active={isActive('/designation-holders')} delayClass="delay-3" />
+          <NavLink to="/donate" label={t('nav.donate')} active={isActive('/donate')} delayClass="delay-4" />
+          <NavLink to="/news" label={t('nav.news')} active={isActive('/news')} delayClass="delay-5" />
 
           <MoreDropdown
             label={t('nav.more')}
@@ -399,8 +400,9 @@ export function Header({ compact }: { compact: boolean }) {
             isActive={isActive}
           />
 
-          <NavLink to="/donate" label={t('nav.donate')} active={isActive('/donate')} delayClass="delay-3" />
-          <NavLink to="/news" label={t('nav.news')} active={isActive('/news')} delayClass="delay-4" />
+          <NavLink to="/designation-holders" label={t('nav.designationHolders')} active={isActive('/designation-holders')} delayClass="delay-3" />
+          <NavLink to="/donate" label={t('nav.donate')} active={isActive('/donate')} delayClass="delay-4" />
+          <NavLink to="/news" label={t('nav.news')} active={isActive('/news')} delayClass="delay-5" />
 
           <MoreDropdown
             label={t('nav.more')}

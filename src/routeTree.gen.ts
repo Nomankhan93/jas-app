@@ -20,6 +20,7 @@ import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as DonorsRouteImport } from './routes/donors'
 import { Route as DonateRouteImport } from './routes/donate'
+import { Route as DesignationHoldersRouteImport } from './routes/designation-holders'
 import { Route as DesignationCardRouteImport } from './routes/designation-card'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CwcRouteImport } from './routes/cwc'
@@ -129,6 +130,11 @@ const DonorsRoute = DonorsRouteImport.update({
 const DonateRoute = DonateRouteImport.update({
   id: '/donate',
   path: '/donate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesignationHoldersRoute = DesignationHoldersRouteImport.update({
+  id: '/designation-holders',
+  path: '/designation-holders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesignationCardRoute = DesignationCardRouteImport.update({
@@ -426,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
   '/designation-card': typeof DesignationCardRoute
+  '/designation-holders': typeof DesignationHoldersRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
@@ -494,6 +501,7 @@ export interface FileRoutesByTo {
   '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
   '/designation-card': typeof DesignationCardRoute
+  '/designation-holders': typeof DesignationHoldersRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
@@ -563,6 +571,7 @@ export interface FileRoutesById {
   '/cwc': typeof CwcRoute
   '/dashboard': typeof DashboardRoute
   '/designation-card': typeof DesignationCardRoute
+  '/designation-holders': typeof DesignationHoldersRoute
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
@@ -633,6 +642,7 @@ export interface FileRouteTypes {
     | '/cwc'
     | '/dashboard'
     | '/designation-card'
+    | '/designation-holders'
     | '/donate'
     | '/donors'
     | '/events'
@@ -701,6 +711,7 @@ export interface FileRouteTypes {
     | '/cwc'
     | '/dashboard'
     | '/designation-card'
+    | '/designation-holders'
     | '/donate'
     | '/donors'
     | '/events'
@@ -769,6 +780,7 @@ export interface FileRouteTypes {
     | '/cwc'
     | '/dashboard'
     | '/designation-card'
+    | '/designation-holders'
     | '/donate'
     | '/donors'
     | '/events'
@@ -838,6 +850,7 @@ export interface RootRouteChildren {
   CwcRoute: typeof CwcRoute
   DashboardRoute: typeof DashboardRoute
   DesignationCardRoute: typeof DesignationCardRoute
+  DesignationHoldersRoute: typeof DesignationHoldersRoute
   DonateRoute: typeof DonateRoute
   DonorsRoute: typeof DonorsRoute
   EventsRoute: typeof EventsRoute
@@ -934,6 +947,13 @@ declare module '@tanstack/react-router' {
       path: '/donate'
       fullPath: '/donate'
       preLoaderRoute: typeof DonateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/designation-holders': {
+      id: '/designation-holders'
+      path: '/designation-holders'
+      fullPath: '/designation-holders'
+      preLoaderRoute: typeof DesignationHoldersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/designation-card': {
@@ -1559,6 +1579,7 @@ const rootRouteChildren: RootRouteChildren = {
   CwcRoute: CwcRoute,
   DashboardRoute: DashboardRoute,
   DesignationCardRoute: DesignationCardRoute,
+  DesignationHoldersRoute: DesignationHoldersRoute,
   DonateRoute: DonateRoute,
   DonorsRoute: DonorsRoute,
   EventsRoute: EventsRoute,
