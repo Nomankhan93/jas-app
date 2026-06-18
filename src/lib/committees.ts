@@ -1,4 +1,5 @@
 import { supabase } from './supabase/client'
+import { getDefaultDesignationValidity } from './designation-validity'
 
 export const committeeTypeOptions = [
   { value: 'central', label: 'Central Executive Committee' },
@@ -436,6 +437,7 @@ export async function addCommitteeMember(input: {
   appointment_notes: string | null
 }) {
   const userId = await getCurrentUserId()
+  const validity = getDefaultDesignationValidity(input.tenure_start)
 
   const { error } = await supabase.from('organization_committee_members' as never).insert({
     committee_id: input.committee_id,
@@ -444,8 +446,8 @@ export async function addCommitteeMember(input: {
     designation_title: input.designation_title,
     status: input.status,
     sort_order: input.sort_order,
-    tenure_start: input.tenure_start,
-    tenure_end: input.tenure_end,
+    tenure_start: input.tenure_start || validity.validFrom,
+    tenure_end: input.tenure_end || validity.expiresOn,
     appointment_notes: input.appointment_notes,
     member_no_snapshot: input.member.member_no,
     full_name_snapshot: input.member.full_name,
@@ -472,11 +474,14 @@ export async function updateCommitteeMember(
   },
 ) {
   const userId = await getCurrentUserId()
+  const validity = getDefaultDesignationValidity(input.tenure_start)
 
   const { error } = await supabase
     .from('organization_committee_members' as never)
     .update({
       ...input,
+      tenure_start: input.tenure_start || validity.validFrom,
+      tenure_end: input.tenure_end || validity.expiresOn,
       updated_by: userId,
       updated_at: new Date().toISOString(),
     } as never)

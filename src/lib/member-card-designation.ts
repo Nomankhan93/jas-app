@@ -5,6 +5,13 @@ import {
   type CommitteeRecord,
   type CommitteeType,
 } from './committees'
+import {
+  formatDesignationExpiry,
+  formatDesignationValidity,
+  getDesignationExpiryDate,
+  getDesignationValidityStart,
+  isDesignationCurrentlyValid,
+} from './designation-validity'
 
 export type MemberCardDesignation = {
   title: string
@@ -14,6 +21,10 @@ export type MemberCardDesignation = {
   committeeLocationLabel: string | null
   tenureStart: string | null
   tenureEnd: string | null
+  validityStart: string | null
+  expiresOn: string | null
+  validityLabel: string
+  expiryLabel: string
 }
 
 type CommitteeAssignmentRow = {
@@ -81,7 +92,15 @@ export async function fetchActiveMemberCardDesignation(memberId: string) {
       ? row.committee[0]
       : row.committee
 
-    return Boolean(row.designation_title?.trim()) && committee?.status === 'active'
+    return (
+      Boolean(row.designation_title?.trim()) &&
+      committee?.status === 'active' &&
+      isDesignationCurrentlyValid({
+        tenure_start: row.tenure_start,
+        tenure_end: row.tenure_end,
+        created_at: row.created_at,
+      })
+    )
   })
 
   if (!activeRow) return null
@@ -92,6 +111,12 @@ export async function fetchActiveMemberCardDesignation(memberId: string) {
 
   if (!committee) return null
 
+  const validitySource = {
+    tenure_start: activeRow.tenure_start,
+    tenure_end: activeRow.tenure_end,
+    created_at: activeRow.created_at,
+  }
+
   return {
     title: activeRow.designation_title.trim(),
     committeeName: committee.name ?? null,
@@ -100,5 +125,9 @@ export async function fetchActiveMemberCardDesignation(memberId: string) {
     committeeLocationLabel: getCommitteeLocationLabel(committee),
     tenureStart: activeRow.tenure_start,
     tenureEnd: activeRow.tenure_end,
+    validityStart: getDesignationValidityStart(validitySource),
+    expiresOn: getDesignationExpiryDate(validitySource),
+    validityLabel: formatDesignationValidity(validitySource),
+    expiryLabel: formatDesignationExpiry(validitySource),
   } satisfies MemberCardDesignation
 }

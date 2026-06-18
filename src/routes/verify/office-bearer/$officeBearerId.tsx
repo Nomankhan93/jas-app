@@ -15,11 +15,11 @@ import {
   buildOfficeBearerId,
   fetchOfficeBearerVerification,
   formatOfficeBearerDisplayText,
-  formatTenure,
   getCommitteeLocation,
   getCommitteeTypeLabel,
   type DesignationCardRecord,
 } from '../../../lib/committees-public'
+import { formatDesignationExpiry, formatDesignationValidity } from '../../../lib/designation-validity'
 
 export const Route = createFileRoute('/verify/office-bearer/$officeBearerId')({
   component: OfficeBearerVerificationPage,
@@ -103,10 +103,8 @@ function VerifiedOfficeBearer({
   )
   const level = committee ? getCommitteeTypeLabel(committee.committee_type) : 'JAS Committee'
   const location = committee ? getCommitteeLocation(committee) : getSnapshotLocation(card)
-  const tenure = formatTenure(
-    card.tenure_start || committee?.tenure_start,
-    card.tenure_end || committee?.tenure_end,
-  )
+  const validity = formatDesignationValidity(card)
+  const expiryDate = formatDesignationExpiry(card)
 
   const isExactMatch = useMemo(
     () => officialId.toUpperCase() === requestedId.trim().toUpperCase(),
@@ -138,7 +136,7 @@ function VerifiedOfficeBearer({
                   <span className="block text-[#f6d56f]">Record Confirmed</span>
                 </h1>
                 <p className="mt-4 max-w-3xl text-sm leading-7 text-white/72 sm:text-base">
-                  This QR confirms that the bearer currently has an active JAS committee designation in the official public organization record.
+                  This QR confirms that the bearer currently has a valid active JAS committee designation in the official public organization record.
                 </p>
               </div>
 
@@ -146,7 +144,7 @@ function VerifiedOfficeBearer({
                 <p className="text-xs font-black uppercase tracking-[0.2em]">Status</p>
                 <p className="mt-1 flex items-center gap-2 text-3xl font-black uppercase">
                   <ShieldCheck className="h-7 w-7" />
-                  Active
+                  Valid
                 </p>
               </div>
             </div>
@@ -175,7 +173,8 @@ function VerifiedOfficeBearer({
                 <VerifyInfo icon={<Landmark />} label="Committee" value={committeeName} />
                 <VerifyInfo icon={<ShieldCheck />} label="Level" value={level} />
                 <VerifyInfo icon={<MapPin />} label="Jurisdiction" value={location} />
-                <VerifyInfo icon={<CalendarDays />} label="Tenure" value={tenure} />
+                <VerifyInfo icon={<CalendarDays />} label="Validity" value={validity} />
+                <VerifyInfo icon={<CalendarDays />} label="Expiry Date" value={expiryDate} />
               </div>
             </section>
 
@@ -185,7 +184,7 @@ function VerifiedOfficeBearer({
               </p>
               <h3 className="mt-2 text-2xl font-black">Valid office bearer card</h3>
               <p className="mt-3 text-sm font-semibold leading-7 text-emerald-900/75">
-                The QR code links to a public JAS verification route. Accept this authority only while the status remains active and the tenure/committee details match the presented card.
+                The QR code links to a public JAS verification route. Accept this authority only while the status remains valid, the expiry date has not passed, and the committee details match the presented card.
               </p>
 
               <div className="mt-5 rounded-3xl bg-white p-4 shadow-sm ring-1 ring-emerald-100">

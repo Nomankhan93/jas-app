@@ -1,6 +1,13 @@
 // src/lib/verify/actions.ts
 import { createServerFn } from '@tanstack/react-start'
 import { createSupabaseAdminClient } from '../supabase/admin'
+import {
+  formatDesignationExpiry,
+  formatDesignationValidity,
+  getDesignationExpiryDate,
+  getDesignationValidityStart,
+  isDesignationCurrentlyValid,
+} from '../designation-validity'
 
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 10
@@ -18,6 +25,10 @@ type VerifyMemberDesignation = {
   committeeName: string | null
   level: string | null
   location: string | null
+  validFrom: string | null
+  expiresOn: string | null
+  validity: string
+  expiryDate: string
 }
 
 type VerifyMemberResult = {
@@ -148,6 +159,7 @@ function getCommitteeLocationLabel(committee: {
   taluka: string | null
 }) {
   if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'provincial') return 'Sindh / Provincial'
   if (committee.committee_type === 'divisional') return committee.division || 'Division not set'
   if (committee.committee_type === 'district') return committee.district || 'District not set'
 
@@ -158,6 +170,8 @@ function getCommitteeLevelLabel(value: string | null) {
   switch (value) {
     case 'central':
       return 'Central / Markaz'
+    case 'provincial':
+      return 'Provincial'
     case 'divisional':
       return 'Divisional Committee'
     case 'district':
@@ -178,6 +192,8 @@ async function fetchActiveMemberDesignation(
     .select(
       [
         'designation_title',
+        'tenure_start',
+        'tenure_end',
         'sort_order',
         'created_at',
         'committee:organization_committees(id, committee_type, name, division, district, taluka, status)',
@@ -193,6 +209,9 @@ async function fetchActiveMemberDesignation(
 
   const rows = (data ?? []) as unknown as Array<{
     designation_title: string | null
+    tenure_start: string | null
+    tenure_end: string | null
+    created_at: string | null
     committee:
       | {
           committee_type: string | null
@@ -215,7 +234,15 @@ async function fetchActiveMemberDesignation(
 
   const row = rows.find((item) => {
     const committee = Array.isArray(item.committee) ? item.committee[0] : item.committee
-    return Boolean(item.designation_title?.trim()) && committee?.status === 'active'
+    return (
+      Boolean(item.designation_title?.trim()) &&
+      committee?.status === 'active' &&
+      isDesignationCurrentlyValid({
+        tenure_start: item.tenure_start,
+        tenure_end: item.tenure_end,
+        created_at: item.created_at,
+      })
+    )
   })
 
   if (!row) return null
@@ -223,11 +250,21 @@ async function fetchActiveMemberDesignation(
   const committee = Array.isArray(row.committee) ? row.committee[0] : row.committee
   if (!committee) return null
 
+  const validitySource = {
+    tenure_start: row.tenure_start,
+    tenure_end: row.tenure_end,
+    created_at: row.created_at,
+  }
+
   return {
     title: row.designation_title?.trim() || 'Designation',
     committeeName: committee.name,
     level: getCommitteeLevelLabel(committee.committee_type),
     location: getCommitteeLocationLabel(committee),
+    validFrom: getDesignationValidityStart(validitySource),
+    expiresOn: getDesignationExpiryDate(validitySource),
+    validity: formatDesignationValidity(validitySource),
+    expiryDate: formatDesignationExpiry(validitySource),
   } satisfies VerifyMemberDesignation
 }
 

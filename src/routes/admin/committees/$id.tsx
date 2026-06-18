@@ -37,6 +37,13 @@ import {
   type MemberSearchResult,
 } from '../../../lib/committees'
 import { AdminShell } from '../../../components/admin/AdminShell'
+import {
+  addYearsToIsoDate,
+  formatDesignationExpiry,
+  formatDesignationValidity,
+  getDefaultDesignationValidity,
+  isDesignationCurrentlyValid,
+} from '../../../lib/designation-validity'
 
 export const Route = createFileRoute('/admin/committees/$id')({
   component: AdminCommitteeDetailPage,
@@ -82,6 +89,8 @@ function AdminCommitteeDetailPage() {
   const [selectedMember, setSelectedMember] = useState<MemberSearchResult | null>(null)
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null)
   const [limitSearchToCommitteeArea, setLimitSearchToCommitteeArea] = useState(true)
+  const defaultAssignmentValidity = getDefaultDesignationValidity()
+
   const [committeeForm, setCommitteeForm] = useState<CommitteeForm>({
     committeeType: 'central',
     name: '',
@@ -99,8 +108,8 @@ function AdminCommitteeDetailPage() {
     designationTitle: '',
     status: 'active',
     sortOrder: '1',
-    tenureStart: '',
-    tenureEnd: '',
+    tenureStart: defaultAssignmentValidity.validFrom,
+    tenureEnd: defaultAssignmentValidity.expiresOn,
     appointmentNotes: '',
   })
 
@@ -388,18 +397,29 @@ function AdminCommitteeDetailPage() {
     setMemberSearch(`${member.full_name} ${member.member_no ?? ''}`.trim())
   }
 
+  function handleAssignmentDateChange(value: string) {
+    const expiresOn = addYearsToIsoDate(value) ?? value
+    setMemberForm((current) => ({
+      ...current,
+      tenureStart: value,
+      tenureEnd: expiresOn,
+    }))
+  }
+
   function startEditMember(member: CommitteeMemberRecord) {
     setEditingMemberId(member.id)
     setSelectedMember(null)
     setMemberSearch('')
     setMemberResults([])
+    const assignmentValidity = getDefaultDesignationValidity(member.tenure_start || member.created_at)
+
     setMemberForm({
       designationId: member.designation_id ?? '',
       designationTitle: member.designation_title,
       status: member.status,
       sortOrder: String(member.sort_order),
-      tenureStart: member.tenure_start ?? '',
-      tenureEnd: member.tenure_end ?? '',
+      tenureStart: member.tenure_start ?? assignmentValidity.validFrom,
+      tenureEnd: member.tenure_end ?? assignmentValidity.expiresOn,
       appointmentNotes: member.appointment_notes ?? '',
     })
   }
@@ -409,13 +429,15 @@ function AdminCommitteeDetailPage() {
     setSelectedMember(null)
     if (!options?.keepSearch) setMemberSearch('')
     setMemberResults([])
+    const assignmentValidity = getDefaultDesignationValidity()
+
     setMemberForm({
       designationId: '',
       designationTitle: '',
       status: 'active',
       sortOrder: String((committee?.members.length ?? 0) + 1),
-      tenureStart: '',
-      tenureEnd: '',
+      tenureStart: assignmentValidity.validFrom,
+      tenureEnd: assignmentValidity.expiresOn,
       appointmentNotes: '',
     })
   }
@@ -428,13 +450,14 @@ function AdminCommitteeDetailPage() {
     try {
       if (!memberForm.designationTitle.trim()) throw new Error('Designation title is required.')
 
+      const assignmentValidity = getDefaultDesignationValidity(memberForm.tenureStart)
       const payload = {
         designation_id: memberForm.designationId || null,
         designation_title: memberForm.designationTitle.trim(),
         status: memberForm.status,
         sort_order: Number(memberForm.sortOrder) || 1,
-        tenure_start: memberForm.tenureStart || null,
-        tenure_end: memberForm.tenureEnd || null,
+        tenure_start: memberForm.tenureStart || assignmentValidity.validFrom,
+        tenure_end: memberForm.tenureEnd || assignmentValidity.expiresOn,
         appointment_notes: memberForm.appointmentNotes.trim() || null,
       }
 
@@ -694,7 +717,7 @@ function AdminCommitteeDetailPage() {
                     {editingMemberId ? 'Edit Designation Assignment' : 'Assign Designation'}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    Select an approved member and assign their JAS designation.
+                    Select an approved member and assign their JAS designation. Validity auto-expires one year from the assignment date.
                   </p>
                 </div>
               </div>
@@ -776,21 +799,22 @@ function AdminCommitteeDetailPage() {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <Field label="Tenure Start">
+                  <Field label="Designation Assign Date">
                     <input
                       type="date"
                       value={memberForm.tenureStart}
-                      onChange={(event) => setMemberForm((current) => ({ ...current, tenureStart: event.target.value }))}
+                      onChange={(event) => handleAssignmentDateChange(event.target.value)}
                       className={inputClass}
                     />
                   </Field>
-                  <Field label="Tenure End">
+                  <Field label="Auto Expiry Date">
                     <input
                       type="date"
                       value={memberForm.tenureEnd}
                       onChange={(event) => setMemberForm((current) => ({ ...current, tenureEnd: event.target.value }))}
                       className={inputClass}
                     />
+                    <span className="mt-2 block text-xs font-bold text-slate-500">Auto-generated one year from assignment date. You can adjust it only if admin policy requires.</span>
                   </Field>
                 </div>
 
@@ -1018,7 +1042,9 @@ function OfficeBearerCard({
       <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
         <Info label="Location" value={`${member.district_snapshot ?? 'N/A'}${member.taluka_snapshot ? ` · ${member.taluka_snapshot}` : ''}`} />
         <Info label="Order" value={String(member.sort_order)} />
-        <Info label="Tenure" value={`${formatCommitteeDate(member.tenure_start)} → ${formatCommitteeDate(member.tenure_end)}`} />
+        <Info label="Validity" value={formatDesignationValidity(member)} />
+        <Info label="Expiry Date" value={formatDesignationExpiry(member)} />
+        <Info label="Validity Status" value={isDesignationCurrentlyValid(member) ? 'Valid' : 'Expired'} />
         <Info label="Updated" value={formatCommitteeDate(member.updated_at)} />
       </div>
 

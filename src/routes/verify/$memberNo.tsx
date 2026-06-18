@@ -75,6 +75,10 @@ type VerifyPageText = {
   statusRejected: string
   statusUnknown: string
   notAvailable: string
+  designation: string
+  designationArea: string
+  designationValidity: string
+  designationExpiry: string
 }
 
 const verifyPageText: Record<AppLanguage, VerifyPageText> = {
@@ -125,6 +129,10 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     statusRejected: 'Rejected',
     statusUnknown: 'Unknown',
     notAvailable: 'N/A',
+    designation: 'Designation',
+    designationArea: 'Designation Area',
+    designationValidity: 'Designation Validity',
+    designationExpiry: 'Designation Expiry',
   },
   ur: {
     loading: 'ممبرشپ تصدیق ہو رہی ہے...',
@@ -173,6 +181,10 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     statusRejected: 'رد شدہ',
     statusUnknown: 'نامعلوم',
     notAvailable: 'دستیاب نہیں',
+    designation: 'Designation',
+    designationArea: 'Designation Area',
+    designationValidity: 'Designation Validity',
+    designationExpiry: 'Designation Expiry',
   },
   sd: {
     loading: 'ميمبرشپ تصديق ٿي رهي آهي...',
@@ -221,6 +233,10 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     statusRejected: 'رد ٿيل',
     statusUnknown: 'نامعلوم',
     notAvailable: 'دستياب ناهي',
+    designation: 'Designation',
+    designationArea: 'Designation Area',
+    designationValidity: 'Designation Validity',
+    designationExpiry: 'Designation Expiry',
   },
 }
 
@@ -242,6 +258,10 @@ type VerifyResult = {
     committeeName: string | null
     level: string | null
     location: string | null
+    validFrom: string | null
+    expiresOn: string | null
+    validity: string
+    expiryDate: string
   } | null
 }
 
@@ -489,17 +509,25 @@ function VerifyMemberPage() {
                   {result.activeDesignation ? (
                     <>
                       <Info
-                        label="Designation"
+                        label={text.designation}
                         value={result.activeDesignation.title}
                       />
                       <Info
-                        label="Designation Area"
+                        label={text.designationArea}
                         value={[
                           result.activeDesignation.level,
                           result.activeDesignation.location,
                         ]
                           .filter(Boolean)
                           .join(' · ')}
+                      />
+                      <Info
+                        label={text.designationValidity}
+                        value={result.activeDesignation.validity}
+                      />
+                      <Info
+                        label={text.designationExpiry}
+                        value={result.activeDesignation.expiryDate}
                       />
                     </>
                   ) : null}

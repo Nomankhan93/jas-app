@@ -1,10 +1,14 @@
 import { supabase } from './supabase/client'
 import {
-  formatTenure,
   getInitials,
   type PublicCommitteeMemberRecord,
   type PublicCommitteeRecord,
 } from './committees-public'
+import {
+  formatDesignationExpiry,
+  formatDesignationValidity,
+  isDesignationCurrentlyValid,
+} from './designation-validity'
 
 export const designationHolderLevelOrder = [
   'central',
@@ -134,8 +138,12 @@ export function sortDesignationHolders(holders: PublicDesignationHolderRecord[])
   })
 }
 
-export function formatDesignationHolderTenure(holder: Pick<PublicDesignationHolderRecord, 'tenure_start' | 'tenure_end'>) {
-  return formatTenure(holder.tenure_start, holder.tenure_end)
+export function formatDesignationHolderTenure(holder: Pick<PublicDesignationHolderRecord, 'tenure_start' | 'tenure_end' | 'assigned_at'>) {
+  return formatDesignationValidity(holder)
+}
+
+export function formatDesignationHolderExpiry(holder: Pick<PublicDesignationHolderRecord, 'tenure_start' | 'tenure_end' | 'assigned_at'>) {
+  return formatDesignationExpiry(holder)
 }
 
 export function getDesignationHolderInitials(name: string | null | undefined) {
@@ -146,7 +154,9 @@ export async function fetchPublicDesignationHolders() {
   const rpcResult = await supabase.rpc('get_public_designation_holders' as never)
 
   if (!rpcResult.error) {
-    const rows = (rpcResult.data ?? []) as unknown as PublicDesignationHolderRecord[]
+    const rows = ((rpcResult.data ?? []) as unknown as PublicDesignationHolderRecord[]).filter((holder) =>
+      isDesignationCurrentlyValid(holder),
+    )
     return attachSignedPhotoUrls(sortDesignationHolders(rows))
   }
 
@@ -217,7 +227,7 @@ async function fetchPublicDesignationHoldersFromSnapshots() {
     ]
   })
 
-  return sortDesignationHolders(rows)
+  return sortDesignationHolders(rows.filter((holder) => isDesignationCurrentlyValid(holder)))
 }
 
 function normalizeDesignationHolderLevel(level: string | null | undefined): DesignationHolderLevel {

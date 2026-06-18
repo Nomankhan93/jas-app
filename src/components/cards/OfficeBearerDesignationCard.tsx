@@ -13,13 +13,13 @@ import { forwardRef, type ReactNode, useEffect, useMemo, useRef, useState } from
 import {
   buildOfficeBearerId,
   formatOfficeBearerDisplayText,
-  formatTenure,
   getCommitteeLocation,
   getCommitteeTypeLabel,
   getInitials,
   getOfficeBearerVerificationUrl,
   type DesignationCardRecord,
 } from '../../lib/committees-public'
+import { formatDesignationExpiry, formatDesignationValidity } from '../../lib/designation-validity'
 import { exportElementAsPng } from '../../lib/shared/card-export'
 import { generateQrDataUrl } from '../../lib/shared/qrcode'
 
@@ -300,7 +300,8 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
   const committeeName = formatOfficeBearerDisplayText(committee?.name || 'Committee record')
   const memberNo = card.member.member_no || card.member_no_snapshot || 'Not issued'
   const location = committee ? getCommitteeLocation(committee) : getSnapshotLocation(card)
-  const tenure = formatTenure(card.tenure_start || committee?.tenure_start, card.tenure_end || committee?.tenure_end)
+  const validity = formatDesignationValidity(card)
+  const expiryDate = formatDesignationExpiry(card)
   const level = committee ? getCommitteeTypeLabel(committee.committee_type) : 'JAS Committee'
   return (
     <div
@@ -357,7 +358,7 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
               <PremiumInfo label="Committee" value={committeeName} icon={<Landmark className="h-5 w-5" />} />
               <PremiumInfo label="Level" value={level} icon={<ShieldCheck className="h-5 w-5" />} />
               <PremiumInfo label="Location" value={location} icon={<MapPin className="h-5 w-5" />} />
-              <PremiumInfo label="Tenure" value={tenure} icon={<CalendarDays className="h-5 w-5" />} compact />
+              <PremiumInfo label="Validity" value={validity} icon={<CalendarDays className="h-5 w-5" />} compact />
             </div>
 
             <div className="mt-5 rounded-[22px] border border-[#f6d56f]/30 bg-[#f6d56f]/10 px-5 py-3.5">
@@ -377,6 +378,11 @@ const OfficeBearerCardFront = forwardRef<HTMLDivElement, {
               <p className="text-[12px] font-black uppercase tracking-[0.18em] text-[#f6d56f]">Office Bearer ID</p>
               <p className="mt-3 break-words text-[18px] font-black leading-tight text-white">{officeBearerId}</p>
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-white/42">Verified on reverse side</p>
+            </div>
+
+            <div className="rounded-[26px] border border-amber-200/60 bg-amber-100 px-5 py-4 text-emerald-950 shadow-[0_18px_42px_rgba(0,0,0,0.18)]">
+              <p className="text-[12px] font-black uppercase tracking-[0.18em]">Expiry Date</p>
+              <p className="mt-2 text-[20px] font-black leading-tight">{expiryDate}</p>
             </div>
 
             <div className="mt-auto rounded-[26px] border border-white/12 bg-white/10 p-5 shadow-[0_18px_42px_rgba(0,0,0,0.18)] backdrop-blur">
@@ -408,7 +414,8 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
   const committeeName = formatOfficeBearerDisplayText(committee?.name || 'Committee record')
   const memberNo = card.member.member_no || card.member_no_snapshot || 'Not issued'
   const location = committee ? getCommitteeLocation(committee) : getSnapshotLocation(card)
-  const tenure = formatTenure(card.tenure_start || committee?.tenure_start, card.tenure_end || committee?.tenure_end)
+  const validity = formatDesignationValidity(card)
+  const expiryDate = formatDesignationExpiry(card)
 
   return (
     <div
@@ -447,15 +454,16 @@ const OfficeBearerCardBack = forwardRef<HTMLDivElement, {
               <BackInfo label="Office Bearer ID" value={officeBearerId} />
               <BackInfo label="Committee" value={committeeName} />
               <BackInfo label="Jurisdiction" value={location} />
-              <BackInfo label="Tenure" value={tenure} wide />
-              <BackInfo label="Verification Status" value="Active authority record" />
+              <BackInfo label="Validity" value={validity} wide />
+              <BackInfo label="Expiry Date" value={expiryDate} />
+              <BackInfo label="Verification Status" value="Valid active authority record" />
             </div>
 
             <div className="grid flex-1 grid-cols-[1fr_245px] gap-4">
               <div className="rounded-[24px] border border-slate-200 bg-white/84 p-4 shadow-sm">
                 <p className="text-[13px] font-black uppercase tracking-[0.2em] text-emerald-800">Terms & Conditions</p>
                 <ul className="mt-3 space-y-2 text-[12.5px] font-bold leading-5 text-slate-700">
-                  <li>• Valid only with active office bearer designation in the official JAS committee record.</li>
+                  <li>• Valid for one year from designation assignment date and only with active office bearer status.</li>
                   <li>• Misuse, transfer, alteration or unauthorized use of this authority card is prohibited.</li>
                   <li>• Verify through QR before accepting any office bearer authority.</li>
                 </ul>

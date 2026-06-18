@@ -6,6 +6,7 @@ import {
   type CommitteeStatus,
   type CommitteeType,
 } from './committees'
+import { isDesignationCurrentlyValid } from './designation-validity'
 
 export type PublicCommitteeRecord = {
   id: string
@@ -134,6 +135,7 @@ export function getCommitteeLocation(
   committee: Pick<PublicCommitteeRecord, 'committee_type' | 'division' | 'district' | 'taluka'>,
 ) {
   if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'provincial') return 'Sindh / Provincial'
   if (committee.committee_type === 'divisional') {
     return committee.division || 'Division not set'
   }
@@ -210,6 +212,8 @@ export async function fetchOfficeBearerVerification(officeBearerId: string) {
 
   const rows = (membershipRows ?? []) as unknown as PublicCommitteeMemberRecord[]
   const row = rows.find((item) => {
+    if (!isDesignationCurrentlyValid(item)) return false
+
     const generatedId = buildOfficeBearerId(item).toUpperCase()
     const generatedShortId = item.id.replace(/-/g, '').slice(0, 8).toUpperCase()
     return generatedId === requestedId || generatedShortId === shortId
@@ -306,7 +310,9 @@ export async function fetchPublicCommitteeDetails(id: string): Promise<PublicCom
 
   return {
     ...(committee as unknown as PublicCommitteeRecord),
-    members: (members ?? []) as unknown as PublicCommitteeMemberRecord[],
+    members: ((members ?? []) as unknown as PublicCommitteeMemberRecord[]).filter((member) =>
+      isDesignationCurrentlyValid(member),
+    ),
   }
 }
 
@@ -357,7 +363,9 @@ async function fetchDesignationCardsForMember(member: DesignationCardMember) {
 
   if (error) throw error
 
-  const rows = (memberships ?? []) as unknown as PublicCommitteeMemberRecord[]
+  const rows = ((memberships ?? []) as unknown as PublicCommitteeMemberRecord[]).filter((member) =>
+    isDesignationCurrentlyValid(member),
+  )
   if (!rows.length) return []
 
   const committeeIds = [...new Set(rows.map((row) => row.committee_id))]
