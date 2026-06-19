@@ -1,7 +1,6 @@
 // src/components/MembershipCard.tsx
 import type { ReactNode } from 'react'
 import {
-  getMemberDesignationLevel,
   getMemberDesignationTitle,
   type MemberCardDesignation,
 } from '../lib/member-card-designation'
@@ -100,7 +99,6 @@ function CardFront({
 }: Omit<MembershipCardProps, 'side'>) {
   const profession = member.profession || 'Not provided'
   const designationTitle = getMemberDesignationTitle(member.activeDesignation)
-  const designationLevel = getMemberDesignationLevel(member.activeDesignation)
 
   return (
     <>
@@ -149,11 +147,6 @@ function CardFront({
                 <p className="mt-1 line-clamp-2 break-words text-[18px] font-black leading-tight text-slate-950">
                   {designationTitle}
                 </p>
-                {member.activeDesignation?.expiryLabel ? (
-                  <p className="mt-1 text-[10px] font-black uppercase tracking-[0.14em] text-emerald-800">
-                    Valid until {member.activeDesignation.expiryLabel}
-                  </p>
-                ) : null}
               </div>
             ) : null}
           </section>
@@ -181,7 +174,6 @@ function CardFront({
                 value={formatDate(member.approved_at)}
               />
               <Info label="Status" value="Approved" />
-              {designationLevel ? <Info label="Designation Level" value={designationLevel} /> : null}
             </div>
 
             <div className="rounded-[1.4rem] border border-slate-200 bg-white/90 px-5 py-4 shadow-sm">
@@ -268,10 +260,6 @@ function CardBack({
                 <MiniInfo
                   label="Designation"
                   value={getMemberDesignationTitle(member.activeDesignation) || 'Member'}
-                />
-                <MiniInfo
-                  label="Desig. Expiry"
-                  value={member.activeDesignation?.expiryLabel || 'N/A'}
                 />
                 <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
                 <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
