@@ -1,13 +1,6 @@
 // src/lib/verify/actions.ts
 import { createServerFn } from '@tanstack/react-start'
 import { createSupabaseAdminClient } from '../supabase/admin'
-import {
-  formatDesignationExpiry,
-  formatDesignationValidity,
-  getDesignationExpiryDate,
-  getDesignationValidityStart,
-  isDesignationCurrentlyValid,
-} from '../designation-validity'
 
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 10
@@ -152,13 +145,45 @@ function buildPublicMemberPayload(member: MemberVerificationRow) {
 }
 
 
+function formatPublicDate(value: string | null) {
+  if (!value) return null
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function getDesignationValidityLabel(
+  validFrom: string | null,
+  expiresOn: string | null,
+) {
+  const startLabel = formatPublicDate(validFrom)
+  const endLabel = formatPublicDate(expiresOn)
+
+  if (startLabel && endLabel) return `${startLabel} → ${endLabel}`
+  if (endLabel) return `Valid until ${endLabel}`
+  if (startLabel) return `Valid from ${startLabel}`
+
+  return 'Tenure not set'
+}
+
+function getDesignationExpiryDateLabel(expiresOn: string | null) {
+  return formatPublicDate(expiresOn) ?? 'Not set'
+}
+
 function getCommitteeLocationLabel(committee: {
   committee_type: string | null
   division: string | null
   district: string | null
   taluka: string | null
 }) {
-  if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'central') return 'Sindh / Central Executive Committee'
+  if (committee.committee_type === 'central_advisory') return 'Sindh / Central Advisory Committee'
   if (committee.committee_type === 'provincial') return 'Sindh / Provincial'
   if (committee.committee_type === 'divisional') return committee.division || 'Division not set'
   if (committee.committee_type === 'district') return committee.district || 'District not set'
@@ -169,9 +194,11 @@ function getCommitteeLocationLabel(committee: {
 function getCommitteeLevelLabel(value: string | null) {
   switch (value) {
     case 'central':
-      return 'Central / Markaz'
+      return 'Central Executive Committee'
+    case 'central_advisory':
+      return 'Central Advisory Committee'
     case 'provincial':
-      return 'Provincial'
+      return 'Provincial Committee'
     case 'divisional':
       return 'Divisional Committee'
     case 'district':
@@ -211,7 +238,6 @@ async function fetchActiveMemberDesignation(
     designation_title: string | null
     tenure_start: string | null
     tenure_end: string | null
-    created_at: string | null
     committee:
       | {
           committee_type: string | null
@@ -234,15 +260,7 @@ async function fetchActiveMemberDesignation(
 
   const row = rows.find((item) => {
     const committee = Array.isArray(item.committee) ? item.committee[0] : item.committee
-    return (
-      Boolean(item.designation_title?.trim()) &&
-      committee?.status === 'active' &&
-      isDesignationCurrentlyValid({
-        tenure_start: item.tenure_start,
-        tenure_end: item.tenure_end,
-        created_at: item.created_at,
-      })
-    )
+    return Boolean(item.designation_title?.trim()) && committee?.status === 'active'
   })
 
   if (!row) return null
@@ -250,21 +268,18 @@ async function fetchActiveMemberDesignation(
   const committee = Array.isArray(row.committee) ? row.committee[0] : row.committee
   if (!committee) return null
 
-  const validitySource = {
-    tenure_start: row.tenure_start,
-    tenure_end: row.tenure_end,
-    created_at: row.created_at,
-  }
+  const validFrom = row.tenure_start ?? null
+  const expiresOn = row.tenure_end ?? null
 
   return {
     title: row.designation_title?.trim() || 'Designation',
     committeeName: committee.name,
     level: getCommitteeLevelLabel(committee.committee_type),
     location: getCommitteeLocationLabel(committee),
-    validFrom: getDesignationValidityStart(validitySource),
-    expiresOn: getDesignationExpiryDate(validitySource),
-    validity: formatDesignationValidity(validitySource),
-    expiryDate: formatDesignationExpiry(validitySource),
+    validFrom,
+    expiresOn,
+    validity: getDesignationValidityLabel(validFrom, expiresOn),
+    expiryDate: getDesignationExpiryDateLabel(expiresOn),
   } satisfies VerifyMemberDesignation
 }
 
