@@ -28,7 +28,7 @@ import { supabase } from '../lib/supabase/client'
 import { useI18n, type AppLanguage } from '../lib/i18n'
 import { exportElementAsPng } from '../lib/shared/card-export'
 import { generateQrDataUrl } from '../lib/shared/qrcode'
-import { fetchActiveMemberCardDesignation } from '../lib/member-card-designation'
+import { fetchActiveMemberCardDesignations } from '../lib/member-card-designation'
 
 export const Route = createFileRoute('/card')({
   component: CardPage,
@@ -341,13 +341,14 @@ function CardPage() {
           return
         }
 
-        const activeDesignation = await fetchActiveMemberCardDesignation(data.id)
-        const memberWithDesignation = {
+        const activeDesignations = await fetchActiveMemberCardDesignations(data.id, 2)
+        const memberWithDesignations = {
           ...data,
-          activeDesignation,
+          activeDesignation: activeDesignations[0] ?? null,
+          activeDesignations,
         }
 
-        setMember(memberWithDesignation)
+        setMember(memberWithDesignations)
 
         if (data.status !== 'approved' || !data.member_no) {
           setPhotoUrl(null)

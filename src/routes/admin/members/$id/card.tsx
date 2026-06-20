@@ -1,7 +1,7 @@
 // src/routes/admin/members/$id/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -28,7 +28,7 @@ import {
 import { supabase } from '../../../../lib/supabase/client'
 import { exportElementAsPng } from '../../../../lib/shared/card-export'
 import { generateQrDataUrl } from '../../../../lib/shared/qrcode'
-import { fetchActiveMemberCardDesignation } from '../../../../lib/member-card-designation'
+import { fetchActiveMemberCardDesignations } from '../../../../lib/member-card-designation'
 
 export const Route = createFileRoute('/admin/members/$id/card')({
   component: AdminMemberCardPage,
@@ -105,7 +105,7 @@ function AdminMemberCardPage() {
       try {
         const access = await ensureAdminAccess()
 
-        if (!access.ok) {
+        if (access.ok === false) {
           await navigate({ to: access.redirectTo })
           return
         }
@@ -124,13 +124,14 @@ function AdminMemberCardPage() {
           throw new Error('Member record not found.')
         }
 
-        const activeDesignation = await fetchActiveMemberCardDesignation(data.id)
-        const memberWithDesignation = {
+        const activeDesignations = await fetchActiveMemberCardDesignations(data.id, 2)
+        const memberWithDesignations = {
           ...data,
-          activeDesignation,
+          activeDesignation: activeDesignations[0] ?? null,
+          activeDesignations,
         }
 
-        setMember(memberWithDesignation)
+        setMember(memberWithDesignations)
 
         if (data.status !== 'approved' || !data.member_no) {
           setPhotoUrl(null)
@@ -662,8 +663,8 @@ function ExportCards({
   flagUrl: string | null
   qrUrl: string | null
   verifyUrl: string
-  frontRef: React.RefObject<HTMLDivElement | null>
-  backRef: React.RefObject<HTMLDivElement | null>
+  frontRef: RefObject<HTMLDivElement | null>
+  backRef: RefObject<HTMLDivElement | null>
 }) {
   return (
     <div
