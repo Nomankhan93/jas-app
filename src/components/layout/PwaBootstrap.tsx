@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
+import {
+  clearJasPwaCache,
+  deleteJasCacheStorage,
+  hasPwaCacheResetParam,
+} from '../../lib/pwa-cache-reset'
 
 type BeforeInstallPromptEvent = Event & {
   platforms?: string[]
@@ -64,9 +69,6 @@ function supportsWebPush() {
   )
 }
 
-const DEV_SW_RELOAD_FLAG = 'jas-pwa-dev-sw-unregistered'
-const FORCE_PWA_CACHE_CLEAR_PARAMS = ['clear-pwa-cache', 'clearCache']
-const JAS_CACHE_PREFIX = 'jas-pwa'
 
 function isStandaloneDisplay() {
   if (typeof window === 'undefined') return false
@@ -81,59 +83,7 @@ function isStandaloneDisplay() {
   )
 }
 
-function hasForceCacheClearParam() {
-  if (typeof window === 'undefined') return false
-
-  const url = new URL(window.location.href)
-  return FORCE_PWA_CACHE_CLEAR_PARAMS.some((param) =>
-    url.searchParams.has(param),
-  )
-}
-
-function buildCacheClearedUrl() {
-  const url = new URL(window.location.href)
-
-  for (const param of FORCE_PWA_CACHE_CLEAR_PARAMS) {
-    url.searchParams.delete(param)
-  }
-
-  url.searchParams.set('pwa-cache-cleared', Date.now().toString())
-  return url.toString()
-}
-
-async function deleteJasBrowserCaches() {
-  if (!('caches' in window)) return
-
-  const cacheKeys = await caches.keys()
-  await Promise.all(
-    cacheKeys
-      .filter((key) => key.startsWith(JAS_CACHE_PREFIX))
-      .map((key) => caches.delete(key)),
-  )
-}
-
-async function forceClearPwaCacheAndReload() {
-  try {
-    await deleteJasBrowserCaches()
-
-    if ('serviceWorker' in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations()
-      await Promise.all(
-        registrations
-          .filter((registration) =>
-            registration.active?.scriptURL.endsWith('/sw.js') ||
-            registration.installing?.scriptURL.endsWith('/sw.js') ||
-            registration.waiting?.scriptURL.endsWith('/sw.js'),
-          )
-          .map((registration) => registration.unregister()),
-      )
-    }
-  } catch (error) {
-    console.warn('JAS force cache clear failed:', error)
-  } finally {
-    window.location.replace(buildCacheClearedUrl())
-  }
-}
+const DEV_SW_RELOAD_FLAG = 'jas-pwa-dev-sw-unregistered'
 
 async function unregisterDevServiceWorkers() {
   if (!('serviceWorker' in navigator)) return
@@ -148,7 +98,7 @@ async function unregisterDevServiceWorkers() {
 
     await Promise.all(registrations.map((registration) => registration.unregister()))
 
-    await deleteJasBrowserCaches()
+    await deleteJasCacheStorage()
 
     const alreadyReloaded = sessionStorage.getItem(DEV_SW_RELOAD_FLAG) === '1'
 
@@ -181,9 +131,9 @@ export function PwaBootstrap() {
   const [pushMessage, setPushMessage] = useState('')
 
   useEffect(() => {
-    if (!hasForceCacheClearParam()) return
+    if (!hasPwaCacheResetParam()) return
 
-    void forceClearPwaCacheAndReload()
+    void clearJasPwaCache({ reload: true, reason: 'pwa-bootstrap-query-reset' })
   }, [])
 
   useEffect(() => {

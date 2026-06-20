@@ -10,6 +10,7 @@ import type { ReactNode } from 'react'
 import { Header } from '../components/layout/Header'
 import { NotFoundPage } from '../components/layout/NotFoundPage'
 import { PwaBootstrap } from '../components/layout/PwaBootstrap'
+import { AppUpdateReset } from '../components/pwa/AppUpdateReset'
 import { I18nProvider } from '../lib/i18n'
 import appCss from '../styles.css?url'
 
@@ -74,6 +75,7 @@ function RootComponent() {
         />
 
         <PwaBootstrap />
+        <AppUpdateReset />
         {!isPublicVerifyPage ? <Header compact={isCardPreviewPage} /> : null}
 
         <div className="animate-fade-up relative z-10">

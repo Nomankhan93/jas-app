@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'jas-pwa'
-const CACHE_VERSION = 'v5-cache-clear-fix'
+const CACHE_VERSION = 'v6-apk-cache-reset-fix'
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`
 const CORE_ASSETS = [
   '/offline.html',
@@ -8,7 +8,30 @@ const CORE_ASSETS = [
   '/icon-192.png',
 ]
 
-const ASSET_EXTENSIONS = /\.(?:css|js|mjs|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf)$/i
+const FORCE_CLEAR_PARAMS = [
+  'clear-pwa-cache',
+  'clearCache',
+  'reset-pwa-cache',
+  'resetApp',
+]
+const RESET_DONE_PARAM = 'pwa-cache-cleared'
+const SCRIPT_STYLE_EXTENSIONS = /\.(?:css|js|mjs)$/i
+const STATIC_ASSET_EXTENSIONS = /\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf)$/i
+
+function isForceClearUrl(url) {
+  return FORCE_CLEAR_PARAMS.some((param) => url.searchParams.has(param))
+}
+
+function buildResetRedirectUrl(url) {
+  const cleanUrl = new URL(url.href)
+
+  for (const param of FORCE_CLEAR_PARAMS) {
+    cleanUrl.searchParams.delete(param)
+  }
+
+  cleanUrl.searchParams.set(RESET_DONE_PARAM, Date.now().toString())
+  return cleanUrl.href
+}
 
 async function deleteOldJasCaches() {
   const keys = await caches.keys()
@@ -17,6 +40,11 @@ async function deleteOldJasCaches() {
       .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
       .map((key) => caches.delete(key)),
   )
+}
+
+async function deleteAllCacheStorage() {
+  const keys = await caches.keys()
+  await Promise.all(keys.map((key) => caches.delete(key)))
 }
 
 async function deleteAllJasCaches() {
@@ -33,16 +61,20 @@ async function precacheCoreAssets() {
   )
 }
 
-async function putInCache(request, response) {
+async function putInCache(cacheKeyRequest, response) {
   if (!response || !response.ok) return
 
   const cache = await caches.open(CACHE_NAME)
-  await cache.put(request, response.clone())
+  await cache.put(cacheKeyRequest, response.clone())
+}
+
+async function fetchNoStore(request) {
+  return fetch(new Request(request, { cache: 'no-store' }))
 }
 
 async function networkFirst(request, fallbackUrl) {
   try {
-    const response = await fetch(request)
+    const response = await fetchNoStore(request)
     await putInCache(request, response)
     return response
   } catch {
@@ -61,7 +93,7 @@ async function networkFirst(request, fallbackUrl) {
 async function cacheFirstWithBackgroundRefresh(request, event) {
   const cached = await caches.match(request)
 
-  const networkFetch = fetch(request)
+  const networkFetch = fetch(new Request(request, { cache: 'reload' }))
     .then(async (response) => {
       await putInCache(request, response)
       return response
@@ -101,7 +133,7 @@ self.addEventListener('message', (event) => {
 
   if (event.data?.type === 'CLEAR_JAS_CACHE') {
     event.waitUntil(
-      deleteAllJasCaches().then(() => {
+      deleteAllCacheStorage().then(() => self.registration.unregister()).then(() => {
         if (event.source) {
           event.source.postMessage({ type: 'JAS_CACHE_CLEARED' })
         }
@@ -117,6 +149,20 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
+  if (request.mode === 'navigate' && isForceClearUrl(url)) {
+    event.respondWith(
+      deleteAllCacheStorage()
+        .then(() => self.registration.unregister())
+        .then(() => Response.redirect(buildResetRedirectUrl(url), 302)),
+    )
+    return
+  }
+
+  if (url.pathname === '/sw.js') {
+    event.respondWith(fetchNoStore(request))
+    return
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request, '/offline.html'))
     return
@@ -125,14 +171,19 @@ self.addEventListener('fetch', (event) => {
   const isManifest = url.pathname === '/manifest.json'
   const isOfflinePage = url.pathname === '/offline.html'
   const isMutablePublicAsset = url.pathname.startsWith('/jas/') || isManifest || isOfflinePage
-  const isStaticBuildAsset = url.pathname.startsWith('/assets/') || ASSET_EXTENSIONS.test(url.pathname)
+  const isScriptOrStyle =
+    request.destination === 'script' ||
+    request.destination === 'style' ||
+    request.destination === 'worker' ||
+    SCRIPT_STYLE_EXTENSIONS.test(url.pathname)
+  const isStaticAsset = STATIC_ASSET_EXTENSIONS.test(url.pathname)
 
-  if (isMutablePublicAsset) {
+  if (isMutablePublicAsset || isScriptOrStyle) {
     event.respondWith(networkFirst(request))
     return
   }
 
-  if (isStaticBuildAsset) {
+  if (url.pathname.startsWith('/assets/') || isStaticAsset) {
     event.respondWith(cacheFirstWithBackgroundRefresh(request, event))
   }
 })
