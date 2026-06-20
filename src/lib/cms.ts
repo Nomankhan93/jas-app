@@ -100,7 +100,7 @@ export const cmsPublicPages: CmsPublicConfig[] = [
     fallbackSubtitle:
       'The constitutional structure, roles, responsibilities and organizational rules of JAS.',
     fallbackContent:
-      'The constitution defines JAS membership, organizational structure, Central Working Committee, district and taluka units, duties of office bearers, program management, finance rules, discipline, records and reporting.\n\nCurrent hierarchy:\nCentral / Markaz → District → Taluka\n\nThis page can be updated from the Admin CMS panel.',
+      'The constitution defines JAS membership, organizational structure, Central Executive Committee, Central Advisory Committee, provincial, divisional, district and taluka units, duties of office bearers, program management, finance rules, discipline, records and reporting.\n\nCurrent hierarchy:\nCEC → Advisory → Provincial → Divisional → District → Taluka\n\nThis page can be updated from the Admin CMS panel.',
   },
   {
     slug: 'cwc',

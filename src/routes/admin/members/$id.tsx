@@ -151,6 +151,7 @@ type AdminOfficeBearerAssignment = CommitteeMemberRecord & {
 
 type DesignationAssignmentLevel =
   | 'central-executive'
+  | 'central-advisory'
   | 'provincial'
   | 'divisional'
   | 'district'
@@ -161,6 +162,7 @@ const designationAssignmentLevelOptions: Array<{
   label: string
 }> = [
   { value: 'central-executive', label: 'Central Executive Committee' },
+  { value: 'central-advisory', label: 'Central Advisory Committee' },
   { value: 'provincial', label: 'Provincial' },
   { value: 'divisional', label: 'Divisional' },
   { value: 'district', label: 'District' },
@@ -186,6 +188,16 @@ const recommendedDesignationsByLevel: Record<DesignationAssignmentLevel, string[
     'Deputy General Secretary',
     'Office Secretary',
     'Media Coordinator',
+  ],
+  'central-advisory': [
+    'Chief Patron',
+    'Patron',
+    'Senior Advisor',
+    'Advisor',
+    'Legal Advisor',
+    'Media Advisor',
+    'Policy Advisor',
+    'Advisory Board Member',
   ],
   provincial: [
     'Provincial President',
@@ -1583,6 +1595,19 @@ function isCentralExecutiveCommittee(committee: CommitteeRecord) {
   )
 }
 
+function isCentralAdvisoryCommittee(committee: CommitteeRecord) {
+  const name = normalizeDesignationLevelText(committee.name)
+
+  return (
+    committee.committee_type === 'central_advisory' ||
+    (committee.committee_type === 'central' &&
+      (name.includes('central advisory') ||
+        name.includes('advisory committee') ||
+        name.includes('advisory board') ||
+        name.includes('advisor')))
+  )
+}
+
 function isProvincialCommittee(committee: CommitteeRecord) {
   const name = normalizeDesignationLevelText(committee.name)
 
@@ -1615,6 +1640,11 @@ function findCommitteeForDesignationLevel(
   if (level === 'central-executive') {
     const centralExecutive = activeCommittees.filter(isCentralExecutiveCommittee)
     return pickBestCommittee(centralExecutive, member)
+  }
+
+  if (level === 'central-advisory') {
+    const centralAdvisory = activeCommittees.filter(isCentralAdvisoryCommittee)
+    return pickBestCommittee(centralAdvisory, member)
   }
 
   if (level === 'provincial') {

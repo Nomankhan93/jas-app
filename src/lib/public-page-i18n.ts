@@ -43,7 +43,7 @@ const cmsFallbacks: Record<AppLanguage, Record<CmsPageSlug, CmsFallbackCopy>> = 
       subtitle:
         'The constitutional structure, roles, responsibilities and organizational rules of JAS.',
       content:
-        'The constitution defines JAS membership, organizational structure, Central Working Committee, divisional, district and taluka units, duties of office bearers, program management, finance rules, discipline, records and reporting.\n\nCurrent hierarchy:\nCentral / Markaz → Divisional → District → Taluka\n\nThis page can be updated from the Admin CMS panel.',
+        'The constitution defines JAS membership, organizational structure, Central Executive Committee, Central Advisory Committee, provincial, divisional, district and taluka units, duties of office bearers, program management, finance rules, discipline, records and reporting.\n\nCurrent hierarchy:\nCEC → Advisory → Provincial → Divisional → District → Taluka\n\nThis page can be updated from the Admin CMS panel.',
     },
     cwc: {
       eyebrow: 'Central Working Committee',
@@ -240,12 +240,14 @@ const committeesCopy = {
     eyebrow: 'Organization Structure',
     title: 'Public Committees',
     description:
-      'Publicly displayed Central, Divisional, District and Taluka committees of Jatt Alliance Sindh with official office bearers and tenure details.',
-    hierarchy: 'Central → Divisional → District → Taluka',
+      'Publicly displayed Central Executive, Central Advisory, Provincial, Divisional, District and Taluka committees of Jatt Alliance Sindh with official office bearers and tenure details.',
+    hierarchy: 'CEC → Advisory → Provincial → Divisional → District → Taluka',
     hierarchyText:
       'Only committees marked for public display are shown here. Internal or draft committee records remain restricted to administrators.',
     publicCommittees: 'Public Committees',
-    central: 'Central',
+    central: 'CEC',
+    centralAdvisory: 'Advisory',
+    provincial: 'Provincial',
     divisional: 'Divisional',
     district: 'District',
     taluka: 'Taluka',
@@ -276,12 +278,14 @@ const committeesCopy = {
     eyebrow: 'تنظیمی ڈھانچہ',
     title: 'عوامی کمیٹیاں',
     description:
-      'جٹ الائنس سندھ کی مرکزی، ڈویژنل، ضلعی اور تعلقہ کمیٹیاں، سرکاری عہدیداران اور مدت کی تفصیل کے ساتھ۔',
-    hierarchy: 'مرکز → ڈویژن → ضلع → تعلقہ',
+      'جٹ الائنس سندھ کی مرکزی ایگزیکٹو، مرکزی مشاورتی، صوبائی، ڈویژنل، ضلعی اور تعلقہ کمیٹیاں، سرکاری عہدیداران اور مدت کی تفصیل کے ساتھ۔',
+    hierarchy: 'CEC → Advisory → صوبہ → ڈویژن → ضلع → تعلقہ',
     hierarchyText:
       'صرف public display والی کمیٹیاں یہاں نظر آئیں گی۔ اندرونی یا draft کمیٹی ریکارڈ صرف ایڈمنز تک محدود رہیں گے۔',
     publicCommittees: 'عوامی کمیٹیاں',
-    central: 'مرکزی',
+    central: 'CEC',
+    centralAdvisory: 'مشاورتی',
+    provincial: 'صوبائی',
     divisional: 'ڈویژنل',
     district: 'ضلعی',
     taluka: 'تعلقہ',
@@ -312,12 +316,14 @@ const committeesCopy = {
     eyebrow: 'تنظيمي ڍانچو',
     title: 'عوامي ڪميٽيون',
     description:
-      'جٽ الائنس سنڌ جون مرڪزي، ڊويزنل، ضلعي ۽ تعلقي ڪميٽيون، سرڪاري عهديدارن ۽ مدت جي تفصيل سان۔',
-    hierarchy: 'مرڪز → ڊويزن → ضلعو → تعلقو',
+      'جٽ الائنس سنڌ جون مرڪزي ايگزيڪيوٽو، مرڪزي مشاورتي، صوبائي، ڊويزنل، ضلعي ۽ تعلقي ڪميٽيون، سرڪاري عهديدارن ۽ مدت جي تفصيل سان۔',
+    hierarchy: 'CEC → Advisory → صوبو → ڊويزن → ضلعو → تعلقو',
     hierarchyText:
       'صرف public display واريون ڪميٽيون هتي نظر اينديون. اندروني يا draft ڪميٽي رڪارڊ صرف ايڊمن تائين محدود رهندا۔',
     publicCommittees: 'عوامي ڪميٽيون',
-    central: 'مرڪزي',
+    central: 'CEC',
+    centralAdvisory: 'مشاورتي',
+    provincial: 'صوبائي',
     divisional: 'ڊويزنل',
     district: 'ضلعي',
     taluka: 'تعلقو',
@@ -442,6 +448,8 @@ export function getLocalizedCommitteeTypeLabel(
   labels: ReturnType<typeof usePublicPageCopy>['committees'],
 ) {
   if (type === 'central') return labels.central
+  if (type === 'central_advisory') return labels.centralAdvisory
+  if (type === 'provincial') return labels.provincial
   if (type === 'divisional') return labels.divisional
   if (type === 'district') return labels.district
   if (type === 'taluka') return labels.taluka

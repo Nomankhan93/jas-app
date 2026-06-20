@@ -1,17 +1,14 @@
 import { supabase } from './supabase/client'
 import {
+  formatTenure,
   getInitials,
   type PublicCommitteeMemberRecord,
   type PublicCommitteeRecord,
 } from './committees-public'
-import {
-  formatDesignationExpiry,
-  formatDesignationValidity,
-  isDesignationCurrentlyValid,
-} from './designation-validity'
 
 export const designationHolderLevelOrder = [
   'central',
+  'central_advisory',
   'provincial',
   'divisional',
   'district',
@@ -80,6 +77,8 @@ export function getDesignationHolderLevelLabel(level: string | null | undefined)
   switch (level) {
     case 'central':
       return 'CEC'
+    case 'central_advisory':
+      return 'Advisory'
     case 'provincial':
       return 'Provincial'
     case 'divisional':
@@ -100,6 +99,7 @@ export function getDesignationHolderLevelRank(level: string | null | undefined) 
 
 export function getDesignationHolderLocation(holder: Pick<PublicDesignationHolderRecord, 'level' | 'division' | 'district' | 'taluka'>) {
   if (holder.level === 'central') return 'Sindh / Central Executive Committee'
+  if (holder.level === 'central_advisory') return 'Sindh / Central Advisory Committee'
   if (holder.level === 'provincial') return 'Sindh / Provincial'
   if (holder.level === 'divisional') return holder.division || 'Division not set'
   if (holder.level === 'district') return holder.district || 'District not set'
@@ -138,12 +138,8 @@ export function sortDesignationHolders(holders: PublicDesignationHolderRecord[])
   })
 }
 
-export function formatDesignationHolderTenure(holder: Pick<PublicDesignationHolderRecord, 'tenure_start' | 'tenure_end' | 'assigned_at'>) {
-  return formatDesignationValidity(holder)
-}
-
-export function formatDesignationHolderExpiry(holder: Pick<PublicDesignationHolderRecord, 'tenure_start' | 'tenure_end' | 'assigned_at'>) {
-  return formatDesignationExpiry(holder)
+export function formatDesignationHolderTenure(holder: Pick<PublicDesignationHolderRecord, 'tenure_start' | 'tenure_end'>) {
+  return formatTenure(holder.tenure_start, holder.tenure_end)
 }
 
 export function getDesignationHolderInitials(name: string | null | undefined) {
@@ -154,9 +150,7 @@ export async function fetchPublicDesignationHolders() {
   const rpcResult = await supabase.rpc('get_public_designation_holders' as never)
 
   if (!rpcResult.error) {
-    const rows = ((rpcResult.data ?? []) as unknown as PublicDesignationHolderRecord[]).filter((holder) =>
-      isDesignationCurrentlyValid(holder),
-    )
+    const rows = (rpcResult.data ?? []) as unknown as PublicDesignationHolderRecord[]
     return attachSignedPhotoUrls(sortDesignationHolders(rows))
   }
 
@@ -227,7 +221,7 @@ async function fetchPublicDesignationHoldersFromSnapshots() {
     ]
   })
 
-  return sortDesignationHolders(rows.filter((holder) => isDesignationCurrentlyValid(holder)))
+  return sortDesignationHolders(rows)
 }
 
 function normalizeDesignationHolderLevel(level: string | null | undefined): DesignationHolderLevel {

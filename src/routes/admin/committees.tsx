@@ -161,7 +161,7 @@ function AdminCommitteesPage() {
         if (committee.status === 'active') acc.active += 1
         return acc
       },
-      { total: 0, central: 0, provincial: 0, divisional: 0, district: 0, taluka: 0, active: 0 },
+      { total: 0, central: 0, central_advisory: 0, provincial: 0, divisional: 0, district: 0, taluka: 0, active: 0 },
     )
   }, [committees])
 
@@ -200,9 +200,10 @@ function AdminCommitteesPage() {
           </div>
         </header>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-8">
           <SummaryCard label={copy.page.totalCommittees} value={stats.total} />
           <SummaryCard label={copy.page.central} value={stats.central} />
+          <SummaryCard label={copy.page.centralAdvisory} value={stats.central_advisory} />
           <SummaryCard label={copy.page.provincial} value={stats.provincial} />
           <SummaryCard label={copy.page.divisional} value={stats.divisional} />
           <SummaryCard label={copy.page.district} value={stats.district} />
@@ -251,11 +252,13 @@ function AdminCommitteesPage() {
                 <input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" placeholder="Central Executive Committee" />
               </Field>
 
-              {form.committeeType === 'central' || form.committeeType === 'provincial' ? (
+              {form.committeeType === 'central' || form.committeeType === 'central_advisory' || form.committeeType === 'provincial' ? (
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold leading-6 text-emerald-900">
                   {form.committeeType === 'central'
                     ? 'Central Executive Committee covers Sindh / Central level, so no area field is required.'
-                    : 'Provincial level covers Sindh / Provincial level, so no district or taluka field is required.'}
+                    : form.committeeType === 'central_advisory'
+                      ? 'Central Advisory Committee covers Sindh / Central advisory level, so no area field is required.'
+                      : 'Provincial level covers Sindh / Provincial level, so no district or taluka field is required.'}
                 </div>
               ) : null}
 
@@ -373,8 +376,17 @@ function AdminCommitteesPage() {
                     {committee.committee_type === 'taluka' ? (
                       <Info label={copy.page.taluka} value={committee.taluka ?? 'N/A'} />
                     ) : null}
-                    {committee.committee_type === 'central' || committee.committee_type === 'provincial' ? (
-                      <Info label="Area" value={committee.committee_type === 'central' ? 'Sindh / Central' : 'Sindh / Provincial'} />
+                    {committee.committee_type === 'central' || committee.committee_type === 'central_advisory' || committee.committee_type === 'provincial' ? (
+                      <Info
+                        label="Area"
+                        value={
+                          committee.committee_type === 'central'
+                            ? 'Sindh / Central Executive Committee'
+                            : committee.committee_type === 'central_advisory'
+                              ? 'Sindh / Central Advisory Committee'
+                              : 'Sindh / Provincial'
+                        }
+                      />
                     ) : null}
                     <Info label="Tenure" value={`${formatCommitteeDate(committee.tenure_start)} → ${formatCommitteeDate(committee.tenure_end)}`} />
                     <Info label="Members" value={String(committee.member_count ?? 0)} />

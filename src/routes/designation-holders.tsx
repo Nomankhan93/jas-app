@@ -14,7 +14,6 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   designationHolderLevelOrder,
   fetchPublicDesignationHolders,
-  formatDesignationHolderExpiry,
   formatDesignationHolderTenure,
   getDesignationHolderInitials,
   getDesignationHolderLevelLabel,
@@ -42,6 +41,7 @@ type PageCopy = {
   totalHolders: string
   activeLevels: string
   cec: string
+  centralAdvisory: string
   provincial: string
   divisional: string
   district: string
@@ -56,13 +56,11 @@ type PageCopy = {
   location: string
   memberId: string
   tenure: string
-  expiryDate: string
   committee: string
   notDisclosed: string
   listed: string
   activeDesignationHolders: string
   orderedBy: string
-  valid: string
   noPhoto: string
 }
 
@@ -76,10 +74,11 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     ctaCommittees: 'View Committees',
     publicDirectory: 'Public designation record',
     publicDirectoryText:
-      'Only currently valid holders from public active committees are shown here. Designation validity auto-expires one year from assignment date. The order follows CEC, Provincial, Divisional, District and Taluka levels.',
+      'Only active holders from public active committees are shown here. The order follows CEC, Central Advisory, Provincial, Divisional, District and Taluka levels.',
     totalHolders: 'Designation Holders',
     activeLevels: 'Active Levels',
     cec: 'CEC',
+    centralAdvisory: 'Advisory',
     provincial: 'Provincial',
     divisional: 'Divisional',
     district: 'District',
@@ -93,14 +92,12 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     level: 'Level',
     location: 'Area / Jurisdiction',
     memberId: 'Member ID',
-    tenure: 'Validity',
-    expiryDate: 'Expiry Date',
+    tenure: 'Tenure',
     committee: 'Committee',
     notDisclosed: 'Not disclosed',
     listed: 'listed',
     activeDesignationHolders: 'active designation holders',
     orderedBy: 'Ordered by official JAS hierarchy',
-    valid: 'Valid',
     noPhoto: 'Photo not available',
   },
   ur: {
@@ -112,10 +109,11 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     ctaCommittees: 'کمیٹیاں دیکھیں',
     publicDirectory: 'عوامی عہدہ ریکارڈ',
     publicDirectoryText:
-      'یہاں صرف active public committees کے currently valid designation holders show ہوتے ہیں۔ designation validity assignment date سے ایک سال بعد auto expire ہو جاتی ہے۔ ترتیب CEC، Provincial، Divisional، District اور Taluka ہے۔',
+      'یہاں صرف active public committees کے active designation holders show ہوتے ہیں۔ ترتیب CEC، Central Advisory، Provincial، Divisional، District اور Taluka ہے۔',
     totalHolders: 'عہدیداران',
     activeLevels: 'Active Levels',
     cec: 'CEC',
+    centralAdvisory: 'Advisory',
     provincial: 'Provincial',
     divisional: 'Divisional',
     district: 'District',
@@ -129,14 +127,12 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     level: 'Level',
     location: 'Area / Jurisdiction',
     memberId: 'Member ID',
-    tenure: 'Validity',
-    expiryDate: 'Expiry Date',
+    tenure: 'Tenure',
     committee: 'Committee',
     notDisclosed: 'Not disclosed',
     listed: 'listed',
     activeDesignationHolders: 'active designation holders',
     orderedBy: 'Official JAS hierarchy کے مطابق ترتیب',
-    valid: 'Valid',
     noPhoto: 'Photo not available',
   },
   sd: {
@@ -148,10 +144,11 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     ctaCommittees: 'ڪميٽيون ڏسو',
     publicDirectory: 'عوامي عھدو رڪارڊ',
     publicDirectoryText:
-      'هتي صرف active public committees جا currently valid designation holders show ٿين ٿا. designation validity assignment date کان هڪ سال پوءِ auto expire ٿئي ٿي. ترتيب CEC، Provincial، Divisional، District ۽ Taluka آهي.',
+      'هتي صرف active public committees جا active designation holders show ٿين ٿا. ترتيب CEC، Central Advisory، Provincial، Divisional، District ۽ Taluka آهي.',
     totalHolders: 'عهديدار',
     activeLevels: 'Active Levels',
     cec: 'CEC',
+    centralAdvisory: 'Advisory',
     provincial: 'Provincial',
     divisional: 'Divisional',
     district: 'District',
@@ -165,14 +162,12 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     level: 'Level',
     location: 'Area / Jurisdiction',
     memberId: 'Member ID',
-    tenure: 'Validity',
-    expiryDate: 'Expiry Date',
+    tenure: 'Tenure',
     committee: 'Committee',
     notDisclosed: 'Not disclosed',
     listed: 'listed',
     activeDesignationHolders: 'active designation holders',
     orderedBy: 'Official JAS hierarchy مطابق ترتيب',
-    valid: 'Valid',
     noPhoto: 'Photo not available',
   },
 }
@@ -278,10 +273,11 @@ function DesignationHoldersPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
           <StatCard label={copy.totalHolders} value={stats.total} />
           <StatCard label={copy.activeLevels} value={stats.activeLevels} />
           <StatCard label={copy.cec} value={holders.filter((holder) => holder.level === 'central').length} />
+          <StatCard label={copy.centralAdvisory} value={holders.filter((holder) => holder.level === 'central_advisory').length} />
           <StatCard label={copy.district} value={holders.filter((holder) => holder.level === 'district').length} />
           <StatCard label={copy.taluka} value={holders.filter((holder) => holder.level === 'taluka').length} />
         </section>
@@ -373,7 +369,7 @@ function DesignationHolderCard({ holder, copy }: { holder: PublicDesignationHold
               {getDesignationHolderLevelLabel(holder.level)}
             </span>
             <span className="rounded-full bg-amber-50 px-3 py-1 text-[0.67rem] font-black uppercase tracking-wide text-amber-800 ring-1 ring-amber-100">
-              {copy.valid}
+              Active
             </span>
           </div>
           <h3 className="mt-3 text-xl font-black leading-tight text-slate-950">{holder.full_name}</h3>
@@ -390,7 +386,6 @@ function DesignationHolderCard({ holder, copy }: { holder: PublicDesignationHold
         <InfoLine icon={<Users size={15} />} label={copy.committee} value={holder.committee_name} />
         <InfoLine icon={<IdCard size={15} />} label={copy.memberId} value={holder.member_no || copy.notDisclosed} />
         <InfoLine icon={<CalendarDays size={15} />} label={copy.tenure} value={formatDesignationHolderTenure(holder)} />
-        <InfoLine icon={<CalendarDays size={15} />} label={copy.expiryDate} value={formatDesignationHolderExpiry(holder)} />
       </div>
     </article>
   )
@@ -432,6 +427,8 @@ function getLocalizedLevelLabel(level: DesignationHolderLevel, copy: PageCopy) {
   switch (level) {
     case 'central':
       return copy.cec
+    case 'central_advisory':
+      return copy.centralAdvisory
     case 'provincial':
       return copy.provincial
     case 'divisional':

@@ -1,8 +1,8 @@
 import { supabase } from './supabase/client'
-import { getDefaultDesignationValidity } from './designation-validity'
 
 export const committeeTypeOptions = [
   { value: 'central', label: 'Central Executive Committee' },
+  { value: 'central_advisory', label: 'Central Advisory Committee' },
   { value: 'provincial', label: 'Provincial' },
   { value: 'divisional', label: 'Divisional' },
   { value: 'district', label: 'District' },
@@ -17,7 +17,8 @@ export const committeeStatusOptions = [
 ] as const
 
 export const designationScopeOptions = [
-  { value: 'central', label: 'Central' },
+  { value: 'central', label: 'Central Executive' },
+  { value: 'central_advisory', label: 'Central Advisory' },
   { value: 'provincial', label: 'Provincial' },
   { value: 'divisional', label: 'Divisional' },
   { value: 'district', label: 'District' },
@@ -162,7 +163,8 @@ export function getCommitteeStatusClass(value: string | null | undefined) {
 export function getCommitteeLocationLabel(
   committee: Pick<CommitteeRecord, 'committee_type' | 'division' | 'district' | 'taluka'>,
 ) {
-  if (committee.committee_type === 'central') return 'Sindh / Central'
+  if (committee.committee_type === 'central') return 'Sindh / Central Executive Committee'
+  if (committee.committee_type === 'central_advisory') return 'Sindh / Central Advisory Committee'
   if (committee.committee_type === 'provincial') return 'Sindh / Provincial'
   if (committee.committee_type === 'divisional') {
     return committee.division || 'Division not set'
@@ -437,7 +439,6 @@ export async function addCommitteeMember(input: {
   appointment_notes: string | null
 }) {
   const userId = await getCurrentUserId()
-  const validity = getDefaultDesignationValidity(input.tenure_start)
 
   const { error } = await supabase.from('organization_committee_members' as never).insert({
     committee_id: input.committee_id,
@@ -446,8 +447,8 @@ export async function addCommitteeMember(input: {
     designation_title: input.designation_title,
     status: input.status,
     sort_order: input.sort_order,
-    tenure_start: input.tenure_start || validity.validFrom,
-    tenure_end: validity.expiresOn,
+    tenure_start: input.tenure_start,
+    tenure_end: input.tenure_end,
     appointment_notes: input.appointment_notes,
     member_no_snapshot: input.member.member_no,
     full_name_snapshot: input.member.full_name,
@@ -474,14 +475,11 @@ export async function updateCommitteeMember(
   },
 ) {
   const userId = await getCurrentUserId()
-  const validity = getDefaultDesignationValidity(input.tenure_start)
 
   const { error } = await supabase
     .from('organization_committee_members' as never)
     .update({
       ...input,
-      tenure_start: input.tenure_start || validity.validFrom,
-      tenure_end: validity.expiresOn,
       updated_by: userId,
       updated_at: new Date().toISOString(),
     } as never)

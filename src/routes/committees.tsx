@@ -18,7 +18,7 @@ export const Route = createFileRoute('/committees')({
   component: PublicCommitteesPage,
 })
 
-type CommitteeFilter = 'all' | 'central' | 'divisional' | 'district' | 'taluka'
+type CommitteeFilter = 'all' | 'central' | 'central_advisory' | 'provincial' | 'divisional' | 'district' | 'taluka'
 
 function PublicCommitteesPage() {
   const publicCopy = usePublicPageCopy()
@@ -83,13 +83,15 @@ function PublicCommitteesPage() {
         acc.total += 1
         const committeeType = String(committee.committee_type)
         if (committeeType === 'central') acc.central += 1
+        if (committeeType === 'central_advisory') acc.centralAdvisory += 1
+        if (committeeType === 'provincial') acc.provincial += 1
         if (committeeType === 'divisional') acc.divisional += 1
         if (committeeType === 'district') acc.district += 1
         if (committeeType === 'taluka') acc.taluka += 1
         acc.members += committee.member_count ?? 0
         return acc
       },
-      { total: 0, central: 0, divisional: 0, district: 0, taluka: 0, members: 0 },
+      { total: 0, central: 0, centralAdvisory: 0, provincial: 0, divisional: 0, district: 0, taluka: 0, members: 0 },
     )
   }, [committees])
 
@@ -130,9 +132,11 @@ function PublicCommitteesPage() {
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-8">
           <StatCard label={publicCopy.committees.publicCommittees} value={stats.total} />
           <StatCard label={publicCopy.committees.central} value={stats.central} />
+          <StatCard label={publicCopy.committees.centralAdvisory} value={stats.centralAdvisory} />
+          <StatCard label={publicCopy.committees.provincial} value={stats.provincial} />
           <StatCard label={publicCopy.committees.divisional} value={stats.divisional} />
           <StatCard label={publicCopy.committees.district} value={stats.district} />
           <StatCard label={publicCopy.committees.taluka} value={stats.taluka} />
@@ -158,6 +162,8 @@ function PublicCommitteesPage() {
             >
               <option value="all">{publicCopy.committees.allCommittees}</option>
               <option value="central">{publicCopy.committees.central}</option>
+              <option value="central_advisory">{publicCopy.committees.centralAdvisory}</option>
+              <option value="provincial">{publicCopy.committees.provincial}</option>
               <option value="divisional">{publicCopy.committees.divisional}</option>
               <option value="district">{publicCopy.committees.district}</option>
               <option value="taluka">{publicCopy.committees.taluka}</option>
