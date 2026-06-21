@@ -127,6 +127,8 @@ type AdminQuickActionConfig = {
 
 const ADMIN_MEMBERS_PAGE_SIZE = 50
 const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200
+const MEMBER_PHOTO_BUCKET = 'member-photos'
+const MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60
 
 const adminDashboardDedupeCopy = {
   en: {
@@ -277,6 +279,7 @@ function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [members, setMembers] = useState<Member[]>([])
+  const [memberPhotoUrls, setMemberPhotoUrls] = useState<Record<string, string>>({})
   const [memberResultCount, setMemberResultCount] = useState(0)
   const [memberPage, setMemberPage] = useState(0)
   const [adminRoles, setAdminRoles] = useState<AdminRoleName[]>([])
@@ -476,6 +479,45 @@ function AdminPage() {
       cancelledRef.current = true
     }
   }, [isNestedAdminPage, loadAdmin])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const membersWithPhotos = members.filter((member) => Boolean(member.photo_url))
+
+    if (membersWithPhotos.length === 0) {
+      setMemberPhotoUrls({})
+      return () => {
+        cancelled = true
+      }
+    }
+
+    async function loadMemberPhotoUrls() {
+      const entries = await Promise.all(
+        membersWithPhotos.map(async (member) => {
+          const signedUrl = await createAdminMemberPhotoSignedUrl(member.photo_url)
+
+          if (!signedUrl) return null
+
+          return [member.id, signedUrl] as const
+        }),
+      )
+
+      if (cancelled) return
+
+      setMemberPhotoUrls(
+        Object.fromEntries(
+          entries.filter((entry): entry is readonly [string, string] => Boolean(entry)),
+        ),
+      )
+    }
+
+    void loadMemberPhotoUrls()
+
+    return () => {
+      cancelled = true
+    }
+  }, [members])
 
   const stats = useMemo(() => {
     return members.reduce(
@@ -940,6 +982,7 @@ function AdminPage() {
               <MobileMemberCard
                 key={member.id}
                 member={member}
+                photoUrl={memberPhotoUrls[member.id]}
                 showSensitive={showSensitive}
               />
             ))}
@@ -976,7 +1019,7 @@ function AdminPage() {
                   >
                     <td className="px-4 py-3">
                       <MemberPhoto
-                        src={undefined}
+                        src={memberPhotoUrls[member.id]}
                         alt={member.full_name}
                         className="h-12 w-12 rounded-xl object-cover object-top ring-1 ring-slate-200"
                         fallbackClassName="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
@@ -1339,9 +1382,11 @@ function getQuickActionTone(tone: AdminQuickActionConfig['tone']) {
 
 function MobileMemberCard({
   member,
+  photoUrl,
   showSensitive,
 }: {
   member: Member
+  photoUrl?: string
   showSensitive: boolean
 }) {
   const copy = useAdminDashboardCopy()
@@ -1350,7 +1395,7 @@ function MobileMemberCard({
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <MemberPhoto
-          src={undefined}
+          src={photoUrl}
           alt={member.full_name}
           className="h-14 w-14 shrink-0 rounded-xl object-cover object-top ring-1 ring-slate-200"
           fallbackClassName="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200"
@@ -1565,11 +1610,26 @@ function MemberPhoto({
   fallbackClassName: string
   fallbackText: ReactNode
 }) {
-  if (!src) {
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    setFailed(false)
+  }, [src])
+
+  if (!src || failed) {
     return <div className={fallbackClassName}>{fallbackText}</div>
   }
 
-  return <img src={src} alt={alt} className={className} />
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 function EmptyState({
@@ -1624,6 +1684,25 @@ function StatusBadge({ status }: { status: MemberStatus }) {
       {item.text}
     </span>
   )
+}
+
+async function createAdminMemberPhotoSignedUrl(photoPath: string | null) {
+  if (!photoPath) return null
+
+  if (/^https?:\/\//i.test(photoPath)) {
+    return photoPath
+  }
+
+  const { data, error } = await supabase.storage
+    .from(MEMBER_PHOTO_BUCKET)
+    .createSignedUrl(photoPath, MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS)
+
+  if (error || !data?.signedUrl) {
+    console.warn('Admin member photo could not be loaded:', error?.message ?? photoPath)
+    return null
+  }
+
+  return data.signedUrl
 }
 
 async function ensureAdminAccess(): Promise<AdminAccessResult> {

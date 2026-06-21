@@ -5,24 +5,33 @@ import {
   hasPwaCacheResetParam,
 } from '../../lib/pwa-cache-reset'
 
-function isStandaloneDisplay() {
-  if (typeof window === 'undefined') return false
-
-  const navigatorWithStandalone = window.navigator as Navigator & {
-    standalone?: boolean
-  }
-
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    navigatorWithStandalone.standalone === true
-  )
-}
+const RESET_HELPER_DISMISSED_KEY = 'jas-app-reset-helper-dismissed-v3'
 
 function shouldForceShowReset() {
   if (typeof window === 'undefined') return false
 
   const url = new URL(window.location.href)
   return url.searchParams.has('show-cache-reset') || url.searchParams.has('debug-pwa')
+}
+
+function wasDismissed() {
+  if (typeof window === 'undefined') return false
+
+  try {
+    return window.localStorage.getItem(RESET_HELPER_DISMISSED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function markDismissed() {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(RESET_HELPER_DISMISSED_KEY, '1')
+  } catch {
+    // Ignore storage failures. The close button should still hide the helper.
+  }
 }
 
 export function AppUpdateReset() {
@@ -38,16 +47,22 @@ export function AppUpdateReset() {
       return
     }
 
-    const shouldShow = isStandaloneDisplay() || shouldForceShowReset()
-    if (!shouldShow) return
+    // This helper is intentionally NOT shown automatically anymore.
+    // The old behavior displayed it in every installed APK/PWA session, which
+    // made users think the app was still outdated even after a successful update.
+    if (!shouldForceShowReset() || wasDismissed()) return
 
-    const timer = window.setTimeout(() => setVisible(true), 4500)
-    return () => window.clearTimeout(timer)
+    setVisible(true)
   }, [])
 
   async function handleResetClick() {
     setIsResetting(true)
     await clearJasPwaCache({ reload: true, reason: 'manual-reset' })
+  }
+
+  function handleClose() {
+    markDismissed()
+    setVisible(false)
   }
 
   if (!visible) return null
@@ -76,7 +91,7 @@ export function AppUpdateReset() {
         <button
           type="button"
           className="jas-app-reset__close"
-          onClick={() => setVisible(false)}
+          onClick={handleClose}
           aria-label="Hide app reset helper"
         >
           ×
