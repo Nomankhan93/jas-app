@@ -122,11 +122,11 @@ function CardFront({
                 <img
                   src={photoUrl}
                   alt={`${member.full_name} profile photo`}
-                  className="h-[250px] w-[250px] rounded-[1.9rem] border-4 border-white object-cover object-top"
+                  className="h-[260px] w-[260px] rounded-[1.9rem] border-4 border-white object-cover object-top"
                   draggable={false}
                 />
               ) : (
-                <div className="flex h-[250px] w-[250px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
+                <div className="flex h-[260px] w-[260px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
                   No photo
                 </div>
               )}
@@ -140,10 +140,6 @@ function CardFront({
                 {member.member_no || 'Not issued'}
               </p>
             </div>
-
-            {cardDesignations.length ? (
-              <CardDesignationPanel designations={cardDesignations} />
-            ) : null}
           </section>
 
           <section className="flex flex-col justify-between">
@@ -171,15 +167,7 @@ function CardFront({
               <Info label="Status" value="Approved" />
             </div>
 
-            <div className="rounded-[1.4rem] border border-slate-200 bg-white/90 px-5 py-4 shadow-sm">
-              <p className="text-[13px] font-black uppercase tracking-[0.18em] text-slate-500">
-                Verification Notice
-              </p>
-              <p className="mt-2 text-[15px] font-semibold leading-6 text-slate-700">
-                This card is valid only when the QR verification page confirms
-                the current membership status.
-              </p>
-            </div>
+            <CardDesignationPanel designations={cardDesignations} />
           </section>
 
           <QrPanel
@@ -202,52 +190,69 @@ function CardDesignationPanel({
 }: {
   designations: MemberCardDesignation[]
 }) {
-  const isSingle = designations.length === 1
+  const isSingle = designations.length <= 1
 
   return (
-    <div
-      className={`rounded-[1.2rem] border border-emerald-200 bg-emerald-50/95 text-center shadow-sm ${
-        isSingle ? 'px-3 py-3' : 'px-3 py-2'
-      }`}
-    >
-      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
-        JAS Designations
-      </p>
+    <div className="rounded-[1.4rem] border border-emerald-100 bg-white/95 px-5 py-3.5 shadow-sm ring-1 ring-slate-100">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] font-black uppercase tracking-[0.2em] text-emerald-700">
+          JAS Designations
+        </p>
+        {designations.length > 1 ? (
+          <p className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-700 ring-1 ring-emerald-100">
+            Multiple Roles
+          </p>
+        ) : null}
+      </div>
 
-      <div className={isSingle ? 'mt-2' : 'mt-1.5 space-y-1'}>
-        {designations.map((designation) => {
-          const level = [designation.committeeLevelLabel, designation.committeeLocationLabel]
-            .filter(Boolean)
-            .join(' · ')
+      {designations.length ? (
+        <div className={`mt-2.5 grid gap-3 ${isSingle ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {designations.map((designation) => {
+            const level = [
+              designation.committeeLevelLabel,
+              designation.committeeLocationLabel,
+            ]
+              .filter(Boolean)
+              .join(' · ')
 
-          return (
-            <div
-              key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
-              className={`flex flex-col items-center justify-center rounded-xl bg-white/80 px-2.5 py-1 ring-1 ring-emerald-100 ${
-                isSingle ? 'min-h-[72px]' : 'min-h-[49px]'
-              }`}
-            >
-              <p
-                className={`line-clamp-1 w-full break-words font-black leading-tight text-slate-950 ${
-                  isSingle ? 'text-[17px]' : 'text-[13.5px]'
+            return (
+              <div
+                key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
+                className={`flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50/55 px-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
+                  isSingle ? 'min-h-[82px] py-3' : 'min-h-[70px] py-2.5'
                 }`}
               >
-                {designation.title}
-              </p>
-
-              {level ? (
                 <p
-                  className={`mt-1 line-clamp-1 w-full break-words font-black uppercase tracking-wide text-emerald-800 ${
-                    isSingle ? 'text-[9.5px]' : 'text-[8.5px]'
+                  className={`line-clamp-1 w-full break-words font-black leading-tight text-slate-950 ${
+                    isSingle ? 'text-[22px]' : 'text-[16px]'
                   }`}
                 >
-                  {level}
+                  {designation.title}
                 </p>
-              ) : null}
-            </div>
-          )
-        })}
-      </div>
+
+                {level ? (
+                  <p
+                    className={`mt-1.5 line-clamp-1 w-full break-words font-black uppercase tracking-wide text-emerald-800 ${
+                      isSingle ? 'text-[11px]' : 'text-[9px]'
+                    }`}
+                  >
+                    {level}
+                  </p>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="mt-2.5 flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50/55 px-4 py-3 text-center">
+          <p className="text-[21px] font-black leading-tight text-slate-950">
+            JAS Member
+          </p>
+          <p className="mt-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
+            Approved membership record
+          </p>
+        </div>
+      )}
     </div>
   )
 }
