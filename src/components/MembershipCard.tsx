@@ -115,18 +115,18 @@ function CardFront({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-        <div className="relative grid h-full grid-cols-[270px_1fr_230px] gap-8 p-8">
-          <section className="space-y-3">
-            <div className="rounded-[2.2rem] bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-500 p-[5px] shadow-xl">
+        <div className="relative grid h-full grid-cols-[286px_1fr_220px] gap-7 p-8">
+          <section className="flex min-h-0 flex-col gap-3">
+            <div className="mx-auto rounded-[2.2rem] bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-500 p-[5px] shadow-xl">
               {photoUrl ? (
                 <img
                   src={photoUrl}
                   alt={`${member.full_name} profile photo`}
-                  className="h-[224px] w-[224px] rounded-[1.9rem] border-4 border-white object-cover object-top"
+                  className="h-[250px] w-[250px] rounded-[1.9rem] border-4 border-white object-cover object-top"
                   draggable={false}
                 />
               ) : (
-                <div className="flex h-[224px] w-[224px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
+                <div className="flex h-[250px] w-[250px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
                   No photo
                 </div>
               )}
@@ -142,28 +142,7 @@ function CardFront({
             </div>
 
             {cardDesignations.length ? (
-              <div className="rounded-[1.1rem] border border-emerald-200 bg-emerald-50/95 px-3 py-2 text-center shadow-sm">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
-                  JAS Designations
-                </p>
-                <div className="mt-1.5 space-y-1">
-                  {cardDesignations.map((designation) => (
-                    <div
-                      key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
-                      className="rounded-xl bg-white/70 px-2 py-1 ring-1 ring-emerald-100"
-                    >
-                      <p className="line-clamp-1 break-words text-[14px] font-black leading-tight text-slate-950">
-                        {designation.title}
-                      </p>
-                      <p className="mt-0.5 line-clamp-1 break-words text-[8.5px] font-black uppercase tracking-wide text-emerald-800">
-                        {[designation.committeeLevelLabel, designation.committeeLocationLabel]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <CardDesignationPanel designations={cardDesignations} />
             ) : null}
           </section>
 
@@ -215,6 +194,61 @@ function CardFront({
         confirms the current membership record.
       </CardFooter>
     </>
+  )
+}
+
+function CardDesignationPanel({
+  designations,
+}: {
+  designations: MemberCardDesignation[]
+}) {
+  const isSingle = designations.length === 1
+
+  return (
+    <div
+      className={`rounded-[1.2rem] border border-emerald-200 bg-emerald-50/95 text-center shadow-sm ${
+        isSingle ? 'px-3 py-3' : 'px-3 py-2'
+      }`}
+    >
+      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
+        JAS Designations
+      </p>
+
+      <div className={isSingle ? 'mt-2' : 'mt-1.5 space-y-1'}>
+        {designations.map((designation) => {
+          const level = [designation.committeeLevelLabel, designation.committeeLocationLabel]
+            .filter(Boolean)
+            .join(' · ')
+
+          return (
+            <div
+              key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
+              className={`flex flex-col items-center justify-center rounded-xl bg-white/80 px-2.5 py-1 ring-1 ring-emerald-100 ${
+                isSingle ? 'min-h-[72px]' : 'min-h-[49px]'
+              }`}
+            >
+              <p
+                className={`line-clamp-1 w-full break-words font-black leading-tight text-slate-950 ${
+                  isSingle ? 'text-[17px]' : 'text-[13.5px]'
+                }`}
+              >
+                {designation.title}
+              </p>
+
+              {level ? (
+                <p
+                  className={`mt-1 line-clamp-1 w-full break-words font-black uppercase tracking-wide text-emerald-800 ${
+                    isSingle ? 'text-[9.5px]' : 'text-[8.5px]'
+                  }`}
+                >
+                  {level}
+                </p>
+              ) : null}
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
