@@ -75,6 +75,10 @@ type VerifyPageText = {
   statusRejected: string
   statusUnknown: string
   notAvailable: string
+  designation: string
+  designationArea: string
+  designationValidity: string
+  designationExpiry: string
 }
 
 const verifyPageText: Record<AppLanguage, VerifyPageText> = {
@@ -125,6 +129,10 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     statusRejected: 'Rejected',
     statusUnknown: 'Unknown',
     notAvailable: 'N/A',
+    designation: 'Designation',
+    designationArea: 'Designation Area',
+    designationValidity: 'Designation Validity',
+    designationExpiry: 'Designation Expiry',
   },
   ur: {
     loading: 'ممبرشپ تصدیق ہو رہی ہے...',
@@ -173,6 +181,10 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     statusRejected: 'رد شدہ',
     statusUnknown: 'نامعلوم',
     notAvailable: 'دستیاب نہیں',
+    designation: 'Designation',
+    designationArea: 'Designation Area',
+    designationValidity: 'Designation Validity',
+    designationExpiry: 'Designation Expiry',
   },
   sd: {
     loading: 'ميمبرشپ تصديق ٿي رهي آهي...',
@@ -221,6 +233,10 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     statusRejected: 'رد ٿيل',
     statusUnknown: 'نامعلوم',
     notAvailable: 'دستياب ناهي',
+    designation: 'Designation',
+    designationArea: 'Designation Area',
+    designationValidity: 'Designation Validity',
+    designationExpiry: 'Designation Expiry',
   },
 }
 
@@ -237,19 +253,16 @@ type VerifyResult = {
     approved_at: string | null
   } | null
   photoSignedUrl: string | null
-  activeDesignation: VerifyDesignation | null
-  activeDesignations: VerifyDesignation[]
-}
-
-type VerifyDesignation = {
-  title: string
-  committeeName: string | null
-  level: string | null
-  location: string | null
-  validFrom?: string | null
-  expiresOn?: string | null
-  validity?: string
-  expiryDate?: string | null
+  activeDesignation: {
+    title: string
+    committeeName: string | null
+    level: string | null
+    location: string | null
+    validFrom: string | null
+    expiresOn: string | null
+    validity: string
+    expiryDate: string
+  } | null
 }
 
 function VerifyMemberPage() {
@@ -493,34 +506,30 @@ function VerifyMemberPage() {
                     value={result.member.member_no ?? text.notAvailable}
                   />
                   <Info label={text.status} value={text.approvedVerified} />
-                  {getVerifiedDesignations(result).length ? (
-                    <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-100 md:col-span-2">
-                      <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                        Designations
-                      </p>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        {getVerifiedDesignations(result).map((designation) => (
-                          <div
-                            key={`${designation.title}-${designation.committeeName ?? designation.level ?? ''}`}
-                            className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100"
-                          >
-                            <p className="break-words text-sm font-black text-slate-950">
-                              {designation.title}
-                            </p>
-                            <p className="mt-1 break-words text-xs font-bold text-slate-600">
-                              {[designation.level, designation.location]
-                                .filter(Boolean)
-                                .join(' · ')}
-                            </p>
-                            {designation.validity ? (
-                              <p className="mt-2 text-xs font-black text-emerald-700">
-                                {designation.validity}
-                              </p>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                  {result.activeDesignation ? (
+                    <>
+                      <Info
+                        label={text.designation}
+                        value={result.activeDesignation.title}
+                      />
+                      <Info
+                        label={text.designationArea}
+                        value={[
+                          result.activeDesignation.level,
+                          result.activeDesignation.location,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      />
+                      <Info
+                        label={text.designationValidity}
+                        value={result.activeDesignation.validity}
+                      />
+                      <Info
+                        label={text.designationExpiry}
+                        value={result.activeDesignation.expiryDate}
+                      />
+                    </>
                   ) : null}
                   <Info label={text.district} value={result.member.district} />
                   <Info
@@ -727,36 +736,6 @@ function Info({
       </p>
     </div>
   )
-}
-
-
-function getVerifiedDesignations(result: VerifyResult | null) {
-  if (!result) return []
-
-  const designations = [
-    ...(result.activeDesignations ?? []),
-    ...(result.activeDesignation ? [result.activeDesignation] : []),
-  ]
-
-  const seen = new Set<string>()
-  const unique: VerifyDesignation[] = []
-
-  for (const designation of designations) {
-    const title = designation.title?.trim()
-    if (!title) continue
-
-    const key = [title, designation.committeeName, designation.level, designation.location]
-      .filter(Boolean)
-      .join('|')
-      .toLowerCase()
-
-    if (seen.has(key)) continue
-
-    seen.add(key)
-    unique.push({ ...designation, title })
-  }
-
-  return unique
 }
 
 function formatDate(value: string | null) {

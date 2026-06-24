@@ -1,7 +1,7 @@
 // src/routes/admin/members/$id/card.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ReactNode, RefObject } from 'react'
+import type { ReactNode } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -28,7 +28,7 @@ import {
 import { supabase } from '../../../../lib/supabase/client'
 import { exportElementAsPng } from '../../../../lib/shared/card-export'
 import { generateQrDataUrl } from '../../../../lib/shared/qrcode'
-import { fetchActiveMemberCardDesignations } from '../../../../lib/member-card-designation'
+import { fetchActiveMemberCardDesignation } from '../../../../lib/member-card-designation'
 
 export const Route = createFileRoute('/admin/members/$id/card')({
   component: AdminMemberCardPage,
@@ -105,7 +105,7 @@ function AdminMemberCardPage() {
       try {
         const access = await ensureAdminAccess()
 
-        if (access.ok === false) {
+        if (!access.ok) {
           await navigate({ to: access.redirectTo })
           return
         }
@@ -124,14 +124,13 @@ function AdminMemberCardPage() {
           throw new Error('Member record not found.')
         }
 
-        const activeDesignations = await fetchActiveMemberCardDesignations(data.id, 2)
-        const memberWithDesignations = {
+        const activeDesignation = await fetchActiveMemberCardDesignation(data.id)
+        const memberWithDesignation = {
           ...data,
-          activeDesignation: activeDesignations[0] ?? null,
-          activeDesignations,
+          activeDesignation,
         }
 
-        setMember(memberWithDesignations)
+        setMember(memberWithDesignation)
 
         if (data.status !== 'approved' || !data.member_no) {
           setPhotoUrl(null)
@@ -663,8 +662,8 @@ function ExportCards({
   flagUrl: string | null
   qrUrl: string | null
   verifyUrl: string
-  frontRef: RefObject<HTMLDivElement | null>
-  backRef: RefObject<HTMLDivElement | null>
+  frontRef: React.RefObject<HTMLDivElement | null>
+  backRef: React.RefObject<HTMLDivElement | null>
 }) {
   return (
     <div

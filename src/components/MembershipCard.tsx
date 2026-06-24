@@ -1,8 +1,7 @@
 // src/components/MembershipCard.tsx
 import type { ReactNode } from 'react'
 import {
-  getMemberDesignationList,
-  getMemberDesignationSummary,
+  getMemberDesignationTitle,
   type MemberCardDesignation,
 } from '../lib/member-card-designation'
 
@@ -36,7 +35,6 @@ export type MembershipCardMember = {
   emergency_contact_mobile: string | null
   declaration_accepted: boolean
   activeDesignation?: MemberCardDesignation | null
-  activeDesignations?: MemberCardDesignation[] | null
 }
 
 type MembershipCardProps = {
@@ -100,7 +98,7 @@ function CardFront({
   verifyUrl,
 }: Omit<MembershipCardProps, 'side'>) {
   const profession = member.profession || 'Not provided'
-  const cardDesignations = getMemberDesignationList(member, 2)
+  const designationTitle = getMemberDesignationTitle(member.activeDesignation)
 
   return (
     <>
@@ -116,53 +114,39 @@ function CardFront({
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
         <div className="relative grid h-full grid-cols-[270px_1fr_230px] gap-8 p-8">
-          <section className="space-y-3">
+          <section className="space-y-4">
             <div className="rounded-[2.2rem] bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-500 p-[5px] shadow-xl">
               {photoUrl ? (
                 <img
                   src={photoUrl}
                   alt={`${member.full_name} profile photo`}
-                  className="h-[224px] w-[224px] rounded-[1.9rem] border-4 border-white object-cover object-top"
+                  className="h-[250px] w-[250px] rounded-[1.9rem] border-4 border-white object-cover object-top"
                   draggable={false}
                 />
               ) : (
-                <div className="flex h-[224px] w-[224px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
+                <div className="flex h-[250px] w-[250px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[16px] font-bold text-slate-500">
                   No photo
                 </div>
               )}
             </div>
 
-            <div className="rounded-[1.35rem] border border-yellow-400 bg-slate-950 px-4 py-3 text-center shadow-lg">
-              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-yellow-300">
+            <div className="rounded-[1.5rem] border border-yellow-400 bg-slate-950 px-5 py-4 text-center shadow-lg">
+              <p className="text-[13px] font-black uppercase tracking-[0.22em] text-yellow-300">
                 Member No
               </p>
-              <p className="mt-1.5 break-all text-[20px] font-black leading-tight text-white">
+              <p className="mt-2 break-all text-[22px] font-black leading-tight text-white">
                 {member.member_no || 'Not issued'}
               </p>
             </div>
 
-            {cardDesignations.length ? (
-              <div className="rounded-[1.1rem] border border-emerald-200 bg-emerald-50/95 px-3 py-2 text-center shadow-sm">
+            {designationTitle ? (
+              <div className="rounded-[1.1rem] border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-center shadow-sm">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-700">
-                  JAS Designations
+                  JAS Designation
                 </p>
-                <div className="mt-1.5 space-y-1">
-                  {cardDesignations.map((designation) => (
-                    <div
-                      key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
-                      className="rounded-xl bg-white/70 px-2 py-1 ring-1 ring-emerald-100"
-                    >
-                      <p className="line-clamp-1 break-words text-[14px] font-black leading-tight text-slate-950">
-                        {designation.title}
-                      </p>
-                      <p className="mt-0.5 line-clamp-1 break-words text-[8.5px] font-black uppercase tracking-wide text-emerald-800">
-                        {[designation.committeeLevelLabel, designation.committeeLocationLabel]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                <p className="mt-1 line-clamp-2 break-words text-[18px] font-black leading-tight text-slate-950">
+                  {designationTitle}
+                </p>
               </div>
             ) : null}
           </section>
@@ -239,7 +223,7 @@ function CardBack({
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
         <div className="relative grid h-full min-h-0 grid-cols-[1fr_260px] gap-5 p-5">
-          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[0.95fr_1.2fr_1.2fr] gap-4">
+          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[1fr_1.05fr_1.3fr] gap-4">
             <BackPanel title="Residential Address" tone="gold">
               <p className="line-clamp-3 break-words text-[15px] font-black leading-snug text-slate-950">
                 {member.address || 'Full street address not provided.'}
@@ -267,20 +251,18 @@ function CardBack({
               )}
             </BackPanel>
 
-            <BackPanel title="Member Information">
-              <div className="grid w-full grid-cols-3 items-start gap-x-4 gap-y-2">
+            <BackPanel title="Member Information" contentClassName="flex items-center">
+              <div className="grid w-full grid-cols-3 gap-x-4 gap-y-3">
                 <MiniInfo label="DOB" value={formatDate(member.date_of_birth)} />
                 <MiniInfo label="Gender" value={member.gender || 'Not provided'} />
                 <MiniInfo label="Blood" value={member.blood_group || 'Not provided'} />
                 <MiniInfo label="Education" value={member.education || 'Not provided'} />
-                <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
-                <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
                 <MiniInfo
                   label="Designation"
-                  value={getMemberDesignationSummary(member, 2) || 'Member'}
-                  className="col-span-3 rounded-xl bg-white/65 px-2.5 py-1.5 ring-1 ring-emerald-100"
-                  valueClassName="line-clamp-2 text-[12px] leading-[1.16]"
+                  value={getMemberDesignationTitle(member.activeDesignation) || 'Member'}
                 />
+                <MiniInfo label="CNIC" value={formatCnic(member.cnic)} />
+                <MiniInfo label="Mobile" value={formatMobile(member.mobile)} />
               </div>
             </BackPanel>
 
@@ -496,29 +478,13 @@ function Info({ label, value }: { label: string; value: string }) {
   )
 }
 
-function MiniInfo({
-  label,
-  value,
-  className = '',
-  valueClassName = '',
-}: {
-  label: string
-  value: string
-  className?: string
-  valueClassName?: string
-}) {
+function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className={`min-w-0 ${className}`}>
+    <div className="min-w-0">
       <p className="text-[10px] font-black uppercase tracking-wide text-emerald-800">
         {label}
       </p>
-      <p
-        className={
-          valueClassName
-            ? `mt-0.5 break-words font-black text-slate-950 ${valueClassName}`
-            : 'mt-0.5 break-words text-[13px] font-black leading-[1.15] text-slate-950'
-        }
-      >
+      <p className="mt-0.5 break-words text-[13px] font-black leading-[1.15] text-slate-950">
         {value}
       </p>
     </div>

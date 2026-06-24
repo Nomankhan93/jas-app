@@ -6,7 +6,6 @@ const MEMBER_PHOTO_BUCKET = 'member-photos'
 const PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 10
 const MIN_MEMBER_NUMBER_LENGTH = 3
 const MAX_MEMBER_NUMBER_LENGTH = 80
-const MAX_PUBLIC_DESIGNATIONS = 6
 
 type MemberStatus = 'pending' | 'approved' | 'rejected'
 
@@ -22,7 +21,7 @@ type VerifyMemberDesignation = {
   validFrom: string | null
   expiresOn: string | null
   validity: string
-  expiryDate: string | null
+  expiryDate: string
 }
 
 type VerifyMemberResult = {
@@ -39,7 +38,6 @@ type VerifyMemberResult = {
   } | null
   photoSignedUrl: string | null
   activeDesignation: VerifyMemberDesignation | null
-  activeDesignations: VerifyMemberDesignation[]
 }
 
 type MemberVerificationRow = {
@@ -51,36 +49,6 @@ type MemberVerificationRow = {
   photo_url: string | null
   status: MemberStatus
   approved_at: string | null
-}
-
-type ActiveDesignationRow = {
-  designation_title: string | null
-  tenure_start: string | null
-  tenure_end: string | null
-  sort_order: number | null
-  created_at: string | null
-  committee:
-    | {
-        committee_type: string | null
-        name: string | null
-        division: string | null
-        district: string | null
-        taluka: string | null
-        tenure_start?: string | null
-        tenure_end?: string | null
-        status: string | null
-      }
-    | Array<{
-        committee_type: string | null
-        name: string | null
-        division: string | null
-        district: string | null
-        taluka: string | null
-        tenure_start?: string | null
-        tenure_end?: string | null
-        status: string | null
-      }>
-    | null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -156,7 +124,6 @@ function buildPublicMemberPayload(member: MemberVerificationRow) {
       },
       photoSignedUrl: null,
       activeDesignation: null,
-      activeDesignations: [],
     } satisfies VerifyMemberResult
   }
 
@@ -174,8 +141,39 @@ function buildPublicMemberPayload(member: MemberVerificationRow) {
     },
     photoSignedUrl: null,
     activeDesignation: null,
-    activeDesignations: [],
   } satisfies VerifyMemberResult
+}
+
+
+function formatPublicDate(value: string | null) {
+  if (!value) return null
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return new Intl.DateTimeFormat('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
+}
+
+function getDesignationValidityLabel(
+  validFrom: string | null,
+  expiresOn: string | null,
+) {
+  const startLabel = formatPublicDate(validFrom)
+  const endLabel = formatPublicDate(expiresOn)
+
+  if (startLabel && endLabel) return `${startLabel} → ${endLabel}`
+  if (endLabel) return `Valid until ${endLabel}`
+  if (startLabel) return `Valid from ${startLabel}`
+
+  return 'Tenure not set'
+}
+
+function getDesignationExpiryDateLabel(expiresOn: string | null) {
+  return formatPublicDate(expiresOn) ?? 'Not set'
 }
 
 function getCommitteeLocationLabel(committee: {
@@ -212,44 +210,7 @@ function getCommitteeLevelLabel(value: string | null) {
   }
 }
 
-function getCommitteeLevelRank(value: string | null | undefined) {
-  switch (value) {
-    case 'central':
-      return 1
-    case 'central_advisory':
-      return 2
-    case 'provincial':
-      return 3
-    case 'divisional':
-      return 4
-    case 'district':
-      return 5
-    case 'taluka':
-      return 6
-    default:
-      return 99
-  }
-}
-
-function formatDisplayDate(value: string | null | undefined) {
-  if (!value) return null
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function buildValidityLabel(expiresOn: string | null) {
-  const formatted = formatDisplayDate(expiresOn)
-  return formatted ? `Valid until ${formatted}` : 'Active'
-}
-
-async function fetchActiveMemberDesignations(
+async function fetchActiveMemberDesignation(
   memberId: string,
   supabaseAdmin: ReturnType<typeof createSupabaseAdminClient>,
 ) {
@@ -262,57 +223,64 @@ async function fetchActiveMemberDesignations(
         'tenure_end',
         'sort_order',
         'created_at',
-        'committee:organization_committees(id, committee_type, name, division, district, taluka, tenure_start, tenure_end, status)',
+        'committee:organization_committees(id, committee_type, name, division, district, taluka, status)',
       ].join(', '),
     )
     .eq('member_id', memberId)
     .eq('status', 'active')
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(5)
 
-  if (error) return []
+  if (error) return null
 
-  const rows = (data ?? []) as unknown as ActiveDesignationRow[]
+  const rows = (data ?? []) as unknown as Array<{
+    designation_title: string | null
+    tenure_start: string | null
+    tenure_end: string | null
+    committee:
+      | {
+          committee_type: string | null
+          name: string | null
+          division: string | null
+          district: string | null
+          taluka: string | null
+          status: string | null
+        }
+      | Array<{
+          committee_type: string | null
+          name: string | null
+          division: string | null
+          district: string | null
+          taluka: string | null
+          status: string | null
+        }>
+      | null
+  }>
 
-  const designations = rows.flatMap((item) => {
+  const row = rows.find((item) => {
     const committee = Array.isArray(item.committee) ? item.committee[0] : item.committee
-    const title = item.designation_title?.trim()
-
-    if (!title || committee?.status !== 'active') return []
-
-    const validFrom = item.tenure_start ?? committee.tenure_start ?? null
-    const expiresOn = item.tenure_end ?? committee.tenure_end ?? null
-
-    return [
-      {
-        title,
-        committeeName: committee.name,
-        level: getCommitteeLevelLabel(committee.committee_type),
-        location: getCommitteeLocationLabel(committee),
-        validFrom,
-        expiresOn,
-        validity: buildValidityLabel(expiresOn),
-        expiryDate: expiresOn,
-        committeeType: committee.committee_type,
-        sortOrder: item.sort_order ?? 999,
-        createdAt: item.created_at ?? '',
-      },
-    ]
+    return Boolean(item.designation_title?.trim()) && committee?.status === 'active'
   })
 
-  return designations
-    .sort((a, b) => {
-      const levelRank = getCommitteeLevelRank(a.committeeType) - getCommitteeLevelRank(b.committeeType)
-      if (levelRank !== 0) return levelRank
+  if (!row) return null
 
-      const orderRank = a.sortOrder - b.sortOrder
-      if (orderRank !== 0) return orderRank
+  const committee = Array.isArray(row.committee) ? row.committee[0] : row.committee
+  if (!committee) return null
 
-      return b.createdAt.localeCompare(a.createdAt)
-    })
-    .slice(0, MAX_PUBLIC_DESIGNATIONS)
-    .map(({ committeeType: _committeeType, sortOrder: _sortOrder, createdAt: _createdAt, ...designation }) => designation)
+  const validFrom = row.tenure_start ?? null
+  const expiresOn = row.tenure_end ?? null
+
+  return {
+    title: row.designation_title?.trim() || 'Designation',
+    committeeName: committee.name,
+    level: getCommitteeLevelLabel(committee.committee_type),
+    location: getCommitteeLocationLabel(committee),
+    validFrom,
+    expiresOn,
+    validity: getDesignationValidityLabel(validFrom, expiresOn),
+    expiryDate: getDesignationExpiryDateLabel(expiresOn),
+  } satisfies VerifyMemberDesignation
 }
 
 export const verifyMemberAction = createServerFn({ method: 'POST' })
@@ -349,7 +317,6 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
         member: null,
         photoSignedUrl: null,
         activeDesignation: null,
-        activeDesignations: [],
       }
     }
 
@@ -360,15 +327,14 @@ export const verifyMemberAction = createServerFn({ method: 'POST' })
       return result
     }
 
-    const [photoSignedUrl, activeDesignations] = await Promise.all([
+    const [photoSignedUrl, activeDesignation] = await Promise.all([
       createMemberPhotoSignedUrl(safeMember.photo_url, supabaseAdmin),
-      fetchActiveMemberDesignations(safeMember.id, supabaseAdmin),
+      fetchActiveMemberDesignation(safeMember.id, supabaseAdmin),
     ])
 
     return {
       ...result,
       photoSignedUrl,
-      activeDesignation: activeDesignations[0] ?? null,
-      activeDesignations,
+      activeDesignation,
     }
   })
