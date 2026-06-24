@@ -101,7 +101,6 @@ function CardFront({
 }: Omit<MembershipCardProps, 'side'>) {
   const profession = member.profession || 'Not provided'
   const cardDesignations = getMemberDesignationList(member, 2)
-  const hasMultipleDesignations = cardDesignations.length > 1
 
   return (
     <>
@@ -116,34 +115,34 @@ function CardFront({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-        <div className="relative grid h-full grid-cols-[320px_1fr_250px] gap-8 px-10 py-8">
-          <section className="flex flex-col items-start">
-            <div className="rounded-[2.35rem] bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-500 p-[5px] shadow-xl">
+        <div className="relative grid h-full grid-cols-[286px_1fr_220px] gap-7 p-8">
+          <section className="flex min-h-0 flex-col gap-3">
+            <div className="mx-auto rounded-[2.2rem] bg-gradient-to-br from-yellow-400 via-yellow-300 to-amber-500 p-[5px] shadow-xl">
               {photoUrl ? (
                 <img
                   src={photoUrl}
                   alt={`${member.full_name} profile photo`}
-                  className="h-[260px] w-[260px] rounded-[2rem] border-4 border-white object-cover object-top"
+                  className="h-[260px] w-[260px] rounded-[1.9rem] border-4 border-white object-cover object-top"
                   draggable={false}
                 />
               ) : (
-                <div className="flex h-[260px] w-[260px] items-center justify-center rounded-[2rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
+                <div className="flex h-[260px] w-[260px] items-center justify-center rounded-[1.9rem] border-4 border-white bg-slate-100 text-[15px] font-bold text-slate-500">
                   No photo
                 </div>
               )}
             </div>
 
-            <div className="mt-7 w-full max-w-[300px] rounded-[1.4rem] border border-yellow-400 bg-slate-950 px-5 py-4 text-center shadow-lg">
-              <p className="text-[11px] font-black uppercase tracking-[0.24em] text-yellow-300">
-                Membership No
+            <div className="rounded-[1.35rem] border border-yellow-400 bg-slate-950 px-4 py-3 text-center shadow-lg">
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-yellow-300">
+                Member No
               </p>
-              <p className="mt-2 break-all text-[20px] font-black leading-tight text-white">
+              <p className="mt-1.5 break-all text-[20px] font-black leading-tight text-white">
                 {member.member_no || 'Not issued'}
               </p>
             </div>
           </section>
 
-          <section className="flex min-h-0 flex-col">
+          <section className="flex flex-col justify-between">
             <div>
               <p className="text-[16px] font-black uppercase tracking-[0.18em] text-slate-500">
                 Member Name
@@ -152,10 +151,11 @@ function CardFront({
                 {member.full_name}
               </h3>
 
-              <div className="mt-5 h-[3px] w-36 rounded-full bg-gradient-to-r from-slate-950 via-yellow-500 to-yellow-300" />
+              <div className="mt-5 h-[3px] w-28 rounded-full bg-gradient-to-r from-slate-950 via-yellow-500 to-yellow-300" />
+
             </div>
 
-            <div className="mt-8 grid grid-cols-2 gap-x-14 gap-y-6">
+            <div className="grid grid-cols-2 gap-x-12 gap-y-6">
               <Info label="Father Name" value={member.father_name} />
               <Info label="District" value={member.district} />
               <Info label="Taluka" value={member.taluka || 'Not provided'} />
@@ -167,50 +167,7 @@ function CardFront({
               <Info label="Status" value="Approved" />
             </div>
 
-            {cardDesignations.length ? (
-              <div className="mt-auto rounded-[1.7rem] border border-emerald-200 bg-emerald-50/85 px-6 py-5 shadow-sm">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-[11px] font-black uppercase tracking-[0.26em] text-emerald-700">
-                    JAS Designations
-                  </p>
-                  {hasMultipleDesignations ? (
-                    <span className="rounded-full border border-emerald-200 bg-white/80 px-4 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">
-                      Multiple Roles
-                    </span>
-                  ) : null}
-                </div>
-
-                <div
-                  className={
-                    hasMultipleDesignations
-                      ? 'mt-4 grid grid-cols-2 gap-4'
-                      : 'mt-4 flex justify-start'
-                  }
-                >
-                  {cardDesignations.map((designation) => (
-                    <div
-                      key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
-                      className={
-                        hasMultipleDesignations
-                          ? 'min-h-[88px] rounded-[1.15rem] border border-emerald-200 bg-white/90 px-4 py-3 text-center'
-                          : 'min-h-[88px] w-full max-w-[380px] rounded-[1.15rem] border border-emerald-200 bg-white/90 px-5 py-3 text-center'
-                      }
-                    >
-                      <p className="break-words text-[18px] font-black leading-tight text-slate-950">
-                        {designation.title}
-                      </p>
-                      <p className="mt-2 break-words text-[10px] font-black uppercase tracking-[0.08em] text-emerald-800">
-                        {[designation.committeeLevelLabel, designation.committeeLocationLabel]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-auto" />
-            )}
+            <CardDesignationPanel designations={cardDesignations} />
           </section>
 
           <QrPanel
@@ -225,6 +182,78 @@ function CardFront({
         confirms the current membership record.
       </CardFooter>
     </>
+  )
+}
+
+function CardDesignationPanel({
+  designations,
+}: {
+  designations: MemberCardDesignation[]
+}) {
+  const isSingle = designations.length <= 1
+
+  return (
+    <div className="rounded-[1.4rem] border border-emerald-100 bg-white/95 px-5 py-3.5 shadow-sm ring-1 ring-slate-100">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[13px] font-black uppercase tracking-[0.2em] text-emerald-700">
+          JAS Designations
+        </p>
+        {designations.length > 1 ? (
+          <p className="rounded-full bg-emerald-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.12em] text-emerald-700 ring-1 ring-emerald-100">
+            Multiple Roles
+          </p>
+        ) : null}
+      </div>
+
+      {designations.length ? (
+        <div className={`mt-2.5 grid gap-3 ${isSingle ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          {designations.map((designation) => {
+            const level = [
+              designation.committeeLevelLabel,
+              designation.committeeLocationLabel,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+
+            return (
+              <div
+                key={`${designation.title}-${designation.committeeName ?? designation.committeeLevelLabel ?? ''}`}
+                className={`flex flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50/55 px-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] ${
+                  isSingle ? 'min-h-[82px] py-3' : 'min-h-[70px] py-2.5'
+                }`}
+              >
+                <p
+                  className={`line-clamp-1 w-full break-words font-black leading-tight text-slate-950 ${
+                    isSingle ? 'text-[22px]' : 'text-[16px]'
+                  }`}
+                >
+                  {designation.title}
+                </p>
+
+                {level ? (
+                  <p
+                    className={`mt-1.5 line-clamp-1 w-full break-words font-black uppercase tracking-wide text-emerald-800 ${
+                      isSingle ? 'text-[11px]' : 'text-[9px]'
+                    }`}
+                  >
+                    {level}
+                  </p>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="mt-2.5 flex min-h-[72px] flex-col items-center justify-center rounded-2xl border border-emerald-100 bg-emerald-50/55 px-4 py-3 text-center">
+          <p className="text-[21px] font-black leading-tight text-slate-950">
+            JAS Member
+          </p>
+          <p className="mt-1.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
+            Approved membership record
+          </p>
+        </div>
+      )}
+    </div>
   )
 }
 
