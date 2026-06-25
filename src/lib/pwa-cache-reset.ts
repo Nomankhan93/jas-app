@@ -76,7 +76,7 @@ export async function clearJasPwaCache(options: ClearPwaCacheOptions = {}) {
       sessionStorage.clear()
     }
   } catch (error) {
-    console.warn('JAS PWA cache reset failed:', error)
+    console.warn('JASW PWA cache reset failed:', error)
   } finally {
     if (options.reload !== false) {
       window.location.replace(buildCleanReloadUrl())

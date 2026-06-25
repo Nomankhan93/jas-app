@@ -1,6 +1,6 @@
-# Jatt Alliance Sindh (JAS) Web App
+# Jatt Alliance Sindh Welfare (JASW) Web App
 
-A member-verified web platform for Jatt Alliance Sindh. The app combines digital membership registration, admin approval, QR-based member cards, program applications, finance tracking, donations, donor leaderboard, employment support, and member notifications.
+A member-verified web platform for Jatt Alliance Sindh Welfare. The app combines digital membership registration, admin approval, QR-based member cards, program applications, finance tracking, donations, donor leaderboard, employment support, and member notifications.
 
 ## Current modules
 

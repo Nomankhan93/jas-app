@@ -257,7 +257,7 @@ export function formatFinanceFileSize(bytes?: number | null) {
 
 export function buildDonationReceiptText(donation: FinanceDonation) {
   return [
-    "Jatt Alliance Sindh (JAS)",
+    "Jatt Alliance Sindh Welfare (JASW)",
     "Donation Receipt",
     "----------------------------------------",
     `Donation ID: ${donation.donation_no || donation.id}`,
@@ -280,7 +280,7 @@ export function buildDonationReceiptText(donation: FinanceDonation) {
 
 export function buildExpenseReceiptText(expense: FinanceExpense) {
   return [
-    "Jatt Alliance Sindh (JAS)",
+    "Jatt Alliance Sindh Welfare (JASW)",
     "Expense / Payment Record",
     "----------------------------------------",
     `Receipt No: ${expense.receipt_no || expense.id}`,

@@ -132,21 +132,21 @@ const pages: Record<ManagementPageKey, Record<AppLanguage, LabelMap>> = {
   },
   reports: {
     en: {
-      badge: 'JAS Reports Center',
+      badge: 'JASW Reports Center',
       title: 'Organization-wide reports',
       subtitle: 'Review membership, programs, finance, district activity and recent operational records from one place.',
       total: 'Total',
       financeSnapshot: 'Finance Snapshot',
     },
     ur: {
-      badge: 'JAS رپورٹس سینٹر',
+      badge: 'JASW رپورٹس سینٹر',
       title: 'تنظیم گیر رپورٹس',
       subtitle: 'ممبرشپ، پروگرامز، فنانس، ضلعی سرگرمی اور حالیہ آپریشنل ریکارڈ ایک جگہ دیکھیں۔',
       total: 'کل',
       financeSnapshot: 'فنانس اسنیپ شاٹ',
     },
     sd: {
-      badge: 'JAS رپورٽس سينٽر',
+      badge: 'JASW رپورٽس سينٽر',
       title: 'تنظيمي رپورٽس',
       subtitle: 'ميمبرشپ، پروگرام، فنانس، ضلعي سرگرمي ۽ تازو آپريشنل رڪارڊ هڪ جڳهه تي ڏسو.',
       total: 'ڪل',

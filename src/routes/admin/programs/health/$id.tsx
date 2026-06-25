@@ -622,9 +622,9 @@ function printHealthCaseReport(
       </head>
       <body>
         <button onclick="window.print()">Print / Save PDF</button>
-        <h1>Jatt Alliance Sindh — Health Case Report</h1>
+        <h1>Jatt Alliance Sindh Welfare — Health Case Report</h1>
         <div class="muted">Generated: ${sanitizeHealthReportText(new Date().toLocaleString())}</div>
-        <div class="privacy"><strong>Restricted:</strong> This report contains sensitive medical information. Share only with authorized JAS health committee/admin users.</div>
+        <div class="privacy"><strong>Restricted:</strong> This report contains sensitive medical information. Share only with authorized JASW health committee/admin users.</div>
         <table>
           <tbody>
             ${rows

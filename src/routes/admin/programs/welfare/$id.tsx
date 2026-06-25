@@ -351,7 +351,7 @@ function AdminWelfareApplicationDetailPage() {
           </style>
         </head>
         <body>
-          <h1>JAS ${sanitizeWelfareReportText(copy.program.detailBadge)} Close Report</h1>
+          <h1>JASW ${sanitizeWelfareReportText(copy.program.detailBadge)} Close Report</h1>
           <p class="muted">${sanitizeWelfareReportText(application.application_no || '-')}</p>
           <div class="grid">
             <div class="box"><div class="label">${sanitizeWelfareReportText(copy.program.applicantName)}</div><div class="value">${sanitizeWelfareReportText(application.applicant_name)}</div></div>

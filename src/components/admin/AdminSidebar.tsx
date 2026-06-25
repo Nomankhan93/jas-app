@@ -34,7 +34,7 @@ export function AdminSidebar({
       aria-label="Admin navigation"
     >
       <div className="admin-sidebar-brand">
-        <span className="admin-sidebar-brand-icon">JAS</span>
+        <span className="admin-sidebar-brand-icon">JASW</span>
         <span>
           <strong>Admin Panel</strong>
           <small>Management Console</small>

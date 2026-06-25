@@ -260,7 +260,7 @@ export function Header({ compact }: { compact: boolean }) {
           <Link
             to="/"
             className="site-brand-link brand-pill lift-hover pressable min-w-0 rounded-[1.35rem] px-3 py-2.5 sm:px-4"
-            aria-label="Jatt Alliance Sindh home"
+            aria-label="Jatt Alliance Sindh Welfare home"
           >
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
               <ShieldCheck size={18} className="text-[#d8a949]" aria-hidden="true" />
@@ -277,7 +277,7 @@ export function Header({ compact }: { compact: boolean }) {
               </span>
             </span>
             <span className="hidden shrink-0 rounded-full border border-white/12 bg-white/10 px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.18em] text-white/90 sm:inline-flex">
-              JAS
+              JASW
             </span>
           </Link>
         </div>
