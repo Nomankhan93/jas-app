@@ -72,5 +72,8 @@
       "esbuild",
       "lightningcss"
     ]
+  },
+  "allowScripts": {
+    "core-js@3.49.0": true
   }
 }
