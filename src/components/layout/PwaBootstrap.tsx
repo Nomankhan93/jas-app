@@ -107,7 +107,7 @@ async function unregisterDevServiceWorkers() {
       window.location.reload()
     }
   } catch (error) {
-    console.warn('JASW dev service worker cleanup failed:', error)
+    console.warn('JAS dev service worker cleanup failed:', error)
   }
 }
 
@@ -211,7 +211,7 @@ export function PwaBootstrap() {
         setPushSubscribed(Boolean(subscription))
       })
       .catch((error) => {
-        console.warn('JASW push subscription check failed:', error)
+        console.warn('JAS push subscription check failed:', error)
       })
   }, [isLoggedIn])
 
@@ -260,7 +260,7 @@ export function PwaBootstrap() {
         .register('/sw.js', { updateViaCache: 'none' })
         .then(watchRegistration)
         .catch((error) => {
-          console.warn('JASW service worker registration failed:', error)
+          console.warn('JAS service worker registration failed:', error)
         })
     }
 
@@ -275,7 +275,7 @@ export function PwaBootstrap() {
       if (!activeRegistration || document.hidden) return
 
       activeRegistration.update().catch((error) => {
-        console.warn('JASW service worker update check failed:', error)
+        console.warn('JAS service worker update check failed:', error)
       })
     }
 
@@ -462,10 +462,10 @@ export function PwaBootstrap() {
             ↻
           </div>
           <div className="pwa-toast__body">
-            <p className="pwa-toast__eyebrow">JASW app update</p>
+            <p className="pwa-toast__eyebrow">JAS app update</p>
             <h2 className="pwa-toast__title">New version available</h2>
             <p className="pwa-toast__text">
-              Refresh now to load the latest JASW member portal updates.
+              Refresh now to load the latest JAS member portal updates.
             </p>
           </div>
           <div className="pwa-toast__actions">
@@ -494,10 +494,10 @@ export function PwaBootstrap() {
             ⬇
           </div>
           <div className="pwa-toast__body">
-            <p className="pwa-toast__eyebrow">Install JASW App</p>
-            <h2 className="pwa-toast__title">Install JASW App</h2>
+            <p className="pwa-toast__eyebrow">Install JAS App</p>
+            <h2 className="pwa-toast__title">Install JAS App</h2>
             <p className="pwa-toast__text">
-              Install the JASW member portal for faster access to membership,
+              Install the JAS member portal for faster access to membership,
               digital cards, updates and admin tools.
             </p>
           </div>
@@ -508,7 +508,7 @@ export function PwaBootstrap() {
               onClick={handleInstallClick}
               disabled={isInstalling}
             >
-              {isInstalling ? 'Opening…' : 'Install JASW App'}
+              {isInstalling ? 'Opening…' : 'Install JAS App'}
             </button>
             <button
               type="button"
@@ -527,11 +527,11 @@ export function PwaBootstrap() {
             🔔
           </div>
           <div className="pwa-toast__body">
-            <p className="pwa-toast__eyebrow">JASW notifications</p>
+            <p className="pwa-toast__eyebrow">JAS notifications</p>
             <h2 className="pwa-toast__title">Enable browser notifications</h2>
             <p className="pwa-toast__text">
               Get membership approval, payment and important update alerts even
-              when the JASW app is installed or running in the background.
+              when the JAS app is installed or running in the background.
             </p>
             {pushMessage ? (
               <p className="pwa-toast__note">{pushMessage}</p>

@@ -382,7 +382,7 @@ function RoleUserCard({
         <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
           <p className="text-sm font-black text-slate-950">Assign new role</p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            Only assign official JASW admin roles to trusted accounts.
+            Only assign official JAS admin roles to trusted accounts.
           </p>
 
           <div className="mt-4 grid gap-3">

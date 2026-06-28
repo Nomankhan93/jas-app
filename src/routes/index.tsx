@@ -140,7 +140,7 @@ function PortalCardPreview() {
               <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 border-[#d8a949] bg-white p-0.5 shadow-xl">
                 <img
                   src="/jas/logo.jpeg"
-                  alt="Jatt Alliance Sindh Welfare logo"
+                  alt="Jatt Alliance Sindh logo"
                   className="h-full w-full rounded-full object-cover"
                 />
               </div>
@@ -148,8 +148,8 @@ function PortalCardPreview() {
                 <p className="m-0 text-[0.6rem] font-black uppercase tracking-[0.22em] text-[#f2d48f]">
                   Digital Member ID
                 </p>
-                <p className="mt-1 text-[0.76rem] font-extrabold uppercase leading-tight tracking-[-0.035em] text-white">
-                  JATT ALLIANCE SINDH WELFARE
+                <p className="mt-1 text-[0.92rem] font-extrabold uppercase tracking-[-0.01em] text-white">
+                  JATT ALLIANCE SINDH
                 </p>
                 <p className="mt-1 text-[0.72rem] font-medium text-emerald-50/80">
                   {preview.cardSubtitle}

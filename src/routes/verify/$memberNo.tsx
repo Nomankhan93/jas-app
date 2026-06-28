@@ -85,7 +85,7 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
   en: {
     loading: 'Verifying membership...',
     title: 'Membership Verification',
-    description: 'Public QR verification page for JASW digital membership cards. Always confirm that the status below is approved and verified.',
+    description: 'Public QR verification page for JAS digital membership cards. Always confirm that the status below is approved and verified.',
     refresh: 'Refresh Status',
     copyLink: 'Copy Link',
     searchedMemberNo: 'Searched Member No',
@@ -97,9 +97,9 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     noRecord: 'No record',
     notApproved: 'Not approved',
     notFoundTitle: 'Member Not Found',
-    notFoundMessage: 'No JASW member record was found for this membership number. Please check the number printed on the card or scan the QR code again.',
+    notFoundMessage: 'No JAS member record was found for this membership number. Please check the number printed on the card or scan the QR code again.',
     verifiedTitle: 'Verified Member',
-    verifiedMessage: 'This membership is active and verified by Jatt Alliance Sindh Welfare.',
+    verifiedMessage: 'This membership is active and verified by Jatt Alliance Sindh.',
     verifiedName: 'Verified Name',
     memberNo: 'Member No',
     status: 'Status',
@@ -110,15 +110,15 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     approvedVerified: 'Approved / Verified',
     notProvided: 'Not provided',
     copyMemberNo: 'Copy Member No',
-    goHome: 'Go to JASW Home',
+    goHome: 'Go to JAS Home',
     notVerifiedTitle: 'Not a Verified Member',
     notVerifiedMessage: 'This record exists, but the membership is not currently approved. Do not accept this card as active membership proof.',
     currentStatus: 'Current Status',
     failedTitle: 'Verification Failed',
     failedMessage: 'The membership record could not be verified at this time.',
     guidanceTitle: 'Verification guidance',
-    guidanceMessage: 'A valid JASW card must show an approved status on this page. If the page says not found, pending, or rejected, the card should not be treated as verified.',
-    jasHome: 'JASW Home',
+    guidanceMessage: 'A valid JAS card must show an approved status on this page. If the page says not found, pending, or rejected, the card should not be treated as verified.',
+    jasHome: 'JAS Home',
     successCopyLink: 'Verification link copied.',
     successCopyMemberNo: 'Member number copied.',
     errorCopyLink: 'Could not copy verification link.',
@@ -137,7 +137,7 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
   ur: {
     loading: 'ممبرشپ تصدیق ہو رہی ہے...',
     title: 'ممبرشپ تصدیق',
-    description: 'JASW ڈیجیٹل ممبرشپ کارڈز کے لیے عوامی QR تصدیقی صفحہ۔ ہمیشہ نیچے منظور شدہ اور تصدیق شدہ اسٹیٹس چیک کریں۔',
+    description: 'JAS ڈیجیٹل ممبرشپ کارڈز کے لیے عوامی QR تصدیقی صفحہ۔ ہمیشہ نیچے منظور شدہ اور تصدیق شدہ اسٹیٹس چیک کریں۔',
     refresh: 'اسٹیٹس تازہ کریں',
     copyLink: 'لنک کاپی کریں',
     searchedMemberNo: 'تلاش کیا گیا ممبر نمبر',
@@ -149,9 +149,9 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     noRecord: 'کوئی ریکارڈ نہیں',
     notApproved: 'منظور نہیں',
     notFoundTitle: 'ممبر نہیں ملا',
-    notFoundMessage: 'اس ممبرشپ نمبر کے لیے کوئی JASW ممبر ریکارڈ نہیں ملا۔ کارڈ پر موجود نمبر چیک کریں یا QR کوڈ دوبارہ اسکین کریں۔',
+    notFoundMessage: 'اس ممبرشپ نمبر کے لیے کوئی JAS ممبر ریکارڈ نہیں ملا۔ کارڈ پر موجود نمبر چیک کریں یا QR کوڈ دوبارہ اسکین کریں۔',
     verifiedTitle: 'تصدیق شدہ ممبر',
-    verifiedMessage: 'یہ ممبرشپ فعال ہے اور جٹ الائنس سندھ ویلفیئر کی طرف سے تصدیق شدہ ہے۔',
+    verifiedMessage: 'یہ ممبرشپ فعال ہے اور جٹ الائنس سندھ کی طرف سے تصدیق شدہ ہے۔',
     verifiedName: 'تصدیق شدہ نام',
     memberNo: 'ممبر نمبر',
     status: 'اسٹیٹس',
@@ -162,15 +162,15 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     approvedVerified: 'منظور شدہ / تصدیق شدہ',
     notProvided: 'فراہم نہیں کیا گیا',
     copyMemberNo: 'ممبر نمبر کاپی کریں',
-    goHome: 'JASW ہوم پر جائیں',
+    goHome: 'JAS ہوم پر جائیں',
     notVerifiedTitle: 'تصدیق شدہ ممبر نہیں',
     notVerifiedMessage: 'یہ ریکارڈ موجود ہے، لیکن ممبرشپ فی الحال منظور شدہ نہیں۔ اس کارڈ کو فعال ممبرشپ ثبوت نہ سمجھیں۔',
     currentStatus: 'موجودہ اسٹیٹس',
     failedTitle: 'تصدیق ناکام',
     failedMessage: 'اس وقت ممبرشپ ریکارڈ کی تصدیق نہیں ہو سکی۔',
     guidanceTitle: 'تصدیقی رہنمائی',
-    guidanceMessage: 'درست JASW کارڈ پر اس صفحہ میں منظور شدہ اسٹیٹس لازمی نظر آنا چاہیے۔ اگر صفحہ not found، pending یا rejected دکھائے تو کارڈ کو تصدیق شدہ نہ سمجھیں۔',
-    jasHome: 'JASW ہوم',
+    guidanceMessage: 'درست JAS کارڈ پر اس صفحہ میں منظور شدہ اسٹیٹس لازمی نظر آنا چاہیے۔ اگر صفحہ not found، pending یا rejected دکھائے تو کارڈ کو تصدیق شدہ نہ سمجھیں۔',
+    jasHome: 'JAS ہوم',
     successCopyLink: 'تصدیقی لنک کاپی ہو گیا۔',
     successCopyMemberNo: 'ممبر نمبر کاپی ہو گیا۔',
     errorCopyLink: 'تصدیقی لنک کاپی نہیں ہو سکا۔',
@@ -189,7 +189,7 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
   sd: {
     loading: 'ميمبرشپ تصديق ٿي رهي آهي...',
     title: 'ميمبرشپ تصديق',
-    description: 'JASW ڊجيٽل ميمبرشپ ڪارڊن لاءِ عوامي QR تصديقي صفحو. هميشه هيٺ منظور ٿيل ۽ تصديق ٿيل اسٽيٽس چيڪ ڪريو.',
+    description: 'JAS ڊجيٽل ميمبرشپ ڪارڊن لاءِ عوامي QR تصديقي صفحو. هميشه هيٺ منظور ٿيل ۽ تصديق ٿيل اسٽيٽس چيڪ ڪريو.',
     refresh: 'اسٽيٽس تازو ڪريو',
     copyLink: 'لنڪ ڪاپي ڪريو',
     searchedMemberNo: 'تلاش ڪيل ميمبر نمبر',
@@ -201,9 +201,9 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     noRecord: 'ڪو ريڪارڊ ناهي',
     notApproved: 'منظور ناهي',
     notFoundTitle: 'ميمبر نه مليو',
-    notFoundMessage: 'هن ميمبرشپ نمبر لاءِ ڪو JASW ميمبر ريڪارڊ نه مليو. ڪارڊ تي ڇپيل نمبر چيڪ ڪريو يا QR ڪوڊ ٻيهر اسڪين ڪريو.',
+    notFoundMessage: 'هن ميمبرشپ نمبر لاءِ ڪو JAS ميمبر ريڪارڊ نه مليو. ڪارڊ تي ڇپيل نمبر چيڪ ڪريو يا QR ڪوڊ ٻيهر اسڪين ڪريو.',
     verifiedTitle: 'تصديق ٿيل ميمبر',
-    verifiedMessage: 'هي ميمبرشپ فعال آهي ۽ جٽ الائنس سنڌ ويلفيئر طرفان تصديق ٿيل آهي.',
+    verifiedMessage: 'هي ميمبرشپ فعال آهي ۽ جٽ الائنس سنڌ طرفان تصديق ٿيل آهي.',
     verifiedName: 'تصديق ٿيل نالو',
     memberNo: 'ميمبر نمبر',
     status: 'اسٽيٽس',
@@ -214,15 +214,15 @@ const verifyPageText: Record<AppLanguage, VerifyPageText> = {
     approvedVerified: 'منظور ٿيل / تصديق ٿيل',
     notProvided: 'فراهم ناهي ڪيو ويو',
     copyMemberNo: 'ميمبر نمبر ڪاپي ڪريو',
-    goHome: 'JASW هوم ڏانهن وڃو',
+    goHome: 'JAS هوم ڏانهن وڃو',
     notVerifiedTitle: 'تصديق ٿيل ميمبر ناهي',
     notVerifiedMessage: 'هي ريڪارڊ موجود آهي، پر ميمبرشپ هن وقت منظور ٿيل ناهي. هن ڪارڊ کي فعال ميمبرشپ ثبوت طور قبول نه ڪريو.',
     currentStatus: 'موجوده اسٽيٽس',
     failedTitle: 'تصديق ناڪام',
     failedMessage: 'هن وقت ميمبرشپ ريڪارڊ جي تصديق نه ٿي سگهي.',
     guidanceTitle: 'تصديقي رهنمائي',
-    guidanceMessage: 'صحيح JASW ڪارڊ تي هن صفحي ۾ منظور ٿيل اسٽيٽس لازمي ظاهر ٿيڻ گهرجي. جيڪڏهن صفحو not found، pending يا rejected ڏيکاري ته ڪارڊ کي تصديق ٿيل نه سمجھو.',
-    jasHome: 'JASW هوم',
+    guidanceMessage: 'صحيح JAS ڪارڊ تي هن صفحي ۾ منظور ٿيل اسٽيٽس لازمي ظاهر ٿيڻ گهرجي. جيڪڏهن صفحو not found، pending يا rejected ڏيکاري ته ڪارڊ کي تصديق ٿيل نه سمجھو.',
+    jasHome: 'JAS هوم',
     successCopyLink: 'تصديقي لنڪ ڪاپي ٿي وئي.',
     successCopyMemberNo: 'ميمبر نمبر ڪاپي ٿي ويو.',
     errorCopyLink: 'تصديقي لنڪ ڪاپي نه ٿي سگهي.',
@@ -372,7 +372,7 @@ function VerifyMemberPage() {
         <header className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/70">
           <div className="border-b border-slate-100 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5 text-center sm:p-7">
             <p className="text-xs font-black uppercase tracking-[0.26em] text-emerald-700">
-              Jatt Alliance Sindh Welfare
+              Jatt Alliance Sindh
             </p>
 
             <h1 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-4xl">
@@ -540,7 +540,7 @@ function VerifyMemberPage() {
                     label={text.approvedAt}
                     value={formatDate(result.member.approved_at)}
                   />
-                  <Info label={text.verifiedBy} value="Jatt Alliance Sindh Welfare" />
+                  <Info label={text.verifiedBy} value="Jatt Alliance Sindh" />
                 </div>
 
                 <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2">

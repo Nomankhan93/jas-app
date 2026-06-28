@@ -22,8 +22,8 @@ export const Route = createFileRoute('/programs/education')({
 
 const copy = {
   en: {
-    badge: 'JASW Education & Skills Development',
-    title: 'Education support, scholarships and skills training for JASW members',
+    badge: 'JAS Education & Skills Development',
+    title: 'Education support, scholarships and skills training for JAS members',
     description:
       'Apply for scholarship, fee support, admission guidance, career counselling and skills development programs through a transparent membership-verified system.',
     applyCta: 'Apply for Education Support',
@@ -120,8 +120,8 @@ const copy = {
       'دستاویزات اپلوڈ درخواست فارم میں دستیاب ہے۔ تیز تصدیق کے لیے واضح PDF، JPG، PNG یا WEBP فائلیں 5MB تک اپلوڈ کریں۔',
   },
   sd: {
-    badge: 'JASW تعليم ۽ مهارتن جي ترقي',
-    title: 'JASW ميمبرن لاءِ تعليمي مدد، اسڪالرشپس ۽ مهارتن جي تربيت',
+    badge: 'JAS تعليم ۽ مهارتن جي ترقي',
+    title: 'JAS ميمبرن لاءِ تعليمي مدد، اسڪالرشپس ۽ مهارتن جي تربيت',
     description:
       'شفاف ۽ ميمبرشپ تصديق ٿيل نظام ذريعي اسڪالرشپ، في سپورٽ، داخلا رهنمائي، ڪيريئر ڪائونسلنگ ۽ مهارتن جي پروگرامن لاءِ درخواست ڏيو.',
     applyCta: 'تعليمي مدد لاءِ درخواست ڏيو',

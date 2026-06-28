@@ -127,8 +127,8 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       finance_admin: 'Finance Admin',
     },
     loading: 'Loading admin control center...',
-    brandEyebrow: 'Jatt Alliance Sindh Welfare',
-    title: 'JASW Admin Control Center',
+    brandEyebrow: 'Jatt Alliance Sindh',
+    title: 'JAS Admin Control Center',
     subtitle:
       'Manage membership applications and access authorized program modules for education, health, welfare, employment and finance. Sensitive CNIC/mobile data stays masked unless explicitly required.',
     showSensitive: 'Show Sensitive Data',
@@ -136,7 +136,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
     refresh: 'Refresh',
     refreshing: 'Refreshing...',
     sensitiveWarning:
-      'Sensitive data is visible. Use this mode only for official verification, and avoid exporting or sharing records unless approved by JASW leadership.',
+      'Sensitive data is visible. Use this mode only for official verification, and avoid exporting or sharing records unless approved by JAS leadership.',
     stats: {
       totalMembers: 'Total Members',
       pendingReview: 'Pending Review',
@@ -328,8 +328,8 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       finance_admin: 'فنانس ایڈمن',
     },
     loading: 'ایڈمن کنٹرول سینٹر لوڈ ہو رہا ہے...',
-    brandEyebrow: 'جٹ الائنس سندھ ویلفیئر',
-    title: 'JASW ایڈمن کنٹرول سینٹر',
+    brandEyebrow: 'جٹ الائنس سندھ',
+    title: 'JAS ایڈمن کنٹرول سینٹر',
     subtitle:
       'ممبرشپ درخواستیں مینج کریں اور تعلیم، صحت، ویلفیئر، روزگار اور فنانس کے مجاز پروگرام ماڈیولز تک رسائی حاصل کریں۔ حساس CNIC/mobile ڈیٹا صرف ضرورت پر ظاہر ہوگا۔',
     showSensitive: 'حساس ڈیٹا دکھائیں',
@@ -337,7 +337,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
     refresh: 'ریفریش',
     refreshing: 'ریفریش ہو رہا ہے...',
     sensitiveWarning:
-      'حساس ڈیٹا نظر آ رہا ہے۔ یہ موڈ صرف سرکاری تصدیق کے لیے استعمال کریں اور JASW قیادت کی منظوری کے بغیر ریکارڈ ایکسپورٹ یا شیئر نہ کریں۔',
+      'حساس ڈیٹا نظر آ رہا ہے۔ یہ موڈ صرف سرکاری تصدیق کے لیے استعمال کریں اور JAS قیادت کی منظوری کے بغیر ریکارڈ ایکسپورٹ یا شیئر نہ کریں۔',
     stats: {
       totalMembers: 'کل ممبران',
       pendingReview: 'زیر جائزہ',
@@ -529,8 +529,8 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       finance_admin: 'فنانس ايڊمن',
     },
     loading: 'ايڊمن ڪنٽرول سينٽر لوڊ ٿي رهيو آهي...',
-    brandEyebrow: 'جٽ الائنس سنڌ ويلفيئر',
-    title: 'JASW ايڊمن ڪنٽرول سينٽر',
+    brandEyebrow: 'جٽ الائنس سنڌ',
+    title: 'JAS ايڊمن ڪنٽرول سينٽر',
     subtitle:
       'ميمبرشپ درخواستون منظم ڪريو ۽ تعليم، صحت، ويلفيئر، روزگار ۽ فنانس جي مجاز پروگرام ماڊيولز تائين رسائي حاصل ڪريو. حساس CNIC/mobile ڊيٽا صرف ضرورت تي ظاهر ٿيندو.',
     showSensitive: 'حساس ڊيٽا ڏيکاريو',
@@ -538,7 +538,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
     refresh: 'ريفريش',
     refreshing: 'ريفريش ٿي رهيو آهي...',
     sensitiveWarning:
-      'حساس ڊيٽا نظر اچي رهيو آهي. هي موڊ صرف سرڪاري تصديق لاءِ استعمال ڪريو ۽ JASW قيادت جي منظوري کانسواءِ رڪارڊ ايڪسپورٽ يا شيئر نه ڪريو.',
+      'حساس ڊيٽا نظر اچي رهيو آهي. هي موڊ صرف سرڪاري تصديق لاءِ استعمال ڪريو ۽ JAS قيادت جي منظوري کانسواءِ رڪارڊ ايڪسپورٽ يا شيئر نه ڪريو.',
     stats: {
       totalMembers: 'ڪل ميمبر',
       pendingReview: 'جائزي هيٺ',

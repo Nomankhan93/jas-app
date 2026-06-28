@@ -23,7 +23,7 @@ const copy = {
     badge: 'Employment Program',
     title: 'Youth employment, CV database and skills placement support.',
     description:
-      'JASW Employment Program helps verified members register as job seekers, upload CVs, list skills, request training and connect with employment committee review.',
+      'JAS Employment Program helps verified members register as job seekers, upload CVs, list skills, request training and connect with employment committee review.',
     applyCta: 'Register as Job Seeker',
     myApplicationsCta: 'My Employment Profile',
     includesEyebrow: 'Phase 1 Includes',
@@ -38,7 +38,7 @@ const copy = {
     benefits: [
       {
         title: 'Verified Job Seeker Profile',
-        text: 'Approved JASW members can submit education, skills, experience and employment preferences.',
+        text: 'Approved JAS members can submit education, skills, experience and employment preferences.',
         icon: Users,
       },
       {
@@ -77,7 +77,7 @@ const copy = {
     benefits: [
       {
         title: 'تصدیق شدہ جاب سیکر پروفائل',
-        text: 'منظور شدہ JASW ممبران اپنی تعلیم، اسکلز، تجربہ اور روزگار ترجیحات جمع کرا سکتے ہیں۔',
+        text: 'منظور شدہ JAS ممبران اپنی تعلیم، اسکلز، تجربہ اور روزگار ترجیحات جمع کرا سکتے ہیں۔',
         icon: Users,
       },
       {
@@ -101,7 +101,7 @@ const copy = {
     badge: 'روزگار پروگرام',
     title: 'نوجوانن جي روزگار، CV ڊيٽابيس ۽ مهارتن جي پليسمينٽ سپورٽ.',
     description:
-      'JASW ايمپلائمنٽ پروگرام تصديق ٿيل ميمبرن کي جاب سيڪر طور رجسٽر، CV اپلوڊ، مهارتون درج، ٽريننگ درخواست ۽ ايمپلائمنٽ ڪميٽي جائزي سان ڳنڍي ٿو.',
+      'JAS ايمپلائمنٽ پروگرام تصديق ٿيل ميمبرن کي جاب سيڪر طور رجسٽر، CV اپلوڊ، مهارتون درج، ٽريننگ درخواست ۽ ايمپلائمنٽ ڪميٽي جائزي سان ڳنڍي ٿو.',
     applyCta: 'جاب سيڪر طور رجسٽر ٿيو',
     myApplicationsCta: 'منهنجو روزگار پروفائل',
     includesEyebrow: 'فيس 1 ۾ شامل',
@@ -116,7 +116,7 @@ const copy = {
     benefits: [
       {
         title: 'تصديق ٿيل جاب سيڪر پروفائل',
-        text: 'منظور ٿيل JASW ميمبر تعليم، مهارتون، تجربو ۽ روزگار ترجيحات جمع ڪرائي سگهن ٿا.',
+        text: 'منظور ٿيل JAS ميمبر تعليم، مهارتون، تجربو ۽ روزگار ترجيحات جمع ڪرائي سگهن ٿا.',
         icon: Users,
       },
       {

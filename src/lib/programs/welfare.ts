@@ -192,7 +192,7 @@ export const welfareDocumentOptions: WelfareDocumentConfig[] = [
   {
     type: 'member_cnic',
     label: 'Member CNIC',
-    description: 'Upload approved JASW member CNIC copy.',
+    description: 'Upload approved JAS member CNIC copy.',
     required: true,
   },
   {

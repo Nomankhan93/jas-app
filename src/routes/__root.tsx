@@ -20,28 +20,28 @@ export const Route = createRootRoute({
     meta: [
       { charSet: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-      { title: 'Jatt Alliance Sindh Welfare | Member & Programs Portal' },
+      { title: 'Jatt Alliance Sindh | Member & Programs Portal' },
       {
         name: 'description',
         content:
-          'Jatt Alliance Sindh Welfare membership registration, admin approval, QR verification, digital ID card and member-verified education, health, welfare and employment support platform.',
+          'Jatt Alliance Sindh membership registration, admin approval, QR verification, digital ID card and member-verified education, health, welfare and employment support platform.',
       },
       { name: 'theme-color', content: '#0b2a1d' },
-      { name: 'application-name', content: 'JASW' },
+      { name: 'application-name', content: 'JAS' },
       { name: 'mobile-web-app-capable', content: 'yes' },
       { name: 'apple-mobile-web-app-capable', content: 'yes' },
-      { name: 'apple-mobile-web-app-title', content: 'JASW' },
+      { name: 'apple-mobile-web-app-title', content: 'JAS' },
       { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
       { name: 'msapplication-TileColor', content: '#0b2a1d' },
       { name: 'format-detection', content: 'telephone=no' },
       {
         property: 'og:title',
-        content: 'Jatt Alliance Sindh Welfare Member & Programs Portal',
+        content: 'Jatt Alliance Sindh Member & Programs Portal',
       },
       {
         property: 'og:description',
         content:
-          'Register, verify and access Jatt Alliance Sindh Welfare digital membership, education, health, welfare and employment support programs.',
+          'Register, verify and access Jatt Alliance Sindh digital membership, education, health, welfare and employment support programs.',
       },
       { property: 'og:type', content: 'website' },
     ],

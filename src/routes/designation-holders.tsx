@@ -66,10 +66,10 @@ type PageCopy = {
 
 const copyByLanguage: Record<AppLanguage, PageCopy> = {
   en: {
-    eyebrow: 'JASW public leadership directory',
+    eyebrow: 'JAS public leadership directory',
     title: 'Designation Holders',
     description:
-      'Members can see the officially assigned JASW designation holders with their name, photo, level and designation in the correct organization order.',
+      'Members can see the officially assigned JAS designation holders with their name, photo, level and designation in the correct organization order.',
     ctaJoin: 'Become a Member',
     ctaCommittees: 'View Committees',
     publicDirectory: 'Public designation record',
@@ -97,14 +97,14 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     notDisclosed: 'Not disclosed',
     listed: 'listed',
     activeDesignationHolders: 'active designation holders',
-    orderedBy: 'Ordered by official JASW hierarchy',
+    orderedBy: 'Ordered by official JAS hierarchy',
     noPhoto: 'Photo not available',
   },
   ur: {
-    eyebrow: 'JASW عوامی قیادت ڈائریکٹری',
+    eyebrow: 'JAS عوامی قیادت ڈائریکٹری',
     title: 'عہدیداران / Designation Holders',
     description:
-      'ممبرز یہاں JASW کے باقاعدہ assigned عہدیداران کا نام، تصویر، لیول اور عہدہ درست تنظیمی ترتیب میں دیکھ سکتے ہیں۔',
+      'ممبرز یہاں JAS کے باقاعدہ assigned عہدیداران کا نام، تصویر، لیول اور عہدہ درست تنظیمی ترتیب میں دیکھ سکتے ہیں۔',
     ctaJoin: 'ممبر بنیں',
     ctaCommittees: 'کمیٹیاں دیکھیں',
     publicDirectory: 'عوامی عہدہ ریکارڈ',
@@ -132,14 +132,14 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     notDisclosed: 'Not disclosed',
     listed: 'listed',
     activeDesignationHolders: 'active designation holders',
-    orderedBy: 'Official JASW hierarchy کے مطابق ترتیب',
+    orderedBy: 'Official JAS hierarchy کے مطابق ترتیب',
     noPhoto: 'Photo not available',
   },
   sd: {
-    eyebrow: 'JASW عوامي قيادت ڊائريڪٽري',
+    eyebrow: 'JAS عوامي قيادت ڊائريڪٽري',
     title: 'عهديدار / Designation Holders',
     description:
-      'ميمبر هتي JASW جي assigned عهديدارن جو نالو، تصوير، ليول ۽ عھدو صحيح تنظيمي ترتيب ۾ ڏسي سگهن ٿا.',
+      'ميمبر هتي JAS جي assigned عهديدارن جو نالو، تصوير، ليول ۽ عھدو صحيح تنظيمي ترتيب ۾ ڏسي سگهن ٿا.',
     ctaJoin: 'ميمبر ٿيو',
     ctaCommittees: 'ڪميٽيون ڏسو',
     publicDirectory: 'عوامي عھدو رڪارڊ',
@@ -167,7 +167,7 @@ const copyByLanguage: Record<AppLanguage, PageCopy> = {
     notDisclosed: 'Not disclosed',
     listed: 'listed',
     activeDesignationHolders: 'active designation holders',
-    orderedBy: 'Official JASW hierarchy مطابق ترتيب',
+    orderedBy: 'Official JAS hierarchy مطابق ترتيب',
     noPhoto: 'Photo not available',
   },
 }
