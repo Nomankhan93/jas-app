@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'jas-pwa'
-const CACHE_VERSION = 'v6-apk-cache-reset-fix'
+const CACHE_VERSION = 'v7-auto-update-hard-reset'
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`
 const CORE_ASSETS = [
   '/offline.html',
@@ -16,7 +16,8 @@ const FORCE_CLEAR_PARAMS = [
 ]
 const RESET_DONE_PARAM = 'pwa-cache-cleared'
 const SCRIPT_STYLE_EXTENSIONS = /\.(?:css|js|mjs)$/i
-const STATIC_ASSET_EXTENSIONS = /\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf)$/i
+const STATIC_ASSET_EXTENSIONS =
+  /\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|otf)$/i
 
 function isForceClearUrl(url) {
   return FORCE_CLEAR_PARAMS.some((param) => url.searchParams.has(param))
@@ -50,7 +51,9 @@ async function deleteAllCacheStorage() {
 async function deleteAllJasCaches() {
   const keys = await caches.keys()
   await Promise.all(
-    keys.filter((key) => key.startsWith(CACHE_PREFIX)).map((key) => caches.delete(key)),
+    keys
+      .filter((key) => key.startsWith(CACHE_PREFIX))
+      .map((key) => caches.delete(key)),
   )
 }
 
@@ -121,23 +124,42 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    deleteOldJasCaches().then(() => self.clients.claim()),
+    deleteOldJasCaches()
+      .catch(() => undefined)
+      .then(() => self.clients.claim()),
   )
 })
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting()
+    event.waitUntil(
+      deleteOldJasCaches()
+        .catch(() => undefined)
+        .then(() => self.skipWaiting()),
+    )
+    return
+  }
+
+  if (event.data?.type === 'PURGE_JAS_CACHES') {
+    event.waitUntil(
+      deleteAllJasCaches().then(() => {
+        if (event.source) {
+          event.source.postMessage({ type: 'JAS_CACHES_PURGED' })
+        }
+      }),
+    )
     return
   }
 
   if (event.data?.type === 'CLEAR_JAS_CACHE') {
     event.waitUntil(
-      deleteAllCacheStorage().then(() => self.registration.unregister()).then(() => {
-        if (event.source) {
-          event.source.postMessage({ type: 'JAS_CACHE_CLEARED' })
-        }
-      }),
+      deleteAllCacheStorage()
+        .then(() => self.registration.unregister())
+        .then(() => {
+          if (event.source) {
+            event.source.postMessage({ type: 'JAS_CACHE_CLEARED' })
+          }
+        }),
     )
   }
 })
@@ -170,7 +192,8 @@ self.addEventListener('fetch', (event) => {
 
   const isManifest = url.pathname === '/manifest.json'
   const isOfflinePage = url.pathname === '/offline.html'
-  const isMutablePublicAsset = url.pathname.startsWith('/jas/') || isManifest || isOfflinePage
+  const isMutablePublicAsset =
+    url.pathname.startsWith('/jas/') || isManifest || isOfflinePage
   const isScriptOrStyle =
     request.destination === 'script' ||
     request.destination === 'style' ||
@@ -229,18 +252,20 @@ self.addEventListener('notificationclick', (event) => {
   ).href
 
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if ('focus' in client && client.url === targetUrl) {
-          return client.focus()
+    self.clients
+      .matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if ('focus' in client && client.url === targetUrl) {
+            return client.focus()
+          }
         }
-      }
 
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(targetUrl)
-      }
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl)
+        }
 
-      return undefined
-    }),
+        return undefined
+      }),
   )
 })

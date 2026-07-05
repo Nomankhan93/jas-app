@@ -42,6 +42,36 @@ export function hasPwaCacheResetParam() {
   return RESET_QUERY_PARAMS.some((param) => url.searchParams.has(param))
 }
 
+export function hasPwaCacheClearedParam() {
+  if (!isBrowser()) return false
+
+  const url = new URL(window.location.href)
+  return url.searchParams.has(RESET_MARKER_PARAM)
+}
+
+export function removePwaCacheResetMarkerFromUrl() {
+  if (!isBrowser()) return
+
+  const url = new URL(window.location.href)
+  let changed = false
+
+  for (const param of RESET_QUERY_PARAMS) {
+    if (url.searchParams.has(param)) {
+      url.searchParams.delete(param)
+      changed = true
+    }
+  }
+
+  if (url.searchParams.has(RESET_MARKER_PARAM)) {
+    url.searchParams.delete(RESET_MARKER_PARAM)
+    changed = true
+  }
+
+  if (changed) {
+    window.history.replaceState(window.history.state, '', url.toString())
+  }
+}
+
 export async function deleteJasCacheStorage() {
   if (!isBrowser() || !('caches' in window)) return
 
@@ -88,6 +118,7 @@ export function getPwaCacheResetUrl() {
   if (!isBrowser()) return '/?clear-pwa-cache=1'
 
   const url = new URL(window.location.href)
+  url.searchParams.delete(RESET_MARKER_PARAM)
   url.searchParams.set('clear-pwa-cache', '1')
   return url.toString()
 }

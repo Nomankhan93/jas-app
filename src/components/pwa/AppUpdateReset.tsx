@@ -2,16 +2,23 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   clearJasPwaCache,
   getPwaCacheResetUrl,
+  hasPwaCacheClearedParam,
   hasPwaCacheResetParam,
+  removePwaCacheResetMarkerFromUrl,
 } from '../../lib/pwa-cache-reset'
 
-const RESET_HELPER_DISMISSED_KEY = 'jas-app-reset-helper-dismissed-v3'
+const RESET_HELPER_DISMISSED_KEY = 'jas-app-reset-helper-dismissed-v4'
+
+type ResetHelperMode = 'reset' | 'success'
 
 function shouldForceShowReset() {
   if (typeof window === 'undefined') return false
 
   const url = new URL(window.location.href)
-  return url.searchParams.has('show-cache-reset') || url.searchParams.has('debug-pwa')
+  return (
+    url.searchParams.has('show-cache-reset') ||
+    url.searchParams.has('debug-pwa')
+  )
 }
 
 function wasDismissed() {
@@ -37,6 +44,7 @@ function markDismissed() {
 export function AppUpdateReset() {
   const [visible, setVisible] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
+  const [mode, setMode] = useState<ResetHelperMode>('reset')
   const resetUrl = useMemo(() => getPwaCacheResetUrl(), [])
 
   useEffect(() => {
@@ -47,11 +55,20 @@ export function AppUpdateReset() {
       return
     }
 
-    // This helper is intentionally NOT shown automatically anymore.
-    // The old behavior displayed it in every installed APK/PWA session, which
-    // made users think the app was still outdated even after a successful update.
+    if (hasPwaCacheClearedParam()) {
+      setMode('success')
+      setVisible(true)
+      removePwaCacheResetMarkerFromUrl()
+      window.setTimeout(() => setVisible(false), 4500)
+      return
+    }
+
+    // Keep the reset helper as a debug/fallback tool only. Normal updates are
+    // auto-applied by PwaBootstrap + sw.js, so users should not see this every
+    // time they open the installed PWA/APK.
     if (!shouldForceShowReset() || wasDismissed()) return
 
+    setMode('reset')
     setVisible(true)
   }, [])
 
@@ -67,27 +84,38 @@ export function AppUpdateReset() {
 
   if (!visible) return null
 
+  const isSuccess = mode === 'success'
+
   return (
     <aside className="jas-app-reset" role="status" aria-live="polite">
       <style>{styles}</style>
       <div className="jas-app-reset__content">
         <p className="jas-app-reset__eyebrow">App update</p>
         <p className="jas-app-reset__text">
-          Loading stuck or old version? Reset app cache and reload latest files.
+          {isSuccess
+            ? 'Latest app files loaded successfully. You can continue using the JAS portal.'
+            : 'Loading stuck or old version? Use this fallback to clear app cache and reload latest files.'}
         </p>
       </div>
       <div className="jas-app-reset__actions">
-        <button
-          type="button"
-          className="jas-app-reset__button jas-app-reset__button--primary"
-          onClick={handleResetClick}
-          disabled={isResetting}
-        >
-          {isResetting ? 'Resetting…' : 'Reset cache'}
-        </button>
-        <a className="jas-app-reset__button jas-app-reset__button--ghost" href={resetUrl}>
-          Hard reset link
-        </a>
+        {!isSuccess ? (
+          <>
+            <button
+              type="button"
+              className="jas-app-reset__button jas-app-reset__button--primary"
+              onClick={handleResetClick}
+              disabled={isResetting}
+            >
+              {isResetting ? 'Resetting…' : 'Reset cache'}
+            </button>
+            <a
+              className="jas-app-reset__button jas-app-reset__button--ghost"
+              href={resetUrl}
+            >
+              Hard reset link
+            </a>
+          </>
+        ) : null}
         <button
           type="button"
           className="jas-app-reset__close"
