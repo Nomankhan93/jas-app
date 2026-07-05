@@ -1,10 +1,12 @@
 # Do not include secrets, local state, dependencies, or build output in shared project archives.
-# Note: .env.example is intentionally allowed and should remain safe placeholder-only documentation.
+# Note: .env.example is intentionally allowed and must remain placeholder-only documentation.
 .env
 .env.local
 .env.production
 .env.development
 .env.test
+.env.preview
+.env.staging
 .env.*.local
 *.local
 

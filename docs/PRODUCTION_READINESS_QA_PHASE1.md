@@ -29,7 +29,7 @@ npm run safe-export
 Then verify the archive:
 
 ```bash
-bash scripts/check-safe-archive.sh exports/<archive-name>.zip
+npm run qa:archive -- exports/<archive-name>.zip
 ```
 
 The archive must not contain:

@@ -37,7 +37,7 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Never expose `SUPABASE_SERVICE_ROLE_KEY` with a `VITE_` prefix.
+Never expose `SUPABASE_SERVICE_ROLE_KEY`, `VAPID_PRIVATE_KEY`, or any private secret with a `VITE_` prefix.
 
 ## 3. Required Supabase production steps
 

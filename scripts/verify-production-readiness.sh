@@ -53,6 +53,18 @@ if [[ -f .env.local ]]; then
   warn ".env.local exists locally. This is OK locally, but it must never be committed or shared."
 fi
 
+if grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.output --exclude='*.zip' -E 'VITE_[A-Z0-9_]*(PRIVATE|SECRET|SERVICE_ROLE|PASSWORD|TOKEN|JWT|KEY)=' . | grep -v 'VITE_SUPABASE_ANON_KEY' | grep -v 'VITE_VAPID_PUBLIC_KEY'; then
+  fail "Private-looking VITE_ environment variable detected. Rename private secrets to server-only names."
+else
+  log "No private-looking VITE_ env assignments detected"
+fi
+
+if [[ -f scripts/scan-secrets.sh ]]; then
+  log "Secret scanner available: scripts/scan-secrets.sh"
+else
+  fail "Missing scripts/scan-secrets.sh"
+fi
+
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if git ls-files --error-unmatch .env.local >/dev/null 2>&1; then
     fail ".env.local is tracked by Git. Remove it immediately."

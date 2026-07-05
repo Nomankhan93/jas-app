@@ -35,15 +35,27 @@ cp .env.example .env.local
 Required variables:
 
 ```env
+# Client-safe values
 VITE_SUPABASE_URL=
-SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
 VITE_PUBLIC_SITE_URL=http://localhost:3000
 VITE_SITE_URL=http://localhost:3000
+VITE_VAPID_PUBLIC_KEY=
+
+# Server-only values
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Important: never commit or share `.env.local`. The service-role key is server-only. `SUPABASE_URL` should normally match `VITE_SUPABASE_URL`, but it is read only by server-side admin actions.
+Important: never commit or share `.env`, `.env.local`, or any file containing real secrets. The service-role key is server-only. `SUPABASE_URL` should normally match `VITE_SUPABASE_URL`, but it is read only by server-side admin actions. Never create `VITE_SUPABASE_SERVICE_ROLE_KEY`, `VITE_VAPID_PRIVATE_KEY`, or any other `VITE_` private secret.
+
+For Web Push Edge Functions, set private secrets in Supabase rather than client env:
+
+```bash
+npx supabase secrets set VAPID_PUBLIC_KEY="..."
+npx supabase secrets set VAPID_PRIVATE_KEY="..."
+npx supabase secrets set VAPID_SUBJECT="mailto:admin@example.com"
+```
 
 ## Install and run
 
@@ -218,21 +230,26 @@ Admin routes:
 
 ## Clean zip sharing
 
-When sharing a project zip, exclude secrets and build artifacts:
+Never share a raw project folder or manually-created zip. Use the built-in safe export command so secrets, local Supabase state, build output, git history, logs, and Android signing/package files are excluded and verified.
 
 ```bash
-cd ~/projects
-rsync -av jas-app/ jas-app-clean/ \
-  --exclude node_modules \
-  --exclude .git \
-  --exclude .output \
-  --exclude .env.local \
-  --exclude supabase/.temp \
-  --exclude supabase/.branches \
-  --exclude supabase/snippets
-
-zip -r jas-app-clean.zip jas-app-clean
+npm run safe-export
+npm run qa:archive
 ```
+
+For an explicit archive path:
+
+```bash
+npm run qa:archive -- exports/jas-app-safe-YYYYMMDD-HHMMSS.zip
+```
+
+Before sharing a zip, you can also run the lightweight secret scanner:
+
+```bash
+npm run scan:secrets
+```
+
+If a raw zip containing `.env`, `.env.local`, `SUPABASE_SERVICE_ROLE_KEY`, or a VAPID private key was already shared, rotate those cloud secrets immediately.
 
 ## Recommended next builds
 

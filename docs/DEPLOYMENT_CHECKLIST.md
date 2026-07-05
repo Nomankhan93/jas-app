@@ -5,6 +5,7 @@
 ```bash
 npm run check
 npm run build
+npm run scan:secrets
 bash scripts/verify-project.sh
 git status
 ```
@@ -36,7 +37,7 @@ SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Do not expose `SUPABASE_SERVICE_ROLE_KEY` to client variables.
+Do not expose `SUPABASE_SERVICE_ROLE_KEY` or any private secret to client variables. Never use `VITE_` for private keys such as `VAPID_PRIVATE_KEY`.
 
 ## After deploy smoke test
 
@@ -54,7 +55,7 @@ Do not expose `SUPABASE_SERVICE_ROLE_KEY` to client variables.
 
 ```bash
 npm run safe-export
-bash scripts/check-safe-archive.sh exports/<archive-name>.zip
+npm run qa:archive -- exports/<archive-name>.zip
 ```
 
-Never share raw project folders/zips.
+Never share raw project folders/zips. Always use `npm run safe-export`, then verify with `npm run qa:archive`.

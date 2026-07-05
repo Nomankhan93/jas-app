@@ -120,7 +120,7 @@ for migration in "${migrations[@]}"; do
 
 log_section "Repository hygiene"
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  tracked_forbidden=$(git ls-files | grep -E '(^\.env$|^\.env\.local$|^\.env\.(development|production|test|preview|staging)$|^node_modules/|^\.output/|^supabase/\.temp/|^supabase/snippets/|\.zip$)' || true)
+  tracked_forbidden=$(git ls-files | grep -E '(^\.env$|^\.env\.local$|^\.env\.(development|production|test|preview|staging)$|^\.env\..*\.local$|^node_modules/|^\.output/|^dist/|^dist-ssr/|^supabase/\.temp/|^supabase/\.branches/|^supabase/snippets/|\.zip$|\.apk$|\.aab$|\.keystore$)' || true)
   if [[ -n "$tracked_forbidden" ]]; then
     fail "Forbidden/sensitive files are tracked by git:"
     echo "$tracked_forbidden"
@@ -128,7 +128,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     pass "No forbidden files tracked by git"
   fi
 
-  untracked_forbidden=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -E '(^\.env$|^\.env\.local$|^\.env\.(development|production|test|preview|staging)$|^node_modules/|^\.output/|^supabase/\.temp/|^supabase/snippets/|\.zip$)' || true)
+  untracked_forbidden=$(git status --porcelain --untracked-files=all | awk '{print $2}' | grep -E '(^\.env$|^\.env\.local$|^\.env\.(development|production|test|preview|staging)$|^\.env\..*\.local$|^node_modules/|^\.output/|^dist/|^dist-ssr/|^supabase/\.temp/|^supabase/\.branches/|^supabase/snippets/|\.zip$|\.apk$|\.aab$|\.keystore$)' || true)
   if [[ -n "$untracked_forbidden" ]]; then
     warn "Forbidden/sensitive files exist locally but are untracked. Do not export/share them:"
     echo "$untracked_forbidden"
@@ -159,6 +159,18 @@ if grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.output
   warn "String 'service_role' appears outside server admin helper; review manually"
 else
   pass "No obvious service_role references outside server admin helper"
+fi
+
+if grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.output --exclude='*.zip' -E 'VITE_[A-Z0-9_]*(PRIVATE|SECRET|SERVICE_ROLE|PASSWORD|TOKEN|JWT|KEY)=' . | grep -v 'VITE_SUPABASE_ANON_KEY' | grep -v 'VITE_VAPID_PUBLIC_KEY'; then
+  fail "Private-looking VITE_ environment variable detected"
+else
+  pass "No private-looking VITE_ env assignments detected"
+fi
+
+if [[ -f scripts/scan-secrets.sh ]]; then
+  pass "Secret scanner script available"
+else
+  fail "Missing scripts/scan-secrets.sh"
 fi
 
 log_section "TypeScript and production build"

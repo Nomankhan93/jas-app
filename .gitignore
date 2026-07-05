@@ -1,36 +1,41 @@
-node_modules
+# Dependencies
+node_modules/
+
+# OS/editor noise
 .DS_Store
-dist
-dist-ssr
-*.local
-.env
-.nitro
-.tanstack
-.wrangler
-.output
-.vinxi
-__unconfig*
-todos.json
-.env.local
 
-# Local environment
+# Local environment and secrets
 .env
 .env.local
+.env.production
+.env.development
+.env.test
+.env.preview
+.env.staging
 .env.*.local
+*.local
 
-# Supabase local temp/cache
+# Build/runtime output
+dist/
+dist-ssr/
+.output/
+.nitro/
+.tanstack/
+.wrangler/
+.vinxi/
+__unconfig*/
+
+# Local Supabase temp/cache
 supabase/.temp/
 supabase/.branches/
 supabase/snippets/
 
-# Local backups
+# Local scratch/backups/exported archives
 backups/
-
-# Build output
-dist/
-# Safe export output
 exports/
+*.log
 *.zip
+todos.json
 
 # Android / Play Store generated package outputs
 *.apk

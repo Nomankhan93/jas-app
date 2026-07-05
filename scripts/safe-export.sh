@@ -28,7 +28,10 @@ RSYNC_EXCLUDES=(
   "--exclude=.env.production"
   "--exclude=.env.development"
   "--exclude=.env.test"
+  "--exclude=.env.preview"
+  "--exclude=.env.staging"
   "--exclude=.env.*.local"
+  "--exclude=*.local"
   "--exclude=.git/"
   "--exclude=node_modules/"
   "--exclude=.output/"
@@ -47,10 +50,17 @@ RSYNC_EXCLUDES=(
   "--exclude=*.log"
   "--exclude=*.zip"
   "--exclude=.DS_Store"
+  "--exclude=*.apk"
+  "--exclude=*.aab"
+  "--exclude=*.keystore"
+  "--exclude=signing-key-info.txt"
+  "--exclude=JAS-test.apk"
+  "--exclude=JAS.apk"
+  "--exclude=JAS.aab"
 )
 
 if command -v rsync >/dev/null 2>&1; then
-  rsync -a "${RSYNC_EXCLUDES[@]}" ./ "$PROJECT_DIR/"
+  rsync -a --delete "${RSYNC_EXCLUDES[@]}" ./ "$PROJECT_DIR/"
 else
   echo "rsync not found; using tar fallback"
   tar \
@@ -59,7 +69,10 @@ else
     --exclude='./.env.production' \
     --exclude='./.env.development' \
     --exclude='./.env.test' \
+    --exclude='./.env.preview' \
+    --exclude='./.env.staging' \
     --exclude='./.env.*.local' \
+    --exclude='*.local' \
     --exclude='./.git' \
     --exclude='./node_modules' \
     --exclude='./.output' \
@@ -78,27 +91,50 @@ else
     --exclude='*.log' \
     --exclude='*.zip' \
     --exclude='.DS_Store' \
+    --exclude='*.apk' \
+    --exclude='*.aab' \
+    --exclude='*.keystore' \
+    --exclude='signing-key-info.txt' \
+    --exclude='JAS-test.apk' \
+    --exclude='JAS.apk' \
+    --exclude='JAS.aab' \
     -cf - . | (cd "$PROJECT_DIR" && tar -xf -)
 fi
 
 # Safety guard: fail if any blocked sensitive/local folders slipped through.
-BLOCKED_PATHS=$(find "$PROJECT_DIR" \
+blocked_paths="$(find "$PROJECT_DIR" \
   \( -name '.env' \
   -o -name '.env.local' \
   -o -name '.env.production' \
   -o -name '.env.development' \
   -o -name '.env.test' \
+  -o -name '.env.preview' \
+  -o -name '.env.staging' \
   -o -name '.git' \
   -o -name 'node_modules' \
   -o -name '.output' \
+  -o -name 'dist' \
+  -o -name 'dist-ssr' \
+  -o -name '*.zip' \
+  -o -name '*.log' \
+  -o -name '*.apk' \
+  -o -name '*.aab' \
+  -o -name '*.keystore' \
+  -o -name 'signing-key-info.txt' \
   -o -path '*/supabase/.temp' \
   -o -path '*/supabase/.branches' \
   -o -path '*/supabase/snippets' \
-  \) -print | head -20)
+  \) -print | head -50)"
 
-if [ -n "$BLOCKED_PATHS" ]; then
+if [[ -n "$blocked_paths" ]]; then
   echo "Safe export blocked. Sensitive/local files were still present:" >&2
-  echo "$BLOCKED_PATHS" >&2
+  echo "$blocked_paths" >&2
+  exit 1
+fi
+
+# Content scan before zipping catches accidental hardcoded keys in shareable files.
+if ! bash scripts/scan-secrets.sh "$PROJECT_DIR" --archive-mode; then
+  echo "Safe export blocked. Secret-like content was detected in export staging." >&2
   exit 1
 fi
 
@@ -112,6 +148,8 @@ fi
   zip -qr "$ROOT_DIR/$ARCHIVE_PATH" jas-app
 )
 
-BYTES=$(wc -c < "$ARCHIVE_PATH" | tr -d ' ')
-echo "Safe export created: $ARCHIVE_PATH (${BYTES} bytes)"
-echo "Excluded: .env*, .git, node_modules, .output, supabase/.temp, backups, exports, logs, zip files"
+bash scripts/check-safe-archive.sh "$ARCHIVE_PATH"
+
+bytes="$(wc -c < "$ARCHIVE_PATH" | tr -d ' ')"
+echo "Safe export created: $ARCHIVE_PATH (${bytes} bytes)"
+echo "Excluded: .env*, .git, node_modules, build output, Supabase temp/branches/snippets, backups, exports, logs, zips, Android packages/keys"
