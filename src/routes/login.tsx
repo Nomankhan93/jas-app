@@ -305,6 +305,12 @@ function LoginPage() {
                   </div>
                 </FormField>
 
+                <div className="text-end text-sm">
+                  <Link to="/forgot-password" className="font-bold text-[var(--forest)] hover:underline">
+                    {t('login.forgotPassword')}
+                  </Link>
+                </div>
+
                 <AlertBlock error={error} message={message} />
 
                 <button
@@ -375,6 +381,13 @@ function LoginPage() {
                     </button>
                   </div>
                 </FormField>
+
+                <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+                  {t('login.forgotPhoneHint')}{' '}
+                  <Link to="/forgot-password" className="font-extrabold text-[var(--forest)] hover:underline">
+                    {t('login.forgotPassword')}
+                  </Link>
+                </div>
 
                 <AlertBlock error={error} message={message} />
 

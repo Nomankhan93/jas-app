@@ -11,12 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VisionMissionRouteImport } from './routes/vision-mission'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GalleryRouteImport } from './routes/gallery'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as DonorsRouteImport } from './routes/donors'
 import { Route as DonateRouteImport } from './routes/donate'
@@ -87,6 +89,11 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -115,6 +122,11 @@ const LoginRoute = LoginRouteImport.update({
 const GalleryRoute = GalleryRouteImport.update({
   id: '/gallery',
   path: '/gallery',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EventsRoute = EventsRouteImport.update({
@@ -436,12 +448,14 @@ export interface FileRoutesByFullPath {
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
   '/admin/area-permissions': typeof AdminAreaPermissionsRoute
@@ -505,12 +519,14 @@ export interface FileRoutesByTo {
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
   '/admin/area-permissions': typeof AdminAreaPermissionsRoute
@@ -575,12 +591,14 @@ export interface FileRoutesById {
   '/donate': typeof DonateRoute
   '/donors': typeof DonorsRoute
   '/events': typeof EventsRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/gallery': typeof GalleryRoute
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/vision-mission': typeof VisionMissionRoute
   '/admin/area-permissions': typeof AdminAreaPermissionsRoute
@@ -646,12 +664,14 @@ export interface FileRouteTypes {
     | '/donate'
     | '/donors'
     | '/events'
+    | '/forgot-password'
     | '/gallery'
     | '/login'
     | '/manifesto'
     | '/news'
     | '/notifications'
     | '/register'
+    | '/reset-password'
     | '/signup'
     | '/vision-mission'
     | '/admin/area-permissions'
@@ -715,12 +735,14 @@ export interface FileRouteTypes {
     | '/donate'
     | '/donors'
     | '/events'
+    | '/forgot-password'
     | '/gallery'
     | '/login'
     | '/manifesto'
     | '/news'
     | '/notifications'
     | '/register'
+    | '/reset-password'
     | '/signup'
     | '/vision-mission'
     | '/admin/area-permissions'
@@ -784,12 +806,14 @@ export interface FileRouteTypes {
     | '/donate'
     | '/donors'
     | '/events'
+    | '/forgot-password'
     | '/gallery'
     | '/login'
     | '/manifesto'
     | '/news'
     | '/notifications'
     | '/register'
+    | '/reset-password'
     | '/signup'
     | '/vision-mission'
     | '/admin/area-permissions'
@@ -854,12 +878,14 @@ export interface RootRouteChildren {
   DonateRoute: typeof DonateRoute
   DonorsRoute: typeof DonorsRoute
   EventsRoute: typeof EventsRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   GalleryRoute: typeof GalleryRoute
   LoginRoute: typeof LoginRoute
   ManifestoRoute: typeof ManifestoRoute
   NewsRoute: typeof NewsRouteWithChildren
   NotificationsRoute: typeof NotificationsRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   VisionMissionRoute: typeof VisionMissionRoute
   ProgramsEducationRoute: typeof ProgramsEducationRouteWithChildren
@@ -884,6 +910,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -926,6 +959,13 @@ declare module '@tanstack/react-router' {
       path: '/gallery'
       fullPath: '/gallery'
       preLoaderRoute: typeof GalleryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/events': {
@@ -1583,12 +1623,14 @@ const rootRouteChildren: RootRouteChildren = {
   DonateRoute: DonateRoute,
   DonorsRoute: DonorsRoute,
   EventsRoute: EventsRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   GalleryRoute: GalleryRoute,
   LoginRoute: LoginRoute,
   ManifestoRoute: ManifestoRoute,
   NewsRoute: NewsRouteWithChildren,
   NotificationsRoute: NotificationsRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   VisionMissionRoute: VisionMissionRoute,
   ProgramsEducationRoute: ProgramsEducationRouteWithChildren,
