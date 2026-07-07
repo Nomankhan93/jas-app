@@ -5,8 +5,15 @@ import {
   Outlet,
   useNavigate,
   useRouterState,
-} from '@tanstack/react-router'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+} from "@tanstack/react-router";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowRight,
   BadgeCheck,
@@ -31,379 +38,395 @@ import {
   Users,
   XCircle,
   type LucideIcon,
-} from 'lucide-react'
-import { supabase } from '../lib/supabase/client'
+} from "lucide-react";
+import { supabase } from "../lib/supabase/client";
 import {
   csvCell,
   formatDisplayDate as formatDate,
   maskCnic,
   maskMobile,
   uniqueSorted,
-} from '../lib/shared/formatters'
-import { useAdminDashboardCopy } from '../lib/admin-dashboard-i18n'
-import { AdminShell } from '../components/admin/AdminShell'
-import { useI18n } from '../lib/i18n'
+} from "../lib/shared/formatters";
+import { useAdminDashboardCopy } from "../lib/admin-dashboard-i18n";
+import { AdminShell } from "../components/admin/AdminShell";
+import { useI18n } from "../lib/i18n";
 import {
   filterRowsByAreaAccess,
   getAreaAccessSummaryText,
   loadCurrentAdminAreaAccess,
-} from '../lib/area-permissions'
+} from "../lib/area-permissions";
+import {
+  fetchAuditLogs,
+  formatAuditDate,
+  getAuditActionClass,
+  getAuditModuleLabel,
+  type AuditLogRow,
+} from "../lib/audit-logs";
 
-export const Route = createFileRoute('/admin')({
+export const Route = createFileRoute("/admin")({
   component: AdminPage,
-})
+});
 
 const adminRoleNames = [
-  'admin',
-  'super_admin',
-  'membership_admin',
-  'education_admin',
-  'health_admin',
-  'employment_admin',
-  'ration_admin',
-  'welfare_admin',
-  'finance_admin',
-] as const
+  "admin",
+  "super_admin",
+  "membership_admin",
+  "education_admin",
+  "health_admin",
+  "employment_admin",
+  "ration_admin",
+  "welfare_admin",
+  "finance_admin",
+] as const;
 
-type AdminRoleName = (typeof adminRoleNames)[number]
+type AdminRoleName = (typeof adminRoleNames)[number];
 type AdminModuleKey =
-  | 'membership'
-  | 'education'
-  | 'health'
-  | 'welfare'
-  | 'employment'
-  | 'finance'
-  | 'cms'
-  | 'media'
-  | 'reports'
-  | 'roles'
-  | 'area-permissions'
-  | 'audit-logs'
-  | 'committees'
+  | "membership"
+  | "education"
+  | "health"
+  | "welfare"
+  | "employment"
+  | "finance"
+  | "cms"
+  | "media"
+  | "reports"
+  | "roles"
+  | "area-permissions"
+  | "audit-logs"
+  | "committees";
 
-type MemberStatus = 'pending' | 'approved' | 'rejected'
-type StatusFilter = 'all' | MemberStatus
-type DateFilter = 'all' | 'today' | '7d' | '30d'
-type SortBy = 'newest' | 'oldest' | 'name' | 'district'
+type MemberStatus = "pending" | "approved" | "rejected";
+type StatusFilter = "all" | MemberStatus;
+type DateFilter = "all" | "today" | "7d" | "30d";
+type SortBy = "newest" | "oldest" | "name" | "district";
 
 type Member = {
-  id: string
-  full_name: string
-  cnic: string
-  mobile: string
-  district: string
-  taluka: string | null
-  photo_url: string | null
-  status: MemberStatus
-  member_no: string | null
-  created_at: string
-}
+  id: string;
+  full_name: string;
+  cnic: string;
+  mobile: string;
+  district: string;
+  taluka: string | null;
+  photo_url: string | null;
+  status: MemberStatus;
+  member_no: string | null;
+  created_at: string;
+};
 
 type AdminAccessResult =
   | { ok: true; userId: string; roles: AdminRoleName[] }
-  | { ok: false; redirectTo: '/login' | '/dashboard' }
+  | { ok: false; redirectTo: "/login" | "/dashboard" };
 
 type AdminRouteTo =
-  | '/admin/finance'
-  | '/admin/cms'
-  | '/admin/news'
-  | '/admin/reports'
-  | '/admin/committees'
-  | '/admin/roles'
-  | '/admin/area-permissions'
-  | '/admin/audit-logs'
+  | "/admin/finance"
+  | "/admin/cms"
+  | "/admin/news"
+  | "/admin/reports"
+  | "/admin/committees"
+  | "/admin/roles"
+  | "/admin/area-permissions"
+  | "/admin/audit-logs";
 
 type AdminQuickActionConfig = {
-  key: AdminModuleKey
-  title: string
-  description: string
-  to?: AdminRouteTo
-  icon: LucideIcon
-  tone: 'emerald' | 'amber' | 'sky' | 'violet' | 'slate' | 'rose'
-  metric?: string
-  metricLabel?: string
-  onClick?: () => void
-}
+  key: AdminModuleKey;
+  title: string;
+  description: string;
+  to?: AdminRouteTo;
+  icon: LucideIcon;
+  tone: "emerald" | "amber" | "sky" | "violet" | "slate" | "rose";
+  metric?: string;
+  metricLabel?: string;
+  onClick?: () => void;
+};
 
-const ADMIN_MEMBERS_PAGE_SIZE = 50
-const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200
-const MEMBER_PHOTO_BUCKET = 'member-photos'
-const MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60
+const ADMIN_MEMBERS_PAGE_SIZE = 50;
+const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200;
+const MEMBER_PHOTO_BUCKET = "member-photos";
+const MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 const adminDashboardDedupeCopy = {
   en: {
-    priorityWork: 'Priority Work',
-    workQueueTitle: 'Admin work queue',
+    priorityWork: "Priority Work",
+    workQueueTitle: "Admin work queue",
     workQueueDescription:
-      'Important membership review numbers and daily admin shortcuts are shown here.',
-    pendingApplications: 'Pending applications',
-    approvedMembers: 'Approved members',
-    cardsIssued: 'Cards issued',
-    cleanerFlow: 'Membership Summary',
-    navigationMoved: 'Current member records',
+      "Important membership review numbers and daily admin shortcuts are shown here.",
+    pendingApplications: "Pending applications",
+    approvedMembers: "Approved members",
+    cardsIssued: "Cards issued",
+    cleanerFlow: "Membership Summary",
+    navigationMoved: "Current member records",
     navigationMovedDescription:
-      'Quick overview of total and rejected membership applications in the current admin records.',
-    total: 'Total',
-    rejected: 'Rejected',
-    quickActions: 'Quick actions',
-    frequentTasks: 'Frequent admin tasks',
+      "Quick overview of total and rejected membership applications in the current admin records.",
+    total: "Total",
+    rejected: "Rejected",
+    quickActions: "Quick actions",
+    frequentTasks: "Frequent admin tasks",
     actions: {
       reviewPending: {
-        title: 'Review pending members',
-        description: 'Open the member table with pending applications selected.',
-        metricLabel: 'Pending',
+        title: "Review pending members",
+        description:
+          "Open the member table with pending applications selected.",
+        metricLabel: "Pending",
       },
       finance: {
-        title: 'Finance',
-        description: 'Track donations, expenses, receipts and finance audit logs.',
+        title: "Finance",
+        description:
+          "Track donations, expenses, receipts and finance audit logs.",
       },
       reports: {
-        title: 'Reports',
-        description: 'View organization summaries, exports and review reports.',
+        title: "Reports",
+        description: "View organization summaries, exports and review reports.",
       },
       news: {
-        title: 'News',
-        description: 'Create or update public announcements and news posts.',
+        title: "News",
+        description: "Create or update public announcements and news posts.",
       },
       cms: {
-        title: 'CMS',
-        description: 'Edit public website pages and multilingual content.',
+        title: "CMS",
+        description: "Edit public website pages and multilingual content.",
       },
       committees: {
-        title: 'Organization Levels',
-        description: 'Manage level units used for designation assignment.',
+        title: "Organization Levels",
+        description: "Manage level units used for designation assignment.",
       },
     },
   },
   ur: {
-    priorityWork: 'اہم کام',
-    workQueueTitle: 'ایڈمن ورک کیو',
+    priorityWork: "اہم کام",
+    workQueueTitle: "ایڈمن ورک کیو",
     workQueueDescription:
-      'اہم ممبرشپ ریویو نمبرز اور روزمرہ ایڈمن شارٹ کٹس یہاں دکھائے جاتے ہیں۔',
-    pendingApplications: 'زیر التواء درخواستیں',
-    approvedMembers: 'منظور شدہ ممبرز',
-    cardsIssued: 'جاری شدہ کارڈز',
-    cleanerFlow: 'ممبرشپ خلاصہ',
-    navigationMoved: 'موجودہ ممبر ریکارڈ',
+      "اہم ممبرشپ ریویو نمبرز اور روزمرہ ایڈمن شارٹ کٹس یہاں دکھائے جاتے ہیں۔",
+    pendingApplications: "زیر التواء درخواستیں",
+    approvedMembers: "منظور شدہ ممبرز",
+    cardsIssued: "جاری شدہ کارڈز",
+    cleanerFlow: "ممبرشپ خلاصہ",
+    navigationMoved: "موجودہ ممبر ریکارڈ",
     navigationMovedDescription:
-      'موجودہ ایڈمن ریکارڈز میں کل اور رد شدہ ممبرشپ درخواستوں کا مختصر جائزہ۔',
-    total: 'کل',
-    rejected: 'رد شدہ',
-    quickActions: 'فوری ایکشنز',
-    frequentTasks: 'عام ایڈمن کام',
+      "موجودہ ایڈمن ریکارڈز میں کل اور رد شدہ ممبرشپ درخواستوں کا مختصر جائزہ۔",
+    total: "کل",
+    rejected: "رد شدہ",
+    quickActions: "فوری ایکشنز",
+    frequentTasks: "عام ایڈمن کام",
     actions: {
       reviewPending: {
-        title: 'زیر التواء ممبرز ریویو کریں',
-        description: 'ممبر ٹیبل کو زیر التواء درخواستوں کے فلٹر کے ساتھ کھولیں۔',
-        metricLabel: 'زیر التواء',
+        title: "زیر التواء ممبرز ریویو کریں",
+        description:
+          "ممبر ٹیبل کو زیر التواء درخواستوں کے فلٹر کے ساتھ کھولیں۔",
+        metricLabel: "زیر التواء",
       },
       finance: {
-        title: 'فنانس',
-        description: 'ڈونیشنز، اخراجات، رسیدیں اور فنانس آڈٹ لاگز ٹریک کریں۔',
+        title: "فنانس",
+        description: "ڈونیشنز، اخراجات، رسیدیں اور فنانس آڈٹ لاگز ٹریک کریں۔",
       },
       reports: {
-        title: 'رپورٹس',
-        description: 'تنظیمی خلاصے، ایکسپورٹس اور ریویو رپورٹس دیکھیں۔',
+        title: "رپورٹس",
+        description: "تنظیمی خلاصے، ایکسپورٹس اور ریویو رپورٹس دیکھیں۔",
       },
       news: {
-        title: 'نیوز',
-        description: 'عوامی اعلانات اور نیوز پوسٹس بنائیں یا اپڈیٹ کریں۔',
+        title: "نیوز",
+        description: "عوامی اعلانات اور نیوز پوسٹس بنائیں یا اپڈیٹ کریں۔",
       },
       cms: {
-        title: 'CMS',
-        description: 'پبلک ویب سائٹ صفحات اور ملٹی لنگول مواد ایڈٹ کریں۔',
+        title: "CMS",
+        description: "پبلک ویب سائٹ صفحات اور ملٹی لنگول مواد ایڈٹ کریں۔",
       },
       committees: {
-        title: 'کمیٹیز',
-        description: 'مرکزی، ڈویژنل، ضلعی اور تعلقہ کمیٹیز مینیج کریں۔',
+        title: "کمیٹیز",
+        description: "مرکزی، ڈویژنل، ضلعی اور تعلقہ کمیٹیز مینیج کریں۔",
       },
     },
   },
   sd: {
-    priorityWork: 'اهم ڪم',
-    workQueueTitle: 'ايڊمن ورڪ ڪيو',
+    priorityWork: "اهم ڪم",
+    workQueueTitle: "ايڊمن ورڪ ڪيو",
     workQueueDescription:
-      'اهم ميمبرشپ ريَويو نمبر ۽ روزمره ايڊمن شارٽ ڪٽس هتي ڏيکاريا وڃن ٿا.',
-    pendingApplications: 'زير التوا درخواستون',
-    approvedMembers: 'منظور ٿيل ميمبر',
-    cardsIssued: 'جاري ٿيل ڪارڊ',
-    cleanerFlow: 'ميمبرشپ خلاصو',
-    navigationMoved: 'موجوده ميمبر رڪارڊ',
+      "اهم ميمبرشپ ريَويو نمبر ۽ روزمره ايڊمن شارٽ ڪٽس هتي ڏيکاريا وڃن ٿا.",
+    pendingApplications: "زير التوا درخواستون",
+    approvedMembers: "منظور ٿيل ميمبر",
+    cardsIssued: "جاري ٿيل ڪارڊ",
+    cleanerFlow: "ميمبرشپ خلاصو",
+    navigationMoved: "موجوده ميمبر رڪارڊ",
     navigationMovedDescription:
-      'موجوده ايڊمن رڪارڊز ۾ ڪل ۽ رد ٿيل ميمبرشپ درخواستن جو مختصر جائزو.',
-    total: 'ڪل',
-    rejected: 'رد ٿيل',
-    quickActions: 'جلدي عمل',
-    frequentTasks: 'عام ايڊمن ڪم',
+      "موجوده ايڊمن رڪارڊز ۾ ڪل ۽ رد ٿيل ميمبرشپ درخواستن جو مختصر جائزو.",
+    total: "ڪل",
+    rejected: "رد ٿيل",
+    quickActions: "جلدي عمل",
+    frequentTasks: "عام ايڊمن ڪم",
     actions: {
       reviewPending: {
-        title: 'زير التوا ميمبر ريَويو ڪريو',
-        description: 'ميمبر ٽيبل کي زير التوا درخواستن جي فلٽر سان کوليو.',
-        metricLabel: 'زير التوا',
+        title: "زير التوا ميمبر ريَويو ڪريو",
+        description: "ميمبر ٽيبل کي زير التوا درخواستن جي فلٽر سان کوليو.",
+        metricLabel: "زير التوا",
       },
       finance: {
-        title: 'فنانس',
-        description: 'ڊونيشنز، خرچ، رسيدون ۽ فنانس آڊٽ لاگز ٽريڪ ڪريو.',
+        title: "فنانس",
+        description: "ڊونيشنز، خرچ، رسيدون ۽ فنانس آڊٽ لاگز ٽريڪ ڪريو.",
       },
       reports: {
-        title: 'رپورٽس',
-        description: 'تنظيمي خلاصا، ايڪسپورٽس ۽ ريَويو رپورٽس ڏسو.',
+        title: "رپورٽس",
+        description: "تنظيمي خلاصا، ايڪسپورٽس ۽ ريَويو رپورٽس ڏسو.",
       },
       news: {
-        title: 'نيوز',
-        description: 'عوامي اعلان ۽ نيوز پوسٽس ٺاهيو يا اپڊيٽ ڪريو.',
+        title: "نيوز",
+        description: "عوامي اعلان ۽ نيوز پوسٽس ٺاهيو يا اپڊيٽ ڪريو.",
       },
       cms: {
-        title: 'CMS',
-        description: 'پبلڪ ويب سائيٽ صفحا ۽ ملٽي لنگول مواد ايڊٽ ڪريو.',
+        title: "CMS",
+        description: "پبلڪ ويب سائيٽ صفحا ۽ ملٽي لنگول مواد ايڊٽ ڪريو.",
       },
       committees: {
-        title: 'ڪميٽيز',
-        description: 'مرڪزي، ڊويزنل، ضلعي ۽ تعلقي ڪميٽيز مينيج ڪريو.',
+        title: "ڪميٽيز",
+        description: "مرڪزي، ڊويزنل، ضلعي ۽ تعلقي ڪميٽيز مينيج ڪريو.",
       },
     },
   },
-} as const
-
+} as const;
 
 function AdminPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
-  })
+  });
 
-  const normalizedPathname = pathname.replace(/\/+$/, '') || '/'
-  const isNestedAdminPage = normalizedPathname !== '/admin'
+  const normalizedPathname = pathname.replace(/\/+$/, "") || "/";
+  const isNestedAdminPage = normalizedPathname !== "/admin";
 
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [members, setMembers] = useState<Member[]>([])
-  const [memberPhotoUrls, setMemberPhotoUrls] = useState<Record<string, string>>({})
-  const [memberResultCount, setMemberResultCount] = useState(0)
-  const [memberPage, setMemberPage] = useState(0)
-  const [adminRoles, setAdminRoles] = useState<AdminRoleName[]>([])
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [districtFilter, setDistrictFilter] = useState('all')
-  const [talukaFilter, setTalukaFilter] = useState('all')
-  const [dateFilter, setDateFilter] = useState<DateFilter>('all')
-  const [sortBy, setSortBy] = useState<SortBy>('newest')
-  const [searchInput, setSearchInput] = useState('')
-  const [showSensitive, setShowSensitive] = useState(false)
-  const [error, setError] = useState('')
-  const [areaNotice, setAreaNotice] = useState('')
-  const hasLoadedMembersRef = useRef(false)
-  const adminCopy = useAdminDashboardCopy()
-  const debouncedSearch = useDebouncedValue(searchInput, 350)
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [memberPhotoUrls, setMemberPhotoUrls] = useState<
+    Record<string, string>
+  >({});
+  const [memberResultCount, setMemberResultCount] = useState(0);
+  const [memberPage, setMemberPage] = useState(0);
+  const [adminRoles, setAdminRoles] = useState<AdminRoleName[]>([]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [districtFilter, setDistrictFilter] = useState("all");
+  const [talukaFilter, setTalukaFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [sortBy, setSortBy] = useState<SortBy>("newest");
+  const [searchInput, setSearchInput] = useState("");
+  const [showSensitive, setShowSensitive] = useState(false);
+  const [error, setError] = useState("");
+  const [areaNotice, setAreaNotice] = useState("");
+  const [recentAuditLogs, setRecentAuditLogs] = useState<AuditLogRow[]>([]);
+  const hasLoadedMembersRef = useRef(false);
+  const adminCopy = useAdminDashboardCopy();
+  const debouncedSearch = useDebouncedValue(searchInput, 350);
 
   const loadAdmin = useCallback(
     async (
       cancelledRef?: { current: boolean },
       options?: { silent?: boolean },
     ) => {
-      const silent = options?.silent ?? false
+      const silent = options?.silent ?? false;
 
       if (silent) {
-        setRefreshing(true)
+        setRefreshing(true);
       } else {
-        setLoading(true)
+        setLoading(true);
       }
 
-      setError('')
-      setAreaNotice('')
+      setError("");
+      setAreaNotice("");
 
       try {
-        const access = await ensureAdminAccess()
+        const access = await ensureAdminAccess();
 
         if (!access.ok) {
           if (!cancelledRef?.current) {
-            await navigate({ to: access.redirectTo })
+            await navigate({ to: access.redirectTo });
           }
 
-          return
+          return;
         }
 
         if (!canManageMembersFromRoles(access.roles)) {
           if (!cancelledRef?.current) {
-            await navigate({ to: getPrimaryAdminRoute(access.roles) })
+            await navigate({ to: getPrimaryAdminRoute(access.roles) });
           }
 
-          return
+          return;
         }
 
         if (!cancelledRef?.current) {
-          setAdminRoles(access.roles)
+          setAdminRoles(access.roles);
         }
 
-        const areaAccess = await loadCurrentAdminAreaAccess('membership', 'view', {
-          requiredRoles: ['admin', 'super_admin', 'membership_admin'],
-          userId: access.userId,
-          roles: access.roles,
-        })
+        const areaAccess = await loadCurrentAdminAreaAccess(
+          "membership",
+          "view",
+          {
+            requiredRoles: ["admin", "super_admin", "membership_admin"],
+            userId: access.userId,
+            roles: access.roles,
+          },
+        );
 
         if (!areaAccess.ok) {
-          throw new Error(areaAccess.message)
+          throw new Error(areaAccess.message);
         }
 
         let membersQuery = supabase
-          .from('members')
+          .from("members")
           .select(
             [
-              'id',
-              'full_name',
-              'cnic',
-              'mobile',
-              'district',
-              'taluka',
-              'photo_url',
-              'status',
-              'member_no',
-              'created_at',
-            ].join(', '),
-            { count: 'exact' },
-          )
+              "id",
+              "full_name",
+              "cnic",
+              "mobile",
+              "district",
+              "taluka",
+              "photo_url",
+              "status",
+              "member_no",
+              "created_at",
+            ].join(", "),
+            { count: "exact" },
+          );
 
-        if (statusFilter !== 'all') {
-          membersQuery = membersQuery.eq('status', statusFilter)
+        if (statusFilter !== "all") {
+          membersQuery = membersQuery.eq("status", statusFilter);
         }
 
-        if (districtFilter !== 'all') {
-          membersQuery = membersQuery.eq('district', districtFilter)
+        if (districtFilter !== "all") {
+          membersQuery = membersQuery.eq("district", districtFilter);
         }
 
-        if (talukaFilter !== 'all') {
-          membersQuery = membersQuery.eq('taluka', talukaFilter)
+        if (talukaFilter !== "all") {
+          membersQuery = membersQuery.eq("taluka", talukaFilter);
         }
 
-        const dateStart = getDateFilterStart(dateFilter)
+        const dateStart = getDateFilterStart(dateFilter);
 
         if (dateStart) {
-          membersQuery = membersQuery.gte('created_at', dateStart)
+          membersQuery = membersQuery.gte("created_at", dateStart);
         }
 
-        const searchFilter = buildMemberSearchOrFilter(debouncedSearch)
+        const searchFilter = buildMemberSearchOrFilter(debouncedSearch);
 
         if (searchFilter) {
-          membersQuery = membersQuery.or(searchFilter)
+          membersQuery = membersQuery.or(searchFilter);
         }
 
-        if (sortBy === 'oldest') {
-          membersQuery = membersQuery.order('created_at', { ascending: true })
-        } else if (sortBy === 'name') {
+        if (sortBy === "oldest") {
+          membersQuery = membersQuery.order("created_at", { ascending: true });
+        } else if (sortBy === "name") {
           membersQuery = membersQuery
-            .order('full_name', { ascending: true })
-            .order('created_at', { ascending: false })
-        } else if (sortBy === 'district') {
+            .order("full_name", { ascending: true })
+            .order("created_at", { ascending: false });
+        } else if (sortBy === "district") {
           membersQuery = membersQuery
-            .order('district', { ascending: true })
-            .order('taluka', { ascending: true })
-            .order('created_at', { ascending: false })
+            .order("district", { ascending: true })
+            .order("taluka", { ascending: true })
+            .order("created_at", { ascending: false });
         } else {
-          membersQuery = membersQuery.order('created_at', { ascending: false })
+          membersQuery = membersQuery.order("created_at", { ascending: false });
         }
 
-        const pageFrom = memberPage * ADMIN_MEMBERS_PAGE_SIZE
-        const pageTo = pageFrom + ADMIN_MEMBERS_PAGE_SIZE - 1
+        const pageFrom = memberPage * ADMIN_MEMBERS_PAGE_SIZE;
+        const pageTo = pageFrom + ADMIN_MEMBERS_PAGE_SIZE - 1;
 
         const pagedMembersQuery = areaAccess.isRestricted
           ? membersQuery.limit(
@@ -412,43 +435,56 @@ function AdminPage() {
                 Math.min(ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT, pageTo + 1),
               ),
             )
-          : membersQuery.range(pageFrom, pageTo)
+          : membersQuery.range(pageFrom, pageTo);
 
-        const { data, error: membersError, count } = await pagedMembersQuery
-          .returns<Member[]>()
+        const {
+          data,
+          error: membersError,
+          count,
+        } = await pagedMembersQuery.returns<Member[]>();
 
-        if (membersError) throw membersError
+        if (membersError) throw membersError;
 
         const safeMembers = areaAccess.isRestricted
-          ? filterRowsByAreaAccess(data ?? [], areaAccess).slice(pageFrom, pageTo + 1)
-          : filterRowsByAreaAccess(data ?? [], areaAccess)
+          ? filterRowsByAreaAccess(data ?? [], areaAccess).slice(
+              pageFrom,
+              pageTo + 1,
+            )
+          : filterRowsByAreaAccess(data ?? [], areaAccess);
 
-        const resultCount = count ?? safeMembers.length
+        const resultCount = count ?? safeMembers.length;
 
         if (resultCount > 0 && pageFrom >= resultCount && memberPage > 0) {
           if (!cancelledRef?.current) {
-            setMemberPage(0)
+            setMemberPage(0);
           }
 
-          return
+          return;
         }
 
+        const recentLogs = access.roles.includes("super_admin")
+          ? await fetchAuditLogs({ limit: 6 }).catch(() => [])
+          : [];
+
         if (!cancelledRef?.current) {
-          setMembers(safeMembers)
-          setMemberResultCount(resultCount)
-          setAreaNotice(getAreaAccessSummaryText(areaAccess))
+          setMembers(safeMembers);
+          setMemberResultCount(resultCount);
+          setAreaNotice(getAreaAccessSummaryText(areaAccess));
+          setRecentAuditLogs(recentLogs);
         }
       } catch (err) {
         if (!cancelledRef?.current) {
           setError(
-            err instanceof Error ? err.message : 'Failed to load admin members.',
-          )
+            err instanceof Error
+              ? err.message
+              : "Failed to load admin members.",
+          );
         }
       } finally {
         if (!cancelledRef?.current) {
-          setLoading(false)
-          setRefreshing(false)
-          hasLoadedMembersRef.current = true
+          setLoading(false);
+          setRefreshing(false);
+          hasLoadedMembersRef.current = true;
         }
       }
     },
@@ -462,74 +498,87 @@ function AdminPage() {
       statusFilter,
       talukaFilter,
     ],
-  )
+  );
 
   useEffect(() => {
-    setMemberPage(0)
-  }, [dateFilter, debouncedSearch, districtFilter, sortBy, statusFilter, talukaFilter])
+    setMemberPage(0);
+  }, [
+    dateFilter,
+    debouncedSearch,
+    districtFilter,
+    sortBy,
+    statusFilter,
+    talukaFilter,
+  ]);
 
   useEffect(() => {
-    if (isNestedAdminPage) return
+    if (isNestedAdminPage) return;
 
-    const cancelledRef = { current: false }
+    const cancelledRef = { current: false };
 
-    void loadAdmin(cancelledRef, { silent: hasLoadedMembersRef.current })
+    void loadAdmin(cancelledRef, { silent: hasLoadedMembersRef.current });
 
     return () => {
-      cancelledRef.current = true
-    }
-  }, [isNestedAdminPage, loadAdmin])
+      cancelledRef.current = true;
+    };
+  }, [isNestedAdminPage, loadAdmin]);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
-    const membersWithPhotos = members.filter((member) => Boolean(member.photo_url))
+    const membersWithPhotos = members.filter((member) =>
+      Boolean(member.photo_url),
+    );
 
     if (membersWithPhotos.length === 0) {
-      setMemberPhotoUrls({})
+      setMemberPhotoUrls({});
       return () => {
-        cancelled = true
-      }
+        cancelled = true;
+      };
     }
 
     async function loadMemberPhotoUrls() {
       const entries = await Promise.all(
         membersWithPhotos.map(async (member) => {
-          const signedUrl = await createAdminMemberPhotoSignedUrl(member.photo_url)
+          const signedUrl = await createAdminMemberPhotoSignedUrl(
+            member.photo_url,
+          );
 
-          if (!signedUrl) return null
+          if (!signedUrl) return null;
 
-          return [member.id, signedUrl] as const
+          return [member.id, signedUrl] as const;
         }),
-      )
+      );
 
-      if (cancelled) return
+      if (cancelled) return;
 
       setMemberPhotoUrls(
         Object.fromEntries(
-          entries.filter((entry): entry is readonly [string, string] => Boolean(entry)),
+          entries.filter((entry): entry is readonly [string, string] =>
+            Boolean(entry),
+          ),
         ),
-      )
+      );
     }
 
-    void loadMemberPhotoUrls()
+    void loadMemberPhotoUrls();
 
     return () => {
-      cancelled = true
-    }
-  }, [members])
+      cancelled = true;
+    };
+  }, [members]);
 
   const stats = useMemo(() => {
     return members.reduce(
       (acc, member) => {
-        acc.total += 1
-        acc[member.status] += 1
+        acc.total += 1;
+        acc[member.status] += 1;
 
         if (canOpenMemberCard(member)) {
-          acc.cards += 1
+          acc.cards += 1;
         }
 
-        return acc
+        return acc;
       },
       {
         total: 0,
@@ -538,41 +587,43 @@ function AdminPage() {
         rejected: 0,
         cards: 0,
       },
-    )
-  }, [members])
+    );
+  }, [members]);
 
   const districtOptions = useMemo(() => {
-    return uniqueSorted(members.map((member) => member.district).filter(Boolean))
-  }, [members])
+    return uniqueSorted(
+      members.map((member) => member.district).filter(Boolean),
+    );
+  }, [members]);
 
   const talukaOptions = useMemo(() => {
     const source =
-      districtFilter === 'all'
+      districtFilter === "all"
         ? members
-        : members.filter((member) => member.district === districtFilter)
+        : members.filter((member) => member.district === districtFilter);
 
     return uniqueSorted(
-      source.map((member) => member.taluka ?? '').filter(Boolean),
-    )
-  }, [districtFilter, members])
+      source.map((member) => member.taluka ?? "").filter(Boolean),
+    );
+  }, [districtFilter, members]);
 
   const filteredMembers = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase()
+    const query = debouncedSearch.trim().toLowerCase();
 
     const result = members.filter((member) => {
       const matchesStatus =
-        statusFilter === 'all' || member.status === statusFilter
+        statusFilter === "all" || member.status === statusFilter;
 
       const matchesDistrict =
-        districtFilter === 'all' || member.district === districtFilter
+        districtFilter === "all" || member.district === districtFilter;
 
       const matchesTaluka =
-        talukaFilter === 'all' || member.taluka === talukaFilter
+        talukaFilter === "all" || member.taluka === talukaFilter;
 
-      const matchesDate = matchesDateFilter(member.created_at, dateFilter)
+      const matchesDate = matchesDateFilter(member.created_at, dateFilter);
 
       const matchesSearch =
-        query.length === 0 || buildMemberSearchText(member).includes(query)
+        query.length === 0 || buildMemberSearchText(member).includes(query);
 
       return (
         matchesStatus &&
@@ -580,10 +631,10 @@ function AdminPage() {
         matchesTaluka &&
         matchesDate &&
         matchesSearch
-      )
-    })
+      );
+    });
 
-    return sortMembers(result, sortBy)
+    return sortMembers(result, sortBy);
   }, [
     dateFilter,
     districtFilter,
@@ -592,77 +643,79 @@ function AdminPage() {
     sortBy,
     statusFilter,
     talukaFilter,
-  ])
+  ]);
 
   const totalMemberPages = Math.max(
     1,
-    Math.ceil((memberResultCount || filteredMembers.length) / ADMIN_MEMBERS_PAGE_SIZE),
-  )
-  const currentMemberPage = Math.min(memberPage + 1, totalMemberPages)
+    Math.ceil(
+      (memberResultCount || filteredMembers.length) / ADMIN_MEMBERS_PAGE_SIZE,
+    ),
+  );
+  const currentMemberPage = Math.min(memberPage + 1, totalMemberPages);
   const pageStartNumber =
-    memberResultCount > 0 ? memberPage * ADMIN_MEMBERS_PAGE_SIZE + 1 : 0
+    memberResultCount > 0 ? memberPage * ADMIN_MEMBERS_PAGE_SIZE + 1 : 0;
   const pageEndNumber = Math.min(
     (memberPage + 1) * ADMIN_MEMBERS_PAGE_SIZE,
     memberResultCount || filteredMembers.length,
-  )
-  const canGoToPreviousMembersPage = memberPage > 0
-  const canGoToNextMembersPage = memberPage + 1 < totalMemberPages
+  );
+  const canGoToPreviousMembersPage = memberPage > 0;
+  const canGoToNextMembersPage = memberPage + 1 < totalMemberPages;
 
   const hasActiveFilters =
-    statusFilter !== 'all' ||
-    districtFilter !== 'all' ||
-    talukaFilter !== 'all' ||
-    dateFilter !== 'all' ||
-    searchInput.trim().length > 0
+    statusFilter !== "all" ||
+    districtFilter !== "all" ||
+    talukaFilter !== "all" ||
+    dateFilter !== "all" ||
+    searchInput.trim().length > 0;
 
   function resetFilters() {
-    setStatusFilter('all')
-    setDistrictFilter('all')
-    setTalukaFilter('all')
-    setDateFilter('all')
-    setSortBy('newest')
-    setSearchInput('')
+    setStatusFilter("all");
+    setDistrictFilter("all");
+    setTalukaFilter("all");
+    setDateFilter("all");
+    setSortBy("newest");
+    setSearchInput("");
   }
 
   function handleDistrictFilter(value: string) {
-    setDistrictFilter(value)
-    setTalukaFilter('all')
+    setDistrictFilter(value);
+    setTalukaFilter("all");
   }
 
   function goToPreviousMembersPage() {
-    setMemberPage((page) => Math.max(0, page - 1))
+    setMemberPage((page) => Math.max(0, page - 1));
   }
 
   function goToNextMembersPage() {
-    setMemberPage((page) => Math.min(totalMemberPages - 1, page + 1))
+    setMemberPage((page) => Math.min(totalMemberPages - 1, page + 1));
   }
 
   function exportCsv() {
     if (showSensitive) {
-      const confirmed = window.confirm(adminCopy.exportConfirm)
+      const confirmed = window.confirm(adminCopy.exportConfirm);
 
-      if (!confirmed) return
+      if (!confirmed) return;
     }
 
-    const csv = buildCsv(filteredMembers, showSensitive)
+    const csv = buildCsv(filteredMembers, showSensitive);
     const blob = new Blob([`\uFEFF${csv}`], {
-      type: 'text/csv;charset=utf-8;',
-    })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    const privacySuffix = showSensitive ? 'full' : 'masked'
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const privacySuffix = showSensitive ? "full" : "masked";
 
-    link.href = url
+    link.href = url;
     link.download = `jas-members-${privacySuffix}-${new Date()
       .toISOString()
-      .slice(0, 10)}.csv`
-    link.click()
+      .slice(0, 10)}.csv`;
+    link.click();
 
-    URL.revokeObjectURL(url)
+    URL.revokeObjectURL(url);
   }
 
   if (isNestedAdminPage) {
-    return <Outlet />
+    return <Outlet />;
   }
 
   if (loading) {
@@ -675,7 +728,7 @@ function AdminPage() {
           </div>
         </div>
       </AdminShell>
-    )
+    );
   }
 
   return (
@@ -715,8 +768,8 @@ function AdminPage() {
                   onClick={() => setShowSensitive((value) => !value)}
                   className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold shadow-sm transition ${
                     showSensitive
-                      ? 'border border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-                      : 'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50'
+                      ? "border border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+                      : "border border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
                   }`}
                 >
                   {showSensitive ? (
@@ -724,7 +777,9 @@ function AdminPage() {
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
-                  {showSensitive ? adminCopy.hideSensitive : adminCopy.showSensitive}
+                  {showSensitive
+                    ? adminCopy.hideSensitive
+                    : adminCopy.showSensitive}
                 </button>
 
                 <button
@@ -734,7 +789,7 @@ function AdminPage() {
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <RefreshCw
-                    className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}
+                    className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
                   />
                   {refreshing ? adminCopy.refreshing : adminCopy.refresh}
                 </button>
@@ -745,9 +800,7 @@ function AdminPage() {
           {showSensitive ? (
             <div className="flex items-start gap-3 border-b border-red-100 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800 sm:px-7">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
-              <p className="m-0">
-                {adminCopy.sensitiveWarning}
-              </p>
+              <p className="m-0">{adminCopy.sensitiveWarning}</p>
             </div>
           ) : null}
 
@@ -757,32 +810,32 @@ function AdminPage() {
               value={stats.total}
               tone="slate"
               icon={<Users className="h-5 w-5" />}
-              active={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
+              active={statusFilter === "all"}
+              onClick={() => setStatusFilter("all")}
             />
             <StatCard
               label={adminCopy.stats.pendingReview}
               value={stats.pending}
               tone="amber"
               icon={<ListChecks className="h-5 w-5" />}
-              active={statusFilter === 'pending'}
-              onClick={() => setStatusFilter('pending')}
+              active={statusFilter === "pending"}
+              onClick={() => setStatusFilter("pending")}
             />
             <StatCard
               label={adminCopy.stats.approved}
               value={stats.approved}
               tone="emerald"
               icon={<UserCheck className="h-5 w-5" />}
-              active={statusFilter === 'approved'}
-              onClick={() => setStatusFilter('approved')}
+              active={statusFilter === "approved"}
+              onClick={() => setStatusFilter("approved")}
             />
             <StatCard
               label={adminCopy.stats.rejected}
               value={stats.rejected}
               tone="red"
               icon={<XCircle className="h-5 w-5" />}
-              active={statusFilter === 'rejected'}
-              onClick={() => setStatusFilter('rejected')}
+              active={statusFilter === "rejected"}
+              onClick={() => setStatusFilter("rejected")}
             />
             <StatCard
               label={adminCopy.stats.cardsIssued}
@@ -790,7 +843,7 @@ function AdminPage() {
               tone="gold"
               icon={<IdCard className="h-5 w-5" />}
               active={false}
-              onClick={() => setStatusFilter('approved')}
+              onClick={() => setStatusFilter("approved")}
             />
           </div>
         </header>
@@ -798,9 +851,12 @@ function AdminPage() {
         <AdminProgramShortcuts
           roles={adminRoles}
           stats={stats}
-          onReviewPending={() => setStatusFilter('pending')}
+          onReviewPending={() => setStatusFilter("pending")}
         />
 
+        {recentAuditLogs.length > 0 ? (
+          <RecentAdminActivityCard rows={recentAuditLogs} />
+        ) : null}
 
         {areaNotice ? (
           <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-black text-emerald-800">
@@ -837,7 +893,8 @@ function AdminPage() {
 
               {memberResultCount > ADMIN_MEMBERS_PAGE_SIZE ? (
                 <p className="mt-1 text-xs font-medium text-slate-400">
-                  Use Next/Previous to browse more records, or search/filter to narrow the list.
+                  Use Next/Previous to browse more records, or search/filter to
+                  narrow the list.
                 </p>
               ) : null}
             </div>
@@ -850,7 +907,9 @@ function AdminPage() {
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download className="h-4 w-4" />
-                {showSensitive ? adminCopy.membership.exportFullCsv : adminCopy.membership.exportMaskedCsv}
+                {showSensitive
+                  ? adminCopy.membership.exportFullCsv
+                  : adminCopy.membership.exportMaskedCsv}
               </button>
 
               {hasActiveFilters ? (
@@ -921,7 +980,9 @@ function AdminPage() {
 
             <select
               value={dateFilter}
-              onChange={(event) => setDateFilter(event.target.value as DateFilter)}
+              onChange={(event) =>
+                setDateFilter(event.target.value as DateFilter)
+              }
               className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-base font-medium text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 md:text-sm"
               aria-label={adminCopy.membership.dateAria}
             >
@@ -946,14 +1007,17 @@ function AdminPage() {
               <option value="newest">{adminCopy.membership.sortNewest}</option>
               <option value="oldest">{adminCopy.membership.sortOldest}</option>
               <option value="name">{adminCopy.membership.sortName}</option>
-              <option value="district">{adminCopy.membership.sortDistrict}</option>
+              <option value="district">
+                {adminCopy.membership.sortDistrict}
+              </option>
             </select>
           </div>
 
           {memberResultCount > ADMIN_MEMBERS_PAGE_SIZE ? (
             <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-slate-600">
-                Showing {pageStartNumber}-{pageEndNumber} of {memberResultCount} records · Page {currentMemberPage} of {totalMemberPages}
+                Showing {pageStartNumber}-{pageEndNumber} of {memberResultCount}{" "}
+                records · Page {currentMemberPage} of {totalMemberPages}
               </p>
 
               <div className="flex gap-2">
@@ -1007,7 +1071,9 @@ function AdminPage() {
                   <th className="px-4 py-3">{adminCopy.table.memberNo}</th>
                   <th className="px-4 py-3">{adminCopy.table.submitted}</th>
                   <th className="px-4 py-3">{adminCopy.table.digitalCard}</th>
-                  <th className="px-4 py-3 text-right">{adminCopy.table.application}</th>
+                  <th className="px-4 py-3 text-right">
+                    {adminCopy.table.application}
+                  </th>
                 </tr>
               </thead>
 
@@ -1041,7 +1107,9 @@ function AdminPage() {
                         {showSensitive ? member.cnic : maskCnic(member.cnic)}
                       </div>
                       <div className="text-xs text-slate-500">
-                        {showSensitive ? member.mobile : maskMobile(member.mobile)}
+                        {showSensitive
+                          ? member.mobile
+                          : maskMobile(member.mobile)}
                       </div>
                     </td>
 
@@ -1063,7 +1131,9 @@ function AdminPage() {
                       {member.member_no ? (
                         <span className="font-bold">{member.member_no}</span>
                       ) : (
-                        <span className="text-slate-400">{adminCopy.mobile.notIssued}</span>
+                        <span className="text-slate-400">
+                          {adminCopy.mobile.notIssued}
+                        </span>
                       )}
                     </td>
 
@@ -1099,7 +1169,7 @@ function AdminPage() {
         </section>
       </div>
     </AdminShell>
-  )
+  );
 }
 
 function AdminProgramShortcuts({
@@ -1107,82 +1177,82 @@ function AdminProgramShortcuts({
   stats,
   onReviewPending,
 }: {
-  roles: readonly AdminRoleName[]
+  roles: readonly AdminRoleName[];
   stats: {
-    total: number
-    pending: number
-    approved: number
-    rejected: number
-    cards: number
-  }
-  onReviewPending: () => void
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+    cards: number;
+  };
+  onReviewPending: () => void;
 }) {
-  const copy = useAdminDashboardCopy()
-  const { language } = useI18n()
-  const localCopy = adminDashboardDedupeCopy[language]
-  const isSuperAdmin = roles.includes('super_admin')
+  const copy = useAdminDashboardCopy();
+  const { language } = useI18n();
+  const localCopy = adminDashboardDedupeCopy[language];
+  const isSuperAdmin = roles.includes("super_admin");
   const accessLabel = isSuperAdmin
     ? copy.access.superAdmin
-    : roles.includes('admin')
+    : roles.includes("admin")
       ? copy.access.centralAdmin
-      : copy.access.roleBased
+      : copy.access.roleBased;
 
   const quickActions: AdminQuickActionConfig[] = [
     {
-      key: 'membership',
+      key: "membership",
       title: localCopy.actions.reviewPending.title,
       description: localCopy.actions.reviewPending.description,
       icon: ListChecks,
-      tone: 'emerald',
+      tone: "emerald",
       metric: String(stats.pending),
       metricLabel: localCopy.actions.reviewPending.metricLabel,
       onClick: onReviewPending,
     },
     {
-      key: 'finance',
+      key: "finance",
       title: localCopy.actions.finance.title,
       description: localCopy.actions.finance.description,
-      to: '/admin/finance',
+      to: "/admin/finance",
       icon: BadgeIndianRupee,
-      tone: 'emerald',
+      tone: "emerald",
     },
     {
-      key: 'reports',
+      key: "reports",
       title: localCopy.actions.reports.title,
       description: localCopy.actions.reports.description,
-      to: '/admin/reports',
+      to: "/admin/reports",
       icon: BarChart3,
-      tone: 'sky',
+      tone: "sky",
     },
     {
-      key: 'media',
+      key: "media",
       title: localCopy.actions.news.title,
       description: localCopy.actions.news.description,
-      to: '/admin/news',
+      to: "/admin/news",
       icon: Newspaper,
-      tone: 'amber',
+      tone: "amber",
     },
     {
-      key: 'cms',
+      key: "cms",
       title: localCopy.actions.cms.title,
       description: localCopy.actions.cms.description,
-      to: '/admin/cms',
+      to: "/admin/cms",
       icon: FileText,
-      tone: 'violet',
+      tone: "violet",
     },
     {
-      key: 'committees',
+      key: "committees",
       title: localCopy.actions.committees.title,
       description: localCopy.actions.committees.description,
-      to: '/admin/committees',
+      to: "/admin/committees",
       icon: Network,
-      tone: 'slate',
+      tone: "slate",
     },
-  ]
+  ];
 
   const visibleQuickActions = quickActions.filter((action) =>
     canAccessAdminModule(roles, action.key),
-  )
+  );
 
   return (
     <section className="admin-overview-section rounded-[2rem] bg-white/90 p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
@@ -1216,7 +1286,9 @@ function AdminProgramShortcuts({
                 <ListChecks className="h-5 w-5" />
               </span>
               <span className="admin-work-card-value">{stats.pending}</span>
-              <span className="admin-work-card-label">{localCopy.pendingApplications}</span>
+              <span className="admin-work-card-label">
+                {localCopy.pendingApplications}
+              </span>
             </button>
 
             <div className="admin-work-card">
@@ -1224,7 +1296,9 @@ function AdminProgramShortcuts({
                 <UserCheck className="h-5 w-5" />
               </span>
               <span className="admin-work-card-value">{stats.approved}</span>
-              <span className="admin-work-card-label">{localCopy.approvedMembers}</span>
+              <span className="admin-work-card-label">
+                {localCopy.approvedMembers}
+              </span>
             </div>
 
             <div className="admin-work-card">
@@ -1232,7 +1306,9 @@ function AdminProgramShortcuts({
                 <IdCard className="h-5 w-5" />
               </span>
               <span className="admin-work-card-value">{stats.cards}</span>
-              <span className="admin-work-card-label">{localCopy.cardsIssued}</span>
+              <span className="admin-work-card-label">
+                {localCopy.cardsIssued}
+              </span>
             </div>
           </div>
         </div>
@@ -1250,12 +1326,20 @@ function AdminProgramShortcuts({
 
           <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
-              <p className="text-xs font-black uppercase text-slate-500">{localCopy.total}</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">{stats.total}</p>
+              <p className="text-xs font-black uppercase text-slate-500">
+                {localCopy.total}
+              </p>
+              <p className="mt-1 text-2xl font-black text-slate-950">
+                {stats.total}
+              </p>
             </div>
             <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
-              <p className="text-xs font-black uppercase text-slate-500">{localCopy.rejected}</p>
-              <p className="mt-1 text-2xl font-black text-slate-950">{stats.rejected}</p>
+              <p className="text-xs font-black uppercase text-slate-500">
+                {localCopy.rejected}
+              </p>
+              <p className="mt-1 text-2xl font-black text-slate-950">
+                {stats.rejected}
+              </p>
             </div>
           </div>
         </div>
@@ -1284,12 +1368,12 @@ function AdminProgramShortcuts({
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 function AdminQuickAction({ action }: { action: AdminQuickActionConfig }) {
-  const Icon = action.icon
-  const tone = getQuickActionTone(action.tone)
+  const Icon = action.icon;
+  const tone = getQuickActionTone(action.tone);
   const content = (
     <>
       <span className={`admin-quick-action-icon ${tone.icon}`}>
@@ -1314,7 +1398,7 @@ function AdminQuickAction({ action }: { action: AdminQuickActionConfig }) {
         <ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
       )}
     </>
-  )
+  );
 
   if (action.onClick) {
     return (
@@ -1325,59 +1409,55 @@ function AdminQuickAction({ action }: { action: AdminQuickActionConfig }) {
       >
         {content}
       </button>
-    )
+    );
   }
 
   if (!action.to) {
-    return (
-      <div className={`admin-quick-action ${tone.card}`}>
-        {content}
-      </div>
-    )
+    return <div className={`admin-quick-action ${tone.card}`}>{content}</div>;
   }
 
   return (
     <Link to={action.to} className={`admin-quick-action ${tone.card}`}>
       {content}
     </Link>
-  )
+  );
 }
 
-function getQuickActionTone(tone: AdminQuickActionConfig['tone']) {
+function getQuickActionTone(tone: AdminQuickActionConfig["tone"]) {
   const tones: Record<
-    AdminQuickActionConfig['tone'],
+    AdminQuickActionConfig["tone"],
     {
-      card: string
-      icon: string
+      card: string;
+      icon: string;
     }
   > = {
     emerald: {
-      card: 'border-emerald-200 hover:bg-emerald-50',
-      icon: 'bg-emerald-100 text-emerald-800',
+      card: "border-emerald-200 hover:bg-emerald-50",
+      icon: "bg-emerald-100 text-emerald-800",
     },
     amber: {
-      card: 'border-amber-200 hover:bg-amber-50',
-      icon: 'bg-amber-100 text-amber-800',
+      card: "border-amber-200 hover:bg-amber-50",
+      icon: "bg-amber-100 text-amber-800",
     },
     sky: {
-      card: 'border-sky-200 hover:bg-sky-50',
-      icon: 'bg-sky-100 text-sky-800',
+      card: "border-sky-200 hover:bg-sky-50",
+      icon: "bg-sky-100 text-sky-800",
     },
     violet: {
-      card: 'border-violet-200 hover:bg-violet-50',
-      icon: 'bg-violet-100 text-violet-800',
+      card: "border-violet-200 hover:bg-violet-50",
+      icon: "bg-violet-100 text-violet-800",
     },
     slate: {
-      card: 'border-slate-200 hover:bg-slate-50',
-      icon: 'bg-slate-100 text-slate-800',
+      card: "border-slate-200 hover:bg-slate-50",
+      icon: "bg-slate-100 text-slate-800",
     },
     rose: {
-      card: 'border-rose-200 hover:bg-rose-50',
-      icon: 'bg-rose-100 text-rose-800',
+      card: "border-rose-200 hover:bg-rose-50",
+      icon: "bg-rose-100 text-rose-800",
     },
-  }
+  };
 
-  return tones[tone]
+  return tones[tone];
 }
 
 function MobileMemberCard({
@@ -1385,11 +1465,11 @@ function MobileMemberCard({
   photoUrl,
   showSensitive,
 }: {
-  member: Member
-  photoUrl?: string
-  showSensitive: boolean
+  member: Member;
+  photoUrl?: string;
+  showSensitive: boolean;
 }) {
-  const copy = useAdminDashboardCopy()
+  const copy = useAdminDashboardCopy();
 
   return (
     <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1412,7 +1492,8 @@ function MobileMemberCard({
           </div>
 
           <p className="mt-1 break-all text-xs font-medium text-slate-500">
-            {copy.mobile.cnic}: {showSensitive ? member.cnic : maskCnic(member.cnic)}
+            {copy.mobile.cnic}:{" "}
+            {showSensitive ? member.cnic : maskCnic(member.cnic)}
           </p>
 
           <p className="mt-1 text-xs text-slate-500">
@@ -1423,13 +1504,19 @@ function MobileMemberCard({
 
       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-          <p className="text-xs font-bold uppercase text-slate-500">{copy.mobile.location}</p>
+          <p className="text-xs font-bold uppercase text-slate-500">
+            {copy.mobile.location}
+          </p>
           <p className="mt-1 font-bold text-slate-950">{member.district}</p>
-          <p className="text-xs text-slate-500">{member.taluka || copy.mobile.noTaluka}</p>
+          <p className="text-xs text-slate-500">
+            {member.taluka || copy.mobile.noTaluka}
+          </p>
         </div>
 
         <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-          <p className="text-xs font-bold uppercase text-slate-500">{copy.mobile.memberNo}</p>
+          <p className="text-xs font-bold uppercase text-slate-500">
+            {copy.mobile.memberNo}
+          </p>
           <p className="mt-1 break-all font-bold text-slate-950">
             {member.member_no ?? copy.mobile.notIssued}
           </p>
@@ -1445,7 +1532,69 @@ function MobileMemberCard({
         <ViewApplicationLink memberId={member.id} fullWidth />
       </div>
     </article>
-  )
+  );
+}
+
+function RecentAdminActivityCard({ rows }: { rows: AuditLogRow[] }) {
+  return (
+    <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-slate-700 ring-1 ring-slate-200">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Audit trail
+          </div>
+          <h2 className="mt-3 text-lg font-black text-slate-950">
+            Recent admin activity
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Latest sensitive actions recorded for JAS production review.
+          </p>
+        </div>
+
+        <Link
+          to="/admin/audit-logs"
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 no-underline shadow-sm transition hover:bg-slate-50"
+        >
+          View full audit log
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="mt-4 grid gap-2">
+        {rows.map((row) => (
+          <div
+            key={row.id}
+            className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3"
+          >
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-wide ring-1 ${getAuditActionClass(row.action)}`}
+                  >
+                    {row.action_label || row.action}
+                  </span>
+                  <span className="text-xs font-black uppercase tracking-wide text-slate-400">
+                    {getAuditModuleLabel(row.module_key)}
+                  </span>
+                </div>
+                <p className="mt-2 truncate text-sm font-black text-slate-900">
+                  {row.record_label || row.entity_table}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  {row.actor_email || "System/server action"}
+                </p>
+              </div>
+              <time className="shrink-0 text-xs font-bold text-slate-400">
+                {formatAuditDate(row.created_at)}
+              </time>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function StatCard({
@@ -1456,31 +1605,31 @@ function StatCard({
   active,
   onClick,
 }: {
-  label: string
-  value: number
-  tone: 'slate' | 'amber' | 'emerald' | 'red' | 'gold'
-  icon: ReactNode
-  active: boolean
-  onClick: () => void
+  label: string;
+  value: number;
+  tone: "slate" | "amber" | "emerald" | "red" | "gold";
+  icon: ReactNode;
+  active: boolean;
+  onClick: () => void;
 }) {
   const toneStyles: Record<
-    'slate' | 'amber' | 'emerald' | 'red' | 'gold',
+    "slate" | "amber" | "emerald" | "red" | "gold",
     string
   > = {
     slate: active
-      ? 'border-slate-300 bg-slate-900 text-white'
-      : 'border-slate-200 bg-white text-slate-950 hover:bg-slate-50',
+      ? "border-slate-300 bg-slate-900 text-white"
+      : "border-slate-200 bg-white text-slate-950 hover:bg-slate-50",
     amber: active
-      ? 'border-amber-300 bg-amber-500 text-white'
-      : 'border-amber-100 bg-amber-50 text-amber-900 hover:bg-amber-100',
+      ? "border-amber-300 bg-amber-500 text-white"
+      : "border-amber-100 bg-amber-50 text-amber-900 hover:bg-amber-100",
     emerald: active
-      ? 'border-emerald-300 bg-emerald-600 text-white'
-      : 'border-emerald-100 bg-emerald-50 text-emerald-900 hover:bg-emerald-100',
+      ? "border-emerald-300 bg-emerald-600 text-white"
+      : "border-emerald-100 bg-emerald-50 text-emerald-900 hover:bg-emerald-100",
     red: active
-      ? 'border-red-300 bg-red-600 text-white'
-      : 'border-red-100 bg-red-50 text-red-900 hover:bg-red-100',
-    gold: 'border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 text-amber-950 hover:from-amber-100 hover:to-yellow-100',
-  }
+      ? "border-red-300 bg-red-600 text-white"
+      : "border-red-100 bg-red-50 text-red-900 hover:bg-red-100",
+    gold: "border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 text-amber-950 hover:from-amber-100 hover:to-yellow-100",
+  };
 
   return (
     <button
@@ -1492,7 +1641,7 @@ function StatCard({
         <div>
           <p
             className={`text-xs font-bold uppercase tracking-wide ${
-              active ? 'text-white/75' : 'opacity-70'
+              active ? "text-white/75" : "opacity-70"
             }`}
           >
             {label}
@@ -1500,32 +1649,32 @@ function StatCard({
           <p className="mt-2 text-2xl font-black">{value}</p>
         </div>
 
-        <span className={active ? 'text-white/80' : 'opacity-75'}>{icon}</span>
+        <span className={active ? "text-white/80" : "opacity-75"}>{icon}</span>
       </div>
     </button>
-  )
+  );
 }
 
 function CardAccess({
   member,
   layout,
 }: {
-  member: Member
-  layout: 'mobile' | 'desktop'
+  member: Member;
+  layout: "mobile" | "desktop";
 }) {
-  const copy = useAdminDashboardCopy()
-  const isReady = canOpenMemberCard(member)
+  const copy = useAdminDashboardCopy();
+  const isReady = canOpenMemberCard(member);
 
   if (isReady) {
     return (
       <div
         className={
-          layout === 'mobile'
-            ? 'mt-4 rounded-2xl border border-amber-200 bg-gradient-to-br from-slate-950 via-slate-900 to-black p-3 shadow-sm'
-            : 'min-w-[190px]'
+          layout === "mobile"
+            ? "mt-4 rounded-2xl border border-amber-200 bg-gradient-to-br from-slate-950 via-slate-900 to-black p-3 shadow-sm"
+            : "min-w-[190px]"
         }
       >
-        {layout === 'mobile' ? (
+        {layout === "mobile" ? (
           <div className="mb-3">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-300">
               {copy.card.digitalMemberCard}
@@ -1540,30 +1689,30 @@ function CardAccess({
           to="/admin/members/$id/card"
           params={{ id: member.id }}
           className={
-            layout === 'mobile'
-              ? 'inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-black !text-slate-950 no-underline shadow-sm transition hover:bg-amber-300 hover:!text-slate-950'
-              : 'inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-xs font-bold !text-amber-900 no-underline shadow-sm transition hover:bg-amber-100 hover:!text-amber-950'
+            layout === "mobile"
+              ? "inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 text-sm font-black !text-slate-950 no-underline shadow-sm transition hover:bg-amber-300 hover:!text-slate-950"
+              : "inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 text-xs font-bold !text-amber-900 no-underline shadow-sm transition hover:bg-amber-100 hover:!text-amber-950"
           }
-          style={layout === 'mobile' ? { color: '#020617' } : undefined}
+          style={layout === "mobile" ? { color: "#020617" } : undefined}
         >
           <IdCard className="h-4 w-4" />
           {copy.card.openSameMemberCard}
         </Link>
       </div>
-    )
+    );
   }
 
   const message =
-    member.status !== 'approved'
+    member.status !== "approved"
       ? copy.card.availableAfterApproval
-      : copy.card.memberNoNotIssued
+      : copy.card.memberNoNotIssued;
 
   return (
     <div
       className={
-        layout === 'mobile'
-          ? 'mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3'
-          : 'min-w-[190px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2'
+        layout === "mobile"
+          ? "mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3"
+          : "min-w-[190px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
       }
     >
       <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -1571,30 +1720,30 @@ function CardAccess({
       </p>
       <p className="mt-1 text-xs font-medium text-slate-500">{message}</p>
     </div>
-  )
+  );
 }
 
 function ViewApplicationLink({
   memberId,
   fullWidth = false,
 }: {
-  memberId: string
-  fullWidth?: boolean
+  memberId: string;
+  fullWidth?: boolean;
 }) {
-  const copy = useAdminDashboardCopy()
+  const copy = useAdminDashboardCopy();
 
   return (
     <Link
       to="/admin/members/$id"
       params={{ id: memberId }}
       className={`jas-dark-action-link inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-bold no-underline shadow-sm transition ${
-        fullWidth ? 'w-full' : ''
+        fullWidth ? "w-full" : ""
       }`}
     >
       <ShieldCheck className="h-4 w-4" />
       {copy.viewApplication}
     </Link>
-  )
+  );
 }
 
 function MemberPhoto({
@@ -1604,20 +1753,20 @@ function MemberPhoto({
   fallbackClassName,
   fallbackText,
 }: {
-  src?: string
-  alt: string
-  className: string
-  fallbackClassName: string
-  fallbackText: ReactNode
+  src?: string;
+  alt: string;
+  className: string;
+  fallbackClassName: string;
+  fallbackText: ReactNode;
 }) {
-  const [failed, setFailed] = useState(false)
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    setFailed(false)
-  }, [src])
+    setFailed(false);
+  }, [src]);
 
   if (!src || failed) {
-    return <div className={fallbackClassName}>{fallbackText}</div>
+    return <div className={fallbackClassName}>{fallbackText}</div>;
   }
 
   return (
@@ -1629,52 +1778,46 @@ function MemberPhoto({
       decoding="async"
       onError={() => setFailed(true)}
     />
-  )
+  );
 }
 
-function EmptyState({
-  title,
-  message,
-}: {
-  title: string
-  message: string
-}) {
+function EmptyState({ title, message }: { title: string; message: string }) {
   return (
     <div className="rounded-2xl bg-slate-50 p-6 text-center ring-1 ring-slate-100">
       <p className="text-sm font-bold text-slate-800">{title}</p>
       <p className="mt-1 text-sm text-slate-500">{message}</p>
     </div>
-  )
+  );
 }
 
 function StatusBadge({ status }: { status: MemberStatus }) {
-  const copy = useAdminDashboardCopy()
+  const copy = useAdminDashboardCopy();
   const config: Record<
     MemberStatus,
     {
-      icon: ReactNode
-      className: string
-      text: string
+      icon: ReactNode;
+      className: string;
+      text: string;
     }
   > = {
     pending: {
       icon: <ListChecks className="h-3.5 w-3.5" />,
-      className: 'bg-amber-50 text-amber-700 ring-amber-200',
+      className: "bg-amber-50 text-amber-700 ring-amber-200",
       text: copy.status.pending,
     },
     approved: {
       icon: <BadgeCheck className="h-3.5 w-3.5" />,
-      className: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+      className: "bg-emerald-50 text-emerald-700 ring-emerald-200",
       text: copy.status.approved,
     },
     rejected: {
       icon: <XCircle className="h-3.5 w-3.5" />,
-      className: 'bg-red-50 text-red-700 ring-red-200',
+      className: "bg-red-50 text-red-700 ring-red-200",
       text: copy.status.rejected,
     },
-  }
+  };
 
-  const item = config[status]
+  const item = config[status];
 
   return (
     <span
@@ -1683,164 +1826,166 @@ function StatusBadge({ status }: { status: MemberStatus }) {
       {item.icon}
       {item.text}
     </span>
-  )
+  );
 }
 
 async function createAdminMemberPhotoSignedUrl(photoPath: string | null) {
-  if (!photoPath) return null
+  if (!photoPath) return null;
 
   if (/^https?:\/\//i.test(photoPath)) {
-    return photoPath
+    return photoPath;
   }
 
   const { data, error } = await supabase.storage
     .from(MEMBER_PHOTO_BUCKET)
-    .createSignedUrl(photoPath, MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS)
+    .createSignedUrl(photoPath, MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS);
 
   if (error || !data?.signedUrl) {
-    console.warn('Admin member photo could not be loaded:', error?.message ?? photoPath)
-    return null
+    console.warn(
+      "Admin member photo could not be loaded:",
+      error?.message ?? photoPath,
+    );
+    return null;
   }
 
-  return data.signedUrl
+  return data.signedUrl;
 }
 
 async function ensureAdminAccess(): Promise<AdminAccessResult> {
   const {
     data: { user },
     error: userError,
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { ok: false, redirectTo: '/login' }
+    return { ok: false, redirectTo: "/login" };
   }
 
   const { data: roles, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .in('role', adminRoleNames)
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", user.id)
+    .in("role", adminRoleNames);
 
   if (roleError || !roles?.length) {
-    return { ok: false, redirectTo: '/dashboard' }
+    return { ok: false, redirectTo: "/dashboard" };
   }
 
   const safeRoles = roles
     .map((item) => item.role)
     .filter((role): role is AdminRoleName =>
       adminRoleNames.includes(role as AdminRoleName),
-    )
+    );
 
   if (!safeRoles.length) {
-    return { ok: false, redirectTo: '/dashboard' }
+    return { ok: false, redirectTo: "/dashboard" };
   }
 
-  return { ok: true, userId: user.id, roles: safeRoles }
+  return { ok: true, userId: user.id, roles: safeRoles };
 }
 
 function canAccessAdminModule(
   roles: readonly AdminRoleName[],
   moduleKey: AdminModuleKey,
 ) {
-  if (roles.includes('super_admin')) {
-    return true
+  if (roles.includes("super_admin")) {
+    return true;
   }
 
   if (
-    moduleKey === 'roles' ||
-    moduleKey === 'area-permissions' ||
-    moduleKey === 'audit-logs'
+    moduleKey === "roles" ||
+    moduleKey === "area-permissions" ||
+    moduleKey === "audit-logs"
   ) {
-    return false
+    return false;
   }
 
-  if (roles.includes('admin')) {
-    return true
+  if (roles.includes("admin")) {
+    return true;
   }
 
   const roleByModule: Partial<Record<AdminModuleKey, AdminRoleName>> = {
-    membership: 'membership_admin',
-    education: 'education_admin',
-    health: 'health_admin',
-    welfare: 'welfare_admin',
-    employment: 'employment_admin',
-    finance: 'finance_admin',
-  }
+    membership: "membership_admin",
+    education: "education_admin",
+    health: "health_admin",
+    welfare: "welfare_admin",
+    employment: "employment_admin",
+    finance: "finance_admin",
+  };
 
-  const requiredRole = roleByModule[moduleKey]
+  const requiredRole = roleByModule[moduleKey];
 
-  return requiredRole ? roles.includes(requiredRole) : false
+  return requiredRole ? roles.includes(requiredRole) : false;
 }
 
 function canManageMembersFromRoles(roles: readonly AdminRoleName[]) {
-  return canAccessAdminModule(roles, 'membership')
+  return canAccessAdminModule(roles, "membership");
 }
 
 function getPrimaryAdminRoute(
   roles: readonly AdminRoleName[],
 ):
-  | '/admin/programs/education'
-  | '/admin/programs/health'
-  | '/admin/programs/welfare'
-  | '/admin/programs/employment'
-  | '/admin/finance'
-  | '/admin/cms'
-  | '/admin/news'
-  | '/admin/reports'
-  | '/admin/roles'
-  | '/admin/area-permissions'
-  | '/admin/audit-logs'
-  | '/admin/committees'
-  | '/dashboard' {
-  if (roles.includes('education_admin')) return '/admin/programs/education'
-  if (roles.includes('health_admin')) return '/admin/programs/health'
-  if (roles.includes('welfare_admin')) return '/admin/programs/welfare'
-  if (roles.includes('employment_admin')) return '/admin/programs/employment'
-  if (roles.includes('finance_admin')) return '/admin/finance'
-  return '/dashboard'
+  | "/admin/programs/education"
+  | "/admin/programs/health"
+  | "/admin/programs/welfare"
+  | "/admin/programs/employment"
+  | "/admin/finance"
+  | "/admin/cms"
+  | "/admin/news"
+  | "/admin/reports"
+  | "/admin/roles"
+  | "/admin/area-permissions"
+  | "/admin/audit-logs"
+  | "/admin/committees"
+  | "/dashboard" {
+  if (roles.includes("education_admin")) return "/admin/programs/education";
+  if (roles.includes("health_admin")) return "/admin/programs/health";
+  if (roles.includes("welfare_admin")) return "/admin/programs/welfare";
+  if (roles.includes("employment_admin")) return "/admin/programs/employment";
+  if (roles.includes("finance_admin")) return "/admin/finance";
+  return "/dashboard";
 }
 
-
 function useDebouncedValue<T>(value: T, delayMs: number) {
-  const [debouncedValue, setDebouncedValue] = useState(value)
+  const [debouncedValue, setDebouncedValue] = useState(value);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      setDebouncedValue(value)
-    }, delayMs)
+      setDebouncedValue(value);
+    }, delayMs);
 
-    return () => window.clearTimeout(timeoutId)
-  }, [delayMs, value])
+    return () => window.clearTimeout(timeoutId);
+  }, [delayMs, value]);
 
-  return debouncedValue
+  return debouncedValue;
 }
 
 function getDateFilterStart(filter: DateFilter) {
-  if (filter === 'all') return null
+  if (filter === "all") return null;
 
-  const date = new Date()
+  const date = new Date();
 
-  if (filter === 'today') {
-    date.setHours(0, 0, 0, 0)
-  } else if (filter === '7d') {
-    date.setDate(date.getDate() - 7)
-  } else if (filter === '30d') {
-    date.setDate(date.getDate() - 30)
+  if (filter === "today") {
+    date.setHours(0, 0, 0, 0);
+  } else if (filter === "7d") {
+    date.setDate(date.getDate() - 7);
+  } else if (filter === "30d") {
+    date.setDate(date.getDate() - 30);
   }
 
-  return date.toISOString()
+  return date.toISOString();
 }
 
 function buildMemberSearchOrFilter(search: string) {
   const value = search
     .trim()
-    .replace(/[%,]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .slice(0, 80)
+    .replace(/[%,]/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
 
-  if (!value) return ''
+  if (!value) return "";
 
-  const pattern = `%${value}%`
+  const pattern = `%${value}%`;
 
   return [
     `full_name.ilike.${pattern}`,
@@ -1849,7 +1994,7 @@ function buildMemberSearchOrFilter(search: string) {
     `district.ilike.${pattern}`,
     `taluka.ilike.${pattern}`,
     `member_no.ilike.${pattern}`,
-  ].join(',')
+  ].join(",");
 }
 
 function buildMemberSearchText(member: Member) {
@@ -1858,88 +2003,87 @@ function buildMemberSearchText(member: Member) {
     member.cnic,
     member.mobile,
     member.district,
-    member.taluka ?? '',
-    member.member_no ?? '',
+    member.taluka ?? "",
+    member.member_no ?? "",
     member.status,
   ]
-    .join(' ')
-    .toLowerCase()
+    .join(" ")
+    .toLowerCase();
 }
 
 function canOpenMemberCard(member: Member) {
-  return member.status === 'approved' && Boolean(member.member_no)
+  return member.status === "approved" && Boolean(member.member_no);
 }
 
 function sortMembers(members: Member[], sortBy: SortBy) {
-  const copy = [...members]
+  const copy = [...members];
 
   switch (sortBy) {
-    case 'oldest':
+    case "oldest":
       return copy.sort(
         (a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-      )
-    case 'name':
-      return copy.sort((a, b) => a.full_name.localeCompare(b.full_name))
-    case 'district':
+      );
+    case "name":
+      return copy.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    case "district":
       return copy.sort((a, b) => {
-        const district = a.district.localeCompare(b.district)
-        if (district !== 0) return district
-        return a.full_name.localeCompare(b.full_name)
-      })
+        const district = a.district.localeCompare(b.district);
+        if (district !== 0) return district;
+        return a.full_name.localeCompare(b.full_name);
+      });
     default:
       return copy.sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )
+      );
   }
 }
 
 function matchesDateFilter(value: string, filter: DateFilter) {
-  if (filter === 'all') return true
+  if (filter === "all") return true;
 
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return false
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
 
-  const now = new Date()
+  const now = new Date();
 
-  if (filter === 'today') {
-    return date.toDateString() === now.toDateString()
+  if (filter === "today") {
+    return date.toDateString() === now.toDateString();
   }
 
-  const days = filter === '7d' ? 7 : 30
-  const cutoff = new Date(now)
-  cutoff.setDate(now.getDate() - days)
+  const days = filter === "7d" ? 7 : 30;
+  const cutoff = new Date(now);
+  cutoff.setDate(now.getDate() - days);
 
-  return date >= cutoff
+  return date >= cutoff;
 }
 
 function buildCsv(members: Member[], includeSensitive: boolean) {
   const rows = [
     [
-      'Full Name',
-      'CNIC',
-      'Mobile',
-      'District',
-      'Taluka',
-      'Status',
-      'Member No',
-      'Submitted',
-      'Export Mode',
+      "Full Name",
+      "CNIC",
+      "Mobile",
+      "District",
+      "Taluka",
+      "Status",
+      "Member No",
+      "Submitted",
+      "Export Mode",
     ],
     ...members.map((member) => [
       member.full_name,
       includeSensitive ? member.cnic : maskCnic(member.cnic),
       includeSensitive ? member.mobile : maskMobile(member.mobile),
       member.district,
-      member.taluka ?? '',
+      member.taluka ?? "",
       member.status,
-      member.member_no ?? '',
+      member.member_no ?? "",
       formatDate(member.created_at),
-      includeSensitive ? 'Full sensitive data' : 'Masked sensitive data',
+      includeSensitive ? "Full sensitive data" : "Masked sensitive data",
     ]),
-  ]
+  ];
 
-  return rows.map((row) => row.map(csvCell).join(',')).join('\n')
+  return rows.map((row) => row.map(csvCell).join(",")).join("\n");
 }
-
