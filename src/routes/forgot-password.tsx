@@ -1,29 +1,54 @@
 // src/routes/forgot-password.tsx
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
+  HelpCircle,
   Loader2,
   Mail,
+  MailCheck,
+  RefreshCcw,
   ShieldCheck,
   Sparkles,
 } from 'lucide-react'
-import { useI18n } from '../lib/i18n'
+import { useI18n, type TranslationKey } from '../lib/i18n'
 import { supabase } from '../lib/supabase/client'
 
 export const Route = createFileRoute('/forgot-password')({
   component: ForgotPasswordPage,
 })
 
+type Translate = (key: TranslationKey) => string
+
 function ForgotPasswordPage() {
+  const navigate = useNavigate()
   const { t, direction } = useI18n()
 
   const [email, setEmail] = useState('')
+  const [sentToEmail, setSentToEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    void (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!cancelled && session) {
+        await navigate({ to: '/dashboard', replace: true })
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [navigate])
 
   function resetAlerts() {
     setError('')
@@ -53,10 +78,11 @@ function ForgotPasswordPage() {
     setLoading(false)
 
     if (resetError) {
-      setError(toFriendlyResetError(resetError.message))
+      setError(toFriendlyResetError(resetError.message, t))
       return
     }
 
+    setSentToEmail(maskEmail(normalizedEmail))
     setMessage(t('forgot.message.sent'))
   }
 
@@ -118,41 +144,59 @@ function ForgotPasswordPage() {
               <h2 className="section-title mt-4">{t('forgot.form.title')}</h2>
 
               <p className="mt-3 text-sm leading-7 text-stone-600">
-                {t('forgot.form.description')}
+                {sentToEmail ? t('forgot.sent.description') : t('forgot.form.description')}
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <FormField label={t('authPage.common.email')} htmlFor="reset-email">
-                <input
-                  id="reset-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(event) => {
-                    setEmail(event.target.value)
-                    resetAlerts()
-                  }}
-                  required
-                  className="input-clean"
-                  placeholder={t('forgot.email.placeholder')}
-                />
-              </FormField>
+            {sentToEmail ? (
+              <EmailSentPanel
+                email={sentToEmail}
+                message={message}
+                loading={loading}
+                onResend={handleSubmit}
+                onChangeEmail={() => {
+                  setSentToEmail('')
+                  resetAlerts()
+                }}
+                t={t}
+              />
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <FormField label={t('authPage.common.email')} htmlFor="reset-email">
+                  <input
+                    id="reset-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value)
+                      resetAlerts()
+                    }}
+                    required
+                    className="input-clean"
+                    placeholder={t('forgot.email.placeholder')}
+                  />
+                </FormField>
 
-              <AlertBlock error={error} message={message} />
+                <AlertBlock error={error} message={message} />
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loading ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
-                {loading ? t('forgot.submit.loading') : t('forgot.submit.cta')}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                  {loading ? t('forgot.submit.loading') : t('forgot.submit.cta')}
+                </button>
+              </form>
+            )}
 
             <div className="mt-6 rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-4 text-sm leading-7 text-stone-600">
-              {t('forgot.form.emailOnlyNote')}
+              <div className="mb-2 flex items-center gap-2 font-extrabold text-stone-800">
+                <HelpCircle size={16} className="text-[var(--forest)]" />
+                {t('forgot.help.title')}
+              </div>
+              <p>{t('forgot.form.emailOnlyNote')}</p>
             </div>
 
             <p className="mt-6 text-center text-sm text-stone-600">
@@ -165,6 +209,65 @@ function ForgotPasswordPage() {
         </section>
       </div>
     </main>
+  )
+}
+
+function EmailSentPanel({
+  email,
+  message,
+  loading,
+  onResend,
+  onChangeEmail,
+  t,
+}: {
+  email: string
+  message: string
+  loading: boolean
+  onResend: (event: FormEvent<HTMLFormElement>) => void
+  onChangeEmail: () => void
+  t: Translate
+}) {
+  return (
+    <form onSubmit={onResend} className="space-y-4">
+      <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-5 text-emerald-800" role="status">
+        <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
+          <MailCheck size={22} />
+        </div>
+        <p className="text-base font-black">{t('forgot.sent.title')}</p>
+        <p className="mt-2 text-sm leading-7">
+          {message} <span className="font-black">{email}</span>
+        </p>
+      </div>
+
+      <div className="grid gap-3 rounded-[1.25rem] border border-[var(--line)] bg-white p-4 text-sm leading-7 text-stone-600">
+        <p className="font-extrabold text-stone-900">{t('forgot.sent.nextStepsTitle')}</p>
+        <ul className="list-disc space-y-1 ps-5">
+          <li>{t('forgot.sent.stepInbox')}</li>
+          <li>{t('forgot.sent.stepSpam')}</li>
+          <li>{t('forgot.sent.stepExpiry')}</li>
+        </ul>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button
+          type="submit"
+          disabled={loading}
+          className="secondary-btn pressable justify-center disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCcw size={16} />}
+          {loading ? t('forgot.submit.loading') : t('forgot.sent.resend')}
+        </button>
+
+        <button
+          type="button"
+          onClick={onChangeEmail}
+          className="secondary-btn pressable justify-center"
+        >
+          <Mail size={16} />
+          {t('forgot.sent.changeEmail')}
+        </button>
+      </div>
+    </form>
   )
 }
 
@@ -263,12 +366,25 @@ function getPasswordResetRedirectUrl() {
   return `${baseUrl}/reset-password`
 }
 
-function toFriendlyResetError(message: string) {
+function maskEmail(value: string) {
+  const [name, domain] = value.split('@')
+
+  if (!name || !domain) return value
+
+  const visibleName = name.length <= 2 ? name[0] : `${name.slice(0, 2)}***`
+  return `${visibleName}@${domain}`
+}
+
+function toFriendlyResetError(message: string, t: Translate) {
   const lower = message.toLowerCase()
 
   if (lower.includes('rate limit') || lower.includes('too many')) {
-    return 'Too many reset requests. Please wait a few minutes and try again.'
+    return t('forgot.error.rateLimited')
   }
 
-  return message
+  if (lower.includes('smtp') || lower.includes('email')) {
+    return t('forgot.error.emailService')
+  }
+
+  return message || t('forgot.error.generic')
 }

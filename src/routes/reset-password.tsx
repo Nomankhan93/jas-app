@@ -1,6 +1,6 @@
 // src/routes/reset-password.tsx
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   AlertCircle,
   ArrowLeft,
@@ -9,15 +9,36 @@ import {
   EyeOff,
   KeyRound,
   Loader2,
+  LockKeyhole,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
+  XCircle,
 } from 'lucide-react'
-import { useI18n } from '../lib/i18n'
+import { useI18n, type TranslationKey } from '../lib/i18n'
 import { supabase } from '../lib/supabase/client'
 
 export const Route = createFileRoute('/reset-password')({
   component: ResetPasswordPage,
 })
+
+type Translate = (key: TranslationKey) => string
+
+type PasswordCriterion = {
+  key: string
+  labelKey: TranslationKey
+  met: boolean
+}
+
+type PasswordStrength = {
+  score: number
+  labelKey: TranslationKey
+  helperKey: TranslationKey
+  barClass: string
+  textClass: string
+  criteria: PasswordCriterion[]
+  isValid: boolean
+}
 
 function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -26,6 +47,7 @@ function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [checkingSession, setCheckingSession] = useState(true)
   const [hasRecoverySession, setHasRecoverySession] = useState(false)
@@ -33,11 +55,24 @@ function ResetPasswordPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const passwordStrength = useMemo(() => getPasswordStrength(password), [password])
+  const passwordMatches = password.length > 0 && password === confirmPassword
+  const confirmPasswordStarted = confirmPassword.length > 0
+
   useEffect(() => {
     let cancelled = false
     let retryTimer: number | undefined
 
     async function checkRecoverySession() {
+      const linkError = getRecoveryLinkErrorMessage(t)
+
+      if (linkError) {
+        setHasRecoverySession(false)
+        setCheckingSession(false)
+        setError(linkError)
+        return
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession()
@@ -62,7 +97,7 @@ function ResetPasswordPage() {
           setHasRecoverySession(Boolean(delayedSession))
           setCheckingSession(false)
           setError(delayedSession ? '' : t('reset.error.linkInvalid'))
-        }, 1200)
+        }, 1400)
         return
       }
 
@@ -106,8 +141,8 @@ function ResetPasswordPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError(t('reset.error.passwordShort'))
+    if (!passwordStrength.isValid) {
+      setError(t('reset.error.passwordWeak'))
       return
     }
 
@@ -125,7 +160,7 @@ function ResetPasswordPage() {
     setLoading(false)
 
     if (updateError) {
-      setError(updateError.message)
+      setError(toFriendlyUpdatePasswordError(updateError.message, t))
       return
     }
 
@@ -201,7 +236,7 @@ function ResetPasswordPage() {
                 <Loader2 className="h-5 w-5 animate-spin text-emerald-700" />
                 {t('reset.checking')}
               </div>
-            ) : (
+            ) : hasRecoverySession ? (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <FormField label={t('reset.newPassword.label')} htmlFor="new-password">
                   <PasswordInput
@@ -219,6 +254,8 @@ function ResetPasswordPage() {
                   />
                 </FormField>
 
+                <PasswordStrengthMeter strength={passwordStrength} t={t} />
+
                 <FormField label={t('authPage.common.confirmPassword')} htmlFor="confirm-new-password">
                   <PasswordInput
                     id="confirm-new-password"
@@ -227,25 +264,41 @@ function ResetPasswordPage() {
                       setConfirmPassword(value)
                       resetAlerts()
                     }}
-                    showPassword={showPassword}
-                    onTogglePassword={() => setShowPassword((value) => !value)}
+                    showPassword={showConfirmPassword}
+                    onTogglePassword={() => setShowConfirmPassword((value) => !value)}
                     placeholder={t('reset.confirmPassword.placeholder')}
                     showLabel={t('authPage.common.showPassword')}
                     hideLabel={t('authPage.common.hidePassword')}
                   />
                 </FormField>
 
+                {confirmPasswordStarted ? (
+                  <div
+                    className={`flex items-center gap-2 rounded-[0.9rem] px-3 py-2 text-xs font-bold ${
+                      passwordMatches
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-red-50 text-red-700'
+                    }`}
+                    role="status"
+                  >
+                    {passwordMatches ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                    {passwordMatches ? t('reset.match.ok') : t('reset.match.error')}
+                  </div>
+                ) : null}
+
                 <AlertBlock error={error} message={message} />
 
                 <button
                   type="submit"
-                  disabled={loading || !hasRecoverySession}
+                  disabled={loading || !hasRecoverySession || !passwordStrength.isValid || !passwordMatches}
                   className="primary-btn pressable w-full disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                   {loading ? t('reset.submit.loading') : t('reset.submit.cta')}
                 </button>
               </form>
+            ) : (
+              <InvalidResetLinkPanel error={error || t('reset.error.linkInvalid')} t={t} />
             )}
 
             <p className="mt-6 text-center text-sm text-stone-600">
@@ -301,6 +354,78 @@ function PasswordInput({
       >
         {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
       </button>
+    </div>
+  )
+}
+
+function PasswordStrengthMeter({
+  strength,
+  t,
+}: {
+  strength: PasswordStrength
+  t: Translate
+}) {
+  return (
+    <div className="rounded-[1.25rem] border border-[var(--line)] bg-[var(--paper)] p-4" aria-live="polite">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-black text-stone-900">
+          <LockKeyhole size={16} className="text-[var(--forest)]" />
+          {t('reset.strength.title')}
+        </div>
+        <span className={`text-xs font-black ${strength.textClass}`}>{t(strength.labelKey)}</span>
+      </div>
+
+      <div className="mb-3 grid grid-cols-4 gap-2" aria-hidden="true">
+        {[0, 1, 2, 3].map((item) => (
+          <span
+            key={item}
+            className={`h-2 rounded-full transition ${
+              item < strength.score ? strength.barClass : 'bg-stone-200'
+            }`}
+          />
+        ))}
+      </div>
+
+      <p className="mb-3 text-xs font-semibold text-stone-600">{t(strength.helperKey)}</p>
+
+      <div className="grid gap-2 sm:grid-cols-2">
+        {strength.criteria.map((criterion) => (
+          <div
+            key={criterion.key}
+            className={`flex items-center gap-2 text-xs font-semibold ${
+              criterion.met ? 'text-emerald-700' : 'text-stone-500'
+            }`}
+          >
+            {criterion.met ? <CheckCircle2 size={14} /> : <span className="h-3.5 w-3.5 rounded-full border border-stone-300" />}
+            {t(criterion.labelKey)}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function InvalidResetLinkPanel({
+  error,
+  t,
+}: {
+  error: string
+  t: Translate
+}) {
+  return (
+    <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-5 text-red-800" role="alert">
+      <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-red-700 shadow-sm">
+        <ShieldAlert size={22} />
+      </div>
+      <p className="text-base font-black">{t('reset.invalid.title')}</p>
+      <p className="mt-2 text-sm leading-7">{error}</p>
+      <Link
+        to="/forgot-password"
+        className="secondary-btn pressable mt-4 inline-flex justify-center bg-white text-red-800 hover:bg-red-100"
+      >
+        <KeyRound size={16} />
+        {t('reset.invalid.requestNew')}
+      </Link>
     </div>
   )
 }
@@ -362,13 +487,122 @@ function AlertBlock({
 function hasRecoveryUrlParams() {
   if (typeof window === 'undefined') return false
 
-  const url = new URL(window.location.href)
-  const hash = window.location.hash.toLowerCase()
+  const query = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
 
   return (
-    url.searchParams.has('code') ||
-    url.searchParams.get('type') === 'recovery' ||
-    hash.includes('type=recovery') ||
-    hash.includes('access_token=')
+    query.get('type') === 'recovery' ||
+    hash.get('type') === 'recovery' ||
+    query.has('code') ||
+    query.has('token_hash') ||
+    hash.has('access_token') ||
+    hash.has('refresh_token') ||
+    query.has('error_code') ||
+    hash.has('error_code')
   )
+}
+
+function getRecoveryLinkErrorMessage(t: Translate) {
+  if (typeof window === 'undefined') return ''
+
+  const query = new URLSearchParams(window.location.search)
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const code = query.get('error_code') || hash.get('error_code') || ''
+  const description = query.get('error_description') || hash.get('error_description') || ''
+  const combined = `${code} ${description}`.toLowerCase()
+
+  if (!combined.trim()) return ''
+
+  if (combined.includes('expired') || combined.includes('otp_expired')) {
+    return t('reset.error.linkExpired')
+  }
+
+  return t('reset.error.linkInvalid')
+}
+
+function getPasswordStrength(password: string): PasswordStrength {
+  const hasMinLength = password.length >= 8
+  const hasLowercase = /[a-z]/.test(password)
+  const hasUppercase = /[A-Z]/.test(password)
+  const hasNumber = /\d/.test(password)
+  const hasSymbol = /[^A-Za-z0-9]/.test(password)
+  const varietyCount = [hasLowercase, hasUppercase, hasNumber, hasSymbol].filter(Boolean).length
+  const rawScore = (hasMinLength ? 1 : 0) + Math.min(varietyCount, 3)
+  const score = password.length === 0 ? 0 : Math.min(rawScore, 4)
+  const isValid = hasMinLength && varietyCount >= 3
+
+  const criteria: PasswordCriterion[] = [
+    {
+      key: 'length',
+      labelKey: 'reset.criteria.length',
+      met: hasMinLength,
+    },
+    {
+      key: 'uppercase',
+      labelKey: 'reset.criteria.uppercase',
+      met: hasUppercase,
+    },
+    {
+      key: 'number',
+      labelKey: 'reset.criteria.number',
+      met: hasNumber,
+    },
+    {
+      key: 'symbol',
+      labelKey: 'reset.criteria.symbol',
+      met: hasSymbol,
+    },
+  ]
+
+  if (score <= 1) {
+    return {
+      score,
+      labelKey: 'reset.strength.weak',
+      helperKey: 'reset.strength.helperWeak',
+      barClass: 'bg-red-500',
+      textClass: 'text-red-700',
+      criteria,
+      isValid,
+    }
+  }
+
+  if (score <= 3 || !isValid) {
+    return {
+      score,
+      labelKey: 'reset.strength.medium',
+      helperKey: 'reset.strength.helperMedium',
+      barClass: 'bg-amber-500',
+      textClass: 'text-amber-700',
+      criteria,
+      isValid,
+    }
+  }
+
+  return {
+    score,
+    labelKey: 'reset.strength.strong',
+    helperKey: 'reset.strength.helperStrong',
+    barClass: 'bg-emerald-600',
+    textClass: 'text-emerald-700',
+    criteria,
+    isValid,
+  }
+}
+
+function toFriendlyUpdatePasswordError(message: string, t: Translate) {
+  const lower = message.toLowerCase()
+
+  if (lower.includes('same') || lower.includes('different')) {
+    return t('reset.error.passwordSame')
+  }
+
+  if (lower.includes('weak') || lower.includes('at least') || lower.includes('password')) {
+    return t('reset.error.passwordWeak')
+  }
+
+  if (lower.includes('session') || lower.includes('jwt') || lower.includes('expired')) {
+    return t('reset.error.linkInvalid')
+  }
+
+  return message || t('reset.error.generic')
 }
