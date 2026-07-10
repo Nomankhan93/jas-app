@@ -90,6 +90,8 @@ critical_routes=(
   "/admin/members/\$id/designation-card"
   "/card"
   "/dashboard"
+  "/profile-update"
+  "/admin/profile-update-requests"
 )
 
 for route in "${critical_routes[@]}"; do
@@ -109,6 +111,7 @@ migrations=(
   "20260602003000_database_area_rls_enforcement_phase3.sql"
   "20260602004000_database_audit_logs_phase1.sql"
   "20260710193000_member_card_csv_export_audit.sql"
+  "20260710213000_profile_update_requests.sql"
 )
 
 for migration in "${migrations[@]}"; do
@@ -188,6 +191,7 @@ critical_test_files=(
   "src/lib/shared/formatters.test.ts"
   "src/lib/area-permissions.test.ts"
   "src/lib/admin/member-action-validation.test.ts"
+  "src/lib/profile-update.test.ts"
 )
 
 for test_file in "${critical_test_files[@]}"; do

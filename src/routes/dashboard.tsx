@@ -22,6 +22,7 @@ import {
   ShieldCheck,
   Trophy,
   User,
+  UserRoundPen,
   Users,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
@@ -822,6 +823,10 @@ function QuickActions({ member }: { member: Member }) {
             <Link to="/card" className="primary-btn w-full">
               <CreditCard className="h-4 w-4" />
               {t('dashboard.openDigitalCard')}
+            </Link>
+            <Link to="/profile-update" className="secondary-btn w-full">
+              <UserRoundPen className="h-4 w-4" />
+              {t('dashboard.requestProfileUpdate')}
             </Link>
           </>
         ) : canEditApplication ? (

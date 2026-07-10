@@ -99,6 +99,7 @@ export const sd = {
     'dashboard.quickActions': 'فوري عمل',
     'dashboard.nextSteps': 'اڳلا قدم',
     'dashboard.openDigitalCard': 'ڊجيٽل ڪارڊ کوليو',
+    'dashboard.requestProfileUpdate': 'پروفائل اپڊيٽ جي درخواست',
     'dashboard.officeBearerCard': 'عھديدار ڪارڊ',
     'dashboard.submitDonation': 'عطيو جمع ڪريو',
     'dashboard.viewDonors': 'ڊونرز ڏسو',

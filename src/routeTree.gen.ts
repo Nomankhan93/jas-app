@@ -13,6 +13,7 @@ import { Route as VisionMissionRouteImport } from './routes/vision-mission'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
+import { Route as ProfileUpdateRouteImport } from './routes/profile-update'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
@@ -42,6 +43,7 @@ import { Route as NewsSlugRouteImport } from './routes/news/$slug'
 import { Route as CommitteesIdRouteImport } from './routes/committees/$id'
 import { Route as AdminRolesRouteImport } from './routes/admin/roles'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
+import { Route as AdminProfileUpdateRequestsRouteImport } from './routes/admin/profile-update-requests'
 import { Route as AdminNewsRouteImport } from './routes/admin/news'
 import { Route as AdminGalleryRouteImport } from './routes/admin/gallery'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
@@ -97,6 +99,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileUpdateRoute = ProfileUpdateRouteImport.update({
+  id: '/profile-update',
+  path: '/profile-update',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotificationsRoute = NotificationsRouteImport.update({
@@ -244,6 +251,12 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminProfileUpdateRequestsRoute =
+  AdminProfileUpdateRequestsRouteImport.update({
+    id: '/profile-update-requests',
+    path: '/profile-update-requests',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminNewsRoute = AdminNewsRouteImport.update({
   id: '/news',
   path: '/news',
@@ -454,6 +467,7 @@ export interface FileRoutesByFullPath {
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
+  '/profile-update': typeof ProfileUpdateRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -467,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/profile-update-requests': typeof AdminProfileUpdateRequestsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/committees/$id': typeof CommitteesIdRoute
@@ -525,6 +540,7 @@ export interface FileRoutesByTo {
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
+  '/profile-update': typeof ProfileUpdateRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -538,6 +554,7 @@ export interface FileRoutesByTo {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/profile-update-requests': typeof AdminProfileUpdateRequestsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/committees/$id': typeof CommitteesIdRoute
@@ -597,6 +614,7 @@ export interface FileRoutesById {
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
   '/notifications': typeof NotificationsRoute
+  '/profile-update': typeof ProfileUpdateRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
@@ -610,6 +628,7 @@ export interface FileRoutesById {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/profile-update-requests': typeof AdminProfileUpdateRequestsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
   '/committees/$id': typeof CommitteesIdRoute
@@ -670,6 +689,7 @@ export interface FileRouteTypes {
     | '/manifesto'
     | '/news'
     | '/notifications'
+    | '/profile-update'
     | '/register'
     | '/reset-password'
     | '/signup'
@@ -683,6 +703,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/profile-update-requests'
     | '/admin/reports'
     | '/admin/roles'
     | '/committees/$id'
@@ -741,6 +762,7 @@ export interface FileRouteTypes {
     | '/manifesto'
     | '/news'
     | '/notifications'
+    | '/profile-update'
     | '/register'
     | '/reset-password'
     | '/signup'
@@ -754,6 +776,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/profile-update-requests'
     | '/admin/reports'
     | '/admin/roles'
     | '/committees/$id'
@@ -812,6 +835,7 @@ export interface FileRouteTypes {
     | '/manifesto'
     | '/news'
     | '/notifications'
+    | '/profile-update'
     | '/register'
     | '/reset-password'
     | '/signup'
@@ -825,6 +849,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/profile-update-requests'
     | '/admin/reports'
     | '/admin/roles'
     | '/committees/$id'
@@ -884,6 +909,7 @@ export interface RootRouteChildren {
   ManifestoRoute: typeof ManifestoRoute
   NewsRoute: typeof NewsRouteWithChildren
   NotificationsRoute: typeof NotificationsRoute
+  ProfileUpdateRoute: typeof ProfileUpdateRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
@@ -924,6 +950,13 @@ declare module '@tanstack/react-router' {
       path: '/register'
       fullPath: '/register'
       preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile-update': {
+      id: '/profile-update'
+      path: '/profile-update'
+      fullPath: '/profile-update'
+      preLoaderRoute: typeof ProfileUpdateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notifications': {
@@ -1127,6 +1160,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profile-update-requests': {
+      id: '/admin/profile-update-requests'
+      path: '/profile-update-requests'
+      fullPath: '/admin/profile-update-requests'
+      preLoaderRoute: typeof AdminProfileUpdateRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/news': {
@@ -1494,6 +1534,7 @@ interface AdminRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminNewsRoute: typeof AdminNewsRouteWithChildren
+  AdminProfileUpdateRequestsRoute: typeof AdminProfileUpdateRequestsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminRolesRoute: typeof AdminRolesRoute
   AdminMembersIdRoute: typeof AdminMembersIdRouteWithChildren
@@ -1513,6 +1554,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminNewsRoute: AdminNewsRouteWithChildren,
+  AdminProfileUpdateRequestsRoute: AdminProfileUpdateRequestsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminRolesRoute: AdminRolesRoute,
   AdminMembersIdRoute: AdminMembersIdRouteWithChildren,
@@ -1629,6 +1671,7 @@ const rootRouteChildren: RootRouteChildren = {
   ManifestoRoute: ManifestoRoute,
   NewsRoute: NewsRouteWithChildren,
   NotificationsRoute: NotificationsRoute,
+  ProfileUpdateRoute: ProfileUpdateRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,

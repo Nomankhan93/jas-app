@@ -6,6 +6,7 @@ import {
   BookOpenCheck,
   BriefcaseBusiness,
   CalendarDays,
+  FilePenLine,
   FileText,
   HandHeart,
   HeartPulse,
@@ -24,6 +25,7 @@ import {
 
 export type AdminNavigationRoute =
   | '/admin'
+  | '/admin/profile-update-requests'
   | '/admin/programs/education'
   | '/admin/programs/health'
   | '/admin/programs/welfare'
@@ -81,6 +83,11 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         label: 'Digital Cards',
         to: '/admin',
         icon: <ShieldCheck size={17} />,
+      },
+      {
+        label: 'Profile Update Requests',
+        to: '/admin/profile-update-requests',
+        icon: <FilePenLine size={17} />,
       },
     ],
   },

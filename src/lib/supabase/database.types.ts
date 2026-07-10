@@ -1009,6 +1009,77 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_update_requests: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          current_snapshot: Json
+          id: string
+          member_id: string
+          member_name: string
+          member_no: string | null
+          member_note: string | null
+          requested_changes: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          source_district: string
+          source_taluka: string | null
+          status: string
+          target_district: string
+          target_taluka: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          current_snapshot: Json
+          id?: string
+          member_id: string
+          member_name: string
+          member_no?: string | null
+          member_note?: string | null
+          requested_changes: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_district: string
+          source_taluka?: string | null
+          status?: string
+          target_district: string
+          target_taluka?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          current_snapshot?: Json
+          id?: string
+          member_id?: string
+          member_name?: string
+          member_no?: string | null
+          member_note?: string | null
+          requested_changes?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          source_district?: string
+          source_taluka?: string | null
+          status?: string
+          target_district?: string
+          target_taluka?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_update_requests_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       program_admin_assignments: {
         Row: {
           can_approve: boolean
@@ -1359,6 +1430,16 @@ export type Database = {
         Returns: string
       }
       audit_redact_jsonb: { Args: { _data: Json }; Returns: Json }
+      cancel_profile_update_request: {
+        Args: { _request_id: string }
+        Returns: Database["public"]["Tables"]["profile_update_requests"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "profile_update_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       create_notification: {
         Args: {
           _action_url?: string
@@ -1370,6 +1451,34 @@ export type Database = {
           _user_id: string
         }
         Returns: string
+      }
+      review_profile_update_request: {
+        Args: {
+          _admin_note?: string
+          _decision: string
+          _request_id: string
+        }
+        Returns: Database["public"]["Tables"]["profile_update_requests"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "profile_update_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      submit_profile_update_request: {
+        Args: {
+          _member_note?: string
+          _request_id?: string
+          _requested_changes: Json
+        }
+        Returns: Database["public"]["Tables"]["profile_update_requests"]["Row"]
+        SetofOptions: {
+          from: "*"
+          to: "profile_update_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       current_user_can_access_area_module: {
         Args: { _action?: string; _module_key: string }

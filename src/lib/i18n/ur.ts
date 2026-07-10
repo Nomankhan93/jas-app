@@ -99,6 +99,7 @@ export const ur = {
     'dashboard.quickActions': 'فوری ایکشنز',
     'dashboard.nextSteps': 'اگلے اقدامات',
     'dashboard.openDigitalCard': 'ڈیجیٹل کارڈ کھولیں',
+    'dashboard.requestProfileUpdate': 'پروفائل اپ ڈیٹ کی درخواست',
     'dashboard.officeBearerCard': 'عہدیدار کارڈ',
     'dashboard.submitDonation': 'عطیہ جمع کریں',
     'dashboard.viewDonors': 'ڈونرز دیکھیں',

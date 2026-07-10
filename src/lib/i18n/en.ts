@@ -97,6 +97,7 @@ export const en = {
     'dashboard.quickActions': 'Quick Actions',
     'dashboard.nextSteps': 'Next steps',
     'dashboard.openDigitalCard': 'Open Digital Card',
+    'dashboard.requestProfileUpdate': 'Request Profile Update',
     'dashboard.officeBearerCard': 'Office Bearer Card',
     'dashboard.submitDonation': 'Submit Donation',
     'dashboard.viewDonors': 'View Donors',
