@@ -1,3 +1,5 @@
+import { DEFAULT_PUBLIC_SITE_ORIGIN, normalizePublicSiteOrigin } from './member-card-config'
+
 export type NotificationCategory =
   | 'general'
   | 'membership'
@@ -186,4 +188,26 @@ function titleCase(value: string) {
     .split(/\s+/)
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ')
+}
+
+export function getSafeNotificationActionUrl(
+  value: string | null | undefined,
+  allowedOrigin = DEFAULT_PUBLIC_SITE_ORIGIN,
+) {
+  const raw = value?.trim()
+  if (!raw || raw.includes('\\') || /[\u0000-\u001f\u007f]/.test(raw)) return null
+  if (raw.startsWith('//')) return null
+
+  try {
+    const normalizedOrigin = normalizePublicSiteOrigin(allowedOrigin)
+    const allowed = new URL(normalizedOrigin)
+    const parsed = new URL(raw, `${allowed.origin}/`)
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null
+    if (parsed.origin !== allowed.origin) return null
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return null
+  }
 }

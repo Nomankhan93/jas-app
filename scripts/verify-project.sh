@@ -63,7 +63,7 @@ run_cmd() {
   fi
 }
 
-log_section "JAS Production Readiness + QA Phase 1"
+log_section "JAS Production Readiness + QA Phase 6"
 echo "Root: $ROOT_DIR"
 echo "Date: $(date -Is)"
 
@@ -174,7 +174,27 @@ else
   fail "Missing scripts/scan-secrets.sh"
 fi
 
-log_section "TypeScript and production build"
+log_section "Core unit test inventory"
+test_file_count=$(find src -type f \( -name '*.test.ts' -o -name '*.test.tsx' \) | wc -l | tr -d ' ')
+if [[ "$test_file_count" -ge 10 ]]; then
+  pass "Core test suite present: $test_file_count test files"
+else
+  warn "Only $test_file_count test files found; expand core coverage before major refactors"
+fi
+
+critical_test_files=(
+  "src/lib/auth-validation.test.ts"
+  "src/lib/register.validation.test.ts"
+  "src/lib/shared/formatters.test.ts"
+  "src/lib/area-permissions.test.ts"
+  "src/lib/admin/member-action-validation.test.ts"
+)
+
+for test_file in "${critical_test_files[@]}"; do
+  require_file "$test_file"
+done
+
+log_section "TypeScript, unit tests and production build"
 if npm run check; then
   pass "npm run check passed"
 else

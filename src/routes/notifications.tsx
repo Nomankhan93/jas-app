@@ -10,6 +10,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import {
   formatNotificationDate,
+  getSafeNotificationActionUrl,
   getNotificationCategoryLabel,
   getNotificationTone,
   type UserNotification,
@@ -277,6 +278,11 @@ function NotificationsPage() {
 }
 
 function NotificationCard({ item }: { item: UserNotification }) {
+  const safeActionUrl = getSafeNotificationActionUrl(
+    item.action_url,
+    typeof window !== 'undefined' ? window.location.origin : undefined,
+  )
+
   return (
     <article
       className={`rounded-3xl border p-5 shadow-sm ${
@@ -311,9 +317,9 @@ function NotificationCard({ item }: { item: UserNotification }) {
           </p>
         </div>
 
-        {item.action_url ? (
+        {safeActionUrl ? (
           <a
-            href={item.action_url}
+            href={safeActionUrl}
             className="inline-flex h-10 items-center justify-center rounded-xl bg-emerald-900 px-4 text-sm font-black text-white no-underline shadow-sm ring-1 ring-emerald-900/10 transition hover:bg-emerald-800 visited:text-white"
           >
             Open

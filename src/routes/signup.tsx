@@ -15,6 +15,11 @@ import {
   UserRound,
 } from 'lucide-react'
 import { useI18n, type TranslationKey } from '../lib/i18n'
+import {
+  isValidEmail,
+  isValidPakistanMobile,
+  normalizePakistanPhone,
+} from '../lib/auth-validation'
 import { supabase } from '../lib/supabase/client'
 import {
   MEMBERSHIP_BASE_FEE,
@@ -663,25 +668,6 @@ function FeaturePill({
       <p className="mt-1 text-xs text-stone-500">{text}</p>
     </div>
   )
-}
-
-function normalizePakistanPhone(value: string) {
-  const digits = value.replace(/\D/g, '')
-
-  if (digits.startsWith('0092')) return `+92${digits.slice(4, 14)}`
-  if (digits.startsWith('92')) return `+${digits.slice(0, 12)}`
-  if (digits.startsWith('0')) return `+92${digits.slice(1, 11)}`
-  if (digits.startsWith('3')) return `+92${digits.slice(0, 10)}`
-
-  return digits.startsWith('+') ? digits : `+${digits}`
-}
-
-function isValidPakistanMobile(value: string) {
-  return /^\+923\d{9}$/.test(value)
-}
-
-function isValidEmail(value: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 function toFriendlyAuthError(message: string, t: (key: TranslationKey) => string) {

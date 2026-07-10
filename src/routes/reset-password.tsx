@@ -16,6 +16,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useI18n, type TranslationKey } from '../lib/i18n'
+import { getPasswordStrength, type PasswordStrength } from '../lib/auth-validation'
 import { supabase } from '../lib/supabase/client'
 
 export const Route = createFileRoute('/reset-password')({
@@ -23,22 +24,6 @@ export const Route = createFileRoute('/reset-password')({
 })
 
 type Translate = (key: TranslationKey) => string
-
-type PasswordCriterion = {
-  key: string
-  labelKey: TranslationKey
-  met: boolean
-}
-
-type PasswordStrength = {
-  score: number
-  labelKey: TranslationKey
-  helperKey: TranslationKey
-  barClass: string
-  textClass: string
-  criteria: PasswordCriterion[]
-  isValid: boolean
-}
 
 function ResetPasswordPage() {
   const navigate = useNavigate()
@@ -518,75 +503,6 @@ function getRecoveryLinkErrorMessage(t: Translate) {
   }
 
   return t('reset.error.linkInvalid')
-}
-
-function getPasswordStrength(password: string): PasswordStrength {
-  const hasMinLength = password.length >= 8
-  const hasLowercase = /[a-z]/.test(password)
-  const hasUppercase = /[A-Z]/.test(password)
-  const hasNumber = /\d/.test(password)
-  const hasSymbol = /[^A-Za-z0-9]/.test(password)
-  const varietyCount = [hasLowercase, hasUppercase, hasNumber, hasSymbol].filter(Boolean).length
-  const rawScore = (hasMinLength ? 1 : 0) + Math.min(varietyCount, 3)
-  const score = password.length === 0 ? 0 : Math.min(rawScore, 4)
-  const isValid = hasMinLength && varietyCount >= 3
-
-  const criteria: PasswordCriterion[] = [
-    {
-      key: 'length',
-      labelKey: 'reset.criteria.length',
-      met: hasMinLength,
-    },
-    {
-      key: 'uppercase',
-      labelKey: 'reset.criteria.uppercase',
-      met: hasUppercase,
-    },
-    {
-      key: 'number',
-      labelKey: 'reset.criteria.number',
-      met: hasNumber,
-    },
-    {
-      key: 'symbol',
-      labelKey: 'reset.criteria.symbol',
-      met: hasSymbol,
-    },
-  ]
-
-  if (score <= 1) {
-    return {
-      score,
-      labelKey: 'reset.strength.weak',
-      helperKey: 'reset.strength.helperWeak',
-      barClass: 'bg-red-500',
-      textClass: 'text-red-700',
-      criteria,
-      isValid,
-    }
-  }
-
-  if (score <= 3 || !isValid) {
-    return {
-      score,
-      labelKey: 'reset.strength.medium',
-      helperKey: 'reset.strength.helperMedium',
-      barClass: 'bg-amber-500',
-      textClass: 'text-amber-700',
-      criteria,
-      isValid,
-    }
-  }
-
-  return {
-    score,
-    labelKey: 'reset.strength.strong',
-    helperKey: 'reset.strength.helperStrong',
-    barClass: 'bg-emerald-600',
-    textClass: 'text-emerald-700',
-    criteria,
-    isValid,
-  }
 }
 
 function toFriendlyUpdatePasswordError(message: string, t: Translate) {
