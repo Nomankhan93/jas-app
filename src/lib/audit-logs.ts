@@ -48,6 +48,7 @@ export const auditTableOptions = [
   { value: "", label: "All tables" },
   { value: "members", label: "Members" },
   { value: "membership_payments", label: "Membership Payments" },
+  { value: "member_card_csv_exports", label: "Member Card CSV Exports" },
   { value: "user_roles", label: "User Roles" },
   { value: "admin_area_permissions", label: "Area Permissions" },
   { value: "program_applications", label: "Program Applications" },

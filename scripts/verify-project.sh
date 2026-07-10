@@ -108,6 +108,7 @@ migrations=(
   "20260602002000_rbac_membership_admin_phase1.sql"
   "20260602003000_database_area_rls_enforcement_phase3.sql"
   "20260602004000_database_audit_logs_phase1.sql"
+  "20260710193000_member_card_csv_export_audit.sql"
 )
 
 for migration in "${migrations[@]}"; do
@@ -178,6 +179,13 @@ if npm run check; then
   pass "npm run check passed"
 else
   fail "npm run check failed"
+  exit 1
+fi
+
+if npm test; then
+  pass "npm test passed"
+else
+  fail "npm test failed"
   exit 1
 fi
 

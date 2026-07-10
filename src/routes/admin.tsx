@@ -53,7 +53,6 @@ import {
   filterRowsByAreaAccess,
   getAreaAccessSummaryText,
   loadCurrentAdminAreaAccess,
-  type AdminAreaAccessContext,
 } from "../lib/area-permissions";
 import {
   fetchAuditLogs,
@@ -62,10 +61,15 @@ import {
   getAuditModuleLabel,
   type AuditLogRow,
 } from "../lib/audit-logs";
+import { buildFullMemberCardCsv } from "../lib/admin-member-card-csv";
 import {
-  buildFullMemberCardCsv,
-  type MemberCardCsvSource,
-} from "../lib/admin-member-card-csv";
+  buildMemberCardExportFileName,
+  buildMemberCardExportSearchFilter,
+  fetchMembersForCardCsv,
+  getMemberCardExportDateStart,
+  logMemberCardCsvExportAudit,
+} from "../lib/admin-member-card-export";
+import { PUBLIC_SITE_ORIGIN } from "../lib/member-card-config";
 import { fetchActiveMemberCardDesignations } from "../lib/member-card-designation";
 
 export const Route = createFileRoute("/admin")({
@@ -145,16 +149,9 @@ type AdminQuickActionConfig = {
 };
 
 const ADMIN_MEMBERS_PAGE_SIZE = 50;
-const ADMIN_MEMBERS_CSV_PAGE_SIZE = 1000;
 const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200;
 const MEMBER_PHOTO_BUCKET = "member-photos";
 const MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60;
-const PUBLIC_VERIFY_ORIGIN = String(
-  import.meta.env.VITE_PUBLIC_SITE_URL ||
-    import.meta.env.VITE_SITE_URL ||
-    import.meta.env.VITE_APP_URL ||
-    "https://jasofficial.org",
-).replace(/\/+$/, "");
 
 const adminDashboardDedupeCopy = {
   en: {
@@ -411,13 +408,13 @@ function AdminPage() {
           membersQuery = membersQuery.eq("taluka", talukaFilter);
         }
 
-        const dateStart = getDateFilterStart(dateFilter);
+        const dateStart = getMemberCardExportDateStart(dateFilter);
 
         if (dateStart) {
           membersQuery = membersQuery.gte("created_at", dateStart);
         }
 
-        const searchFilter = buildMemberSearchOrFilter(debouncedSearch);
+        const searchFilter = buildMemberCardExportSearchFilter(debouncedSearch);
 
         if (searchFilter) {
           membersQuery = membersQuery.or(searchFilter);
@@ -760,21 +757,34 @@ function AdminPage() {
       const csv = buildFullMemberCardCsv({
         members: exportMembers,
         designationsByMemberId,
-        publicVerifyOrigin: PUBLIC_VERIFY_ORIGIN,
+        publicVerifyOrigin: PUBLIC_SITE_ORIGIN,
       });
+      const fileName = buildMemberCardExportFileName();
       const blob = new Blob([`\uFEFF${csv}`], {
         type: "text/csv;charset=utf-8;",
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
 
-      link.href = url;
-      link.download = `jas-member-card-data-full-${new Date()
-        .toISOString()
-        .slice(0, 10)}.csv`;
-      link.click();
+      try {
+        await logMemberCardCsvExportAudit({
+          statusFilter,
+          districtFilter,
+          talukaFilter,
+          dateFilter,
+          sortBy,
+          search: debouncedSearch,
+          areaAccess,
+          recordCount: exportMembers.length,
+          fileName,
+        });
 
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        link.href = url;
+        link.download = fileName;
+        link.click();
+      } finally {
+        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
     } catch (err) {
       setError(
         err instanceof Error
@@ -2036,43 +2046,6 @@ function useDebouncedValue<T>(value: T, delayMs: number) {
   return debouncedValue;
 }
 
-function getDateFilterStart(filter: DateFilter) {
-  if (filter === "all") return null;
-
-  const date = new Date();
-
-  if (filter === "today") {
-    date.setHours(0, 0, 0, 0);
-  } else if (filter === "7d") {
-    date.setDate(date.getDate() - 7);
-  } else if (filter === "30d") {
-    date.setDate(date.getDate() - 30);
-  }
-
-  return date.toISOString();
-}
-
-function buildMemberSearchOrFilter(search: string) {
-  const value = search
-    .trim()
-    .replace(/[%,]/g, " ")
-    .replace(/\s+/g, " ")
-    .slice(0, 80);
-
-  if (!value) return "";
-
-  const pattern = `%${value}%`;
-
-  return [
-    `full_name.ilike.${pattern}`,
-    `cnic.ilike.${pattern}`,
-    `mobile.ilike.${pattern}`,
-    `district.ilike.${pattern}`,
-    `taluka.ilike.${pattern}`,
-    `member_no.ilike.${pattern}`,
-  ].join(",");
-}
-
 function buildMemberSearchText(member: Member) {
   return [
     member.full_name,
@@ -2133,109 +2106,4 @@ function matchesDateFilter(value: string, filter: DateFilter) {
   cutoff.setDate(now.getDate() - days);
 
   return date >= cutoff;
-}
-
-type FetchMembersForCardCsvOptions = {
-  statusFilter: StatusFilter;
-  districtFilter: string;
-  talukaFilter: string;
-  dateFilter: DateFilter;
-  sortBy: SortBy;
-  search: string;
-  areaAccess: AdminAreaAccessContext;
-};
-
-async function fetchMembersForCardCsv({
-  statusFilter,
-  districtFilter,
-  talukaFilter,
-  dateFilter,
-  sortBy,
-  search,
-  areaAccess,
-}: FetchMembersForCardCsvOptions) {
-  const allMembers: MemberCardCsvSource[] = [];
-  let pageFrom = 0;
-
-  while (true) {
-    let query = supabase.from("members").select(
-      [
-        "id",
-        "member_no",
-        "full_name",
-        "father_name",
-        "cnic",
-        "mobile",
-        "district",
-        "taluka",
-        "profession",
-        "caste_branch",
-        "photo_url",
-        "status",
-        "approved_at",
-        "address",
-        "date_of_birth",
-        "gender",
-        "education",
-        "blood_group",
-        "emergency_contact_name",
-        "emergency_contact_relation",
-        "emergency_contact_mobile",
-        "declaration_accepted",
-        "created_at",
-      ].join(", "),
-    );
-
-    if (statusFilter !== "all") {
-      query = query.eq("status", statusFilter);
-    }
-
-    if (districtFilter !== "all") {
-      query = query.eq("district", districtFilter);
-    }
-
-    if (talukaFilter !== "all") {
-      query = query.eq("taluka", talukaFilter);
-    }
-
-    const dateStart = getDateFilterStart(dateFilter);
-    if (dateStart) {
-      query = query.gte("created_at", dateStart);
-    }
-
-    const searchFilter = buildMemberSearchOrFilter(search);
-    if (searchFilter) {
-      query = query.or(searchFilter);
-    }
-
-    if (sortBy === "oldest") {
-      query = query.order("created_at", { ascending: true });
-    } else if (sortBy === "name") {
-      query = query
-        .order("full_name", { ascending: true })
-        .order("created_at", { ascending: false });
-    } else if (sortBy === "district") {
-      query = query
-        .order("district", { ascending: true })
-        .order("taluka", { ascending: true })
-        .order("created_at", { ascending: false });
-    } else {
-      query = query.order("created_at", { ascending: false });
-    }
-
-    const pageTo = pageFrom + ADMIN_MEMBERS_CSV_PAGE_SIZE - 1;
-    const { data, error } = await query
-      .range(pageFrom, pageTo)
-      .returns<MemberCardCsvSource[]>();
-
-    if (error) throw error;
-
-    const page = data ?? [];
-    allMembers.push(...page);
-
-    if (page.length < ADMIN_MEMBERS_CSV_PAGE_SIZE) break;
-    pageFrom += ADMIN_MEMBERS_CSV_PAGE_SIZE;
-  }
-
-  return filterRowsByAreaAccess(allMembers, areaAccess);
 }

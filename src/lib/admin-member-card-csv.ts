@@ -1,5 +1,11 @@
 import type { MemberCardDesignation } from './member-card-designation'
-import { csvCell, formatDisplayDate } from './shared/formatters'
+import { formatDisplayDate } from './shared/formatters'
+import {
+  buildMemberCardIssueLabel,
+  buildMemberVerificationUrl,
+  JAS_ORGANIZATION_LOCATION,
+  JAS_ORGANIZATION_NAME,
+} from './member-card-config'
 
 export type MemberCardCsvSource = {
   id: string
@@ -32,10 +38,6 @@ type BuildMemberCardCsvOptions = {
   designationsByMemberId: Record<string, MemberCardDesignation | null>
   publicVerifyOrigin: string
 }
-
-const ORGANIZATION_NAME = 'Jatt Alliance Sindh'
-const ORGANIZATION_LOCATION = 'Sindh, Pakistan'
-const CARD_VERSION = 'v1'
 
 export const MEMBER_CARD_CSV_HEADERS = [
   'Member No',
@@ -84,7 +86,7 @@ export function buildFullMemberCardCsv({
     ...members.map((member) => {
       const designation = designationsByMemberId[member.id] ?? null
       const verificationUrl = member.member_no
-        ? `${verifyOrigin}/verify/${encodeURIComponent(member.member_no)}`
+        ? buildMemberVerificationUrl(member.member_no, verifyOrigin)
         : ''
 
       return [
@@ -114,20 +116,18 @@ export function buildFullMemberCardCsv({
         member.emergency_contact_name ?? '',
         member.emergency_contact_relation ?? '',
         member.emergency_contact_mobile ?? '',
-        member.member_no
-          ? `${member.member_no} / ${CARD_VERSION}`
-          : `Pending / ${CARD_VERSION}`,
+        buildMemberCardIssueLabel(member.member_no),
         verificationUrl,
         member.photo_url ?? '',
         member.declaration_accepted ? 'Yes' : 'No',
         formatOptionalDate(member.created_at),
-        ORGANIZATION_NAME,
-        ORGANIZATION_LOCATION,
+        JAS_ORGANIZATION_NAME,
+        JAS_ORGANIZATION_LOCATION,
       ]
     }),
   ]
 
-  return rows.map((row) => row.map(csvCell).join(',')).join('\n')
+  return rows.map((row) => row.map(secureCsvCell).join(',')).join('\n')
 }
 
 function formatOptionalDate(value: string | null | undefined) {
@@ -141,4 +141,17 @@ function formatStatus(status: MemberCardCsvSource['status']) {
   if (status === 'approved') return 'Approved'
   if (status === 'rejected') return 'Rejected'
   return 'Pending'
+}
+
+
+/**
+ * Prevents spreadsheet applications from evaluating user-controlled CSV cells
+ * as formulas while preserving the visible value in Excel and Google Sheets.
+ */
+export function secureCsvCell(value: string | number | null | undefined) {
+  const normalized = String(value ?? '').replace(/\r?\n/g, ' ')
+  const protectedValue = /^[\t\r ]*[=+\-@]/.test(normalized)
+    ? `'${normalized}`
+    : normalized
+  return `"${protectedValue.replace(/"/g, '""')}"`
 }

@@ -319,7 +319,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       roleBased: 'Role-based module access',
     },
     exportConfirm:
-      'This export will include all unmasked personal data shown on the front and back of member cards for every record matching the current filters. Continue only for authorized official use.',
+      'This export will include all unmasked personal data shown on the front and back of member cards for every record matching the current filters. The action will be recorded in the audit log. Continue only for authorized official use.',
     viewApplication: 'View Application',
   },
   ur: {
@@ -524,7 +524,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       roleBased: 'رول بیسڈ ماڈیول ایکسس',
     },
     exportConfirm:
-      'اس ایکسپورٹ میں موجودہ فلٹرز سے میچ کرنے والے تمام ممبرز کے کارڈ کی فرنٹ اور بیک سائیڈ کا مکمل غیر ماسک شدہ ذاتی ڈیٹا شامل ہوگا۔ صرف مجاز سرکاری استعمال کے لیے جاری رکھیں۔',
+      'اس ایکسپورٹ میں موجودہ فلٹرز سے میچ کرنے والے تمام ممبرز کے کارڈ کی فرنٹ اور بیک سائیڈ کا مکمل غیر ماسک شدہ ذاتی ڈیٹا شامل ہوگا۔ یہ ایکشن آڈٹ لاگ میں ریکارڈ ہوگا۔ صرف مجاز سرکاری استعمال کے لیے جاری رکھیں۔',
     viewApplication: 'درخواست دیکھیں',
   },
   sd: {
@@ -729,7 +729,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       roleBased: 'رول بيسڊ ماڊيول ايڪسس',
     },
     exportConfirm:
-      'هن ايڪسپورٽ ۾ موجوده فلٽرن سان ملندڙ سڀني ميمبرن جي ڪارڊ فرنٽ ۽ بيڪ جو مڪمل بغير ماسڪ ٿيل ذاتي ڊيٽا شامل هوندو. صرف مجاز سرڪاري استعمال لاءِ جاري رکو.',
+      'هن ايڪسپورٽ ۾ موجوده فلٽرن سان ملندڙ سڀني ميمبرن جي ڪارڊ فرنٽ ۽ بيڪ جو مڪمل بغير ماسڪ ٿيل ذاتي ڊيٽا شامل هوندو. هي عمل آڊٽ لاگ ۾ رڪارڊ ٿيندو. صرف مجاز سرڪاري استعمال لاءِ جاري رکو.',
     viewApplication: 'درخواست ڏسو',
   },
 }

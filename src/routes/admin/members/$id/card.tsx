@@ -29,6 +29,7 @@ import { supabase } from '../../../../lib/supabase/client'
 import { exportElementAsPng } from '../../../../lib/shared/card-export'
 import { generateQrDataUrl } from '../../../../lib/shared/qrcode'
 import { fetchActiveMemberCardDesignation } from '../../../../lib/member-card-designation'
+import { PUBLIC_SITE_ORIGIN } from '../../../../lib/member-card-config'
 
 export const Route = createFileRoute('/admin/members/$id/card')({
   component: AdminMemberCardPage,
@@ -38,12 +39,7 @@ const JAS_LOGO_PATH = '/jas/logo.jpeg'
 const JAS_FLAG_PATH = '/jas/flag.jpeg'
 const MEMBER_PHOTO_BUCKET = 'member-photos'
 const SIGNED_URL_TTL_SECONDS = 60 * 60
-const PUBLIC_VERIFY_ORIGIN = String(
-  import.meta.env.VITE_PUBLIC_SITE_URL ||
-    import.meta.env.VITE_SITE_URL ||
-    import.meta.env.VITE_APP_URL ||
-    'https://jasofficial.org',
-).replace(/\/+$/, '')
+const PUBLIC_VERIFY_ORIGIN = PUBLIC_SITE_ORIGIN
 const MEMBERSHIP_REVIEW_ROLES: Array<
   'admin' | 'super_admin' | 'membership_admin'
 > = ['admin', 'super_admin', 'membership_admin']

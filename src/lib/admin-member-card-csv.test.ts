@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildFullMemberCardCsv,
   MEMBER_CARD_CSV_HEADERS,
+  secureCsvCell,
   type MemberCardCsvSource,
 } from './admin-member-card-csv'
 
@@ -75,4 +76,20 @@ describe('buildFullMemberCardCsv', () => {
     expect(headerRow.match(/","/g)?.length).toBe(MEMBER_CARD_CSV_HEADERS.length - 1)
     expect(memberRow.match(/","/g)?.length).toBe(MEMBER_CARD_CSV_HEADERS.length - 1)
   })
+
+  it('neutralizes spreadsheet formulas and preserves quoted multiline values', () => {
+    expect(secureCsvCell('=HYPERLINK("https://example.test")')).toBe(
+      `"'=HYPERLINK(""https://example.test"")"`,
+    )
+    expect(secureCsvCell('  +SUM(1,2)')).toBe(`"'  +SUM(1,2)"`)
+    expect(secureCsvCell('@malicious')).toBe(`"'@malicious"`)
+    expect(secureCsvCell('-10+20')).toBe(`"'-10+20"`)
+    expect(secureCsvCell('Nabisar, Road\nKunri')).toBe(
+      `"Nabisar, Road Kunri"`,
+    )
+    expect(secureCsvCell('Muhammad "Ali"')).toBe(
+      `"Muhammad ""Ali"""`,
+    )
+  })
+
 })

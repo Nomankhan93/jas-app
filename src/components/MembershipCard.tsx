@@ -5,6 +5,8 @@ import {
   type MemberCardDesignation,
 } from '../lib/member-card-designation'
 
+import { buildMemberCardIssueLabel } from '../lib/member-card-config'
+
 export const CARD_WIDTH = 1280
 export const CARD_HEIGHT = 760
 
@@ -314,7 +316,7 @@ function CardBack({
                 Issue No / Version
               </p>
               <p className="mt-1 break-all text-[16px] font-black text-white">
-                {member.member_no ? `${member.member_no} / v1` : 'Pending / v1'}
+                {buildMemberCardIssueLabel(member.member_no)}
               </p>
             </div>
 
