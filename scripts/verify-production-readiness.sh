@@ -31,6 +31,14 @@ require_file public/icon-512.png
 require_file public/apple-touch-icon.png
 require_file public/.well-known/assetlinks.json
 require_dir supabase/migrations
+require_file scripts/check-env-safety.sh
+require_file scripts/check-lockfile-integrity.sh
+require_file scripts/safe-export.sh
+require_file scripts/check-safe-archive.sh
+
+# Fail early on local/client secret exposure and package-lock drift.
+bash scripts/check-env-safety.sh
+bash scripts/check-lockfile-integrity.sh
 
 node <<'NODE'
 const fs = require('node:fs')
@@ -53,10 +61,24 @@ if [[ -f .env.local ]]; then
   warn ".env.local exists locally. This is OK locally, but it must never be committed or shared."
 fi
 
-if grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.output --exclude='*.zip' -E 'VITE_[A-Z0-9_]*(PRIVATE|SECRET|SERVICE_ROLE|PASSWORD|TOKEN|JWT|KEY)=' . | grep -v 'VITE_SUPABASE_ANON_KEY' | grep -v 'VITE_VAPID_PUBLIC_KEY'; then
-  fail "Private-looking VITE_ environment variable detected. Rename private secrets to server-only names."
+if grep -RIn \
+  --exclude-dir=node_modules \
+  --exclude-dir=.git \
+  --exclude-dir=.output \
+  --exclude-dir=dist \
+  --exclude-dir=dist-ssr \
+  --exclude-dir=exports \
+  --exclude-dir=.tanstack \
+  --exclude-dir=.nitro \
+  --exclude-dir=.vinxi \
+  --exclude='*.zip' \
+  --exclude='package-lock.json' \
+  -E 'VITE_[A-Z0-9_]*(PRIVATE|SECRET|SERVICE_ROLE|PASSWORD|TOKEN|JWT|KEY)=' . \
+  | grep -v 'VITE_SUPABASE_ANON_KEY' \
+  | grep -v 'VITE_VAPID_PUBLIC_KEY'; then
+  fail "Private-looking VITE_ environment variable assignment detected. Rename private secrets to server-only names."
 else
-  log "No private-looking VITE_ env assignments detected"
+  log "No private-looking VITE_ secret assignments detected in project files"
 fi
 
 if [[ -f scripts/scan-secrets.sh ]]; then
@@ -64,6 +86,16 @@ if [[ -f scripts/scan-secrets.sh ]]; then
 else
   fail "Missing scripts/scan-secrets.sh"
 fi
+
+for ignore_file in .gitignore .zipignore; do
+  require_file "$ignore_file"
+  for required_pattern in '.env.local' 'supabase/.temp/' 'supabase/.branches/' 'exports/' '*.zip' '*.apk' '*.aab' '*.keystore'; do
+    if ! grep -Fq "$required_pattern" "$ignore_file"; then
+      fail "$ignore_file is missing safety pattern: $required_pattern"
+    fi
+  done
+  log "$ignore_file includes required safety patterns"
+done
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if git ls-files --error-unmatch .env.local >/dev/null 2>&1; then

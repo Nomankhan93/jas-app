@@ -20,7 +20,11 @@
     "verify:production": "bash scripts/verify-production-readiness.sh",
     "verify:android": "bash scripts/verify-android-twa.sh",
     "clean:cache": "bash scripts/clear-local-cache.sh",
-    "scan:secrets": "bash scripts/scan-secrets.sh ."
+    "scan:secrets": "bash scripts/scan-secrets.sh .",
+    "env:check": "bash scripts/check-env-safety.sh",
+    "env:fix-local": "bash scripts/fix-local-env-safety.sh",
+    "lock:check": "bash scripts/check-lockfile-integrity.sh",
+    "preflight": "npm run env:check && npm run lock:check && npm run scan:secrets && npm run check && npm run build"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",

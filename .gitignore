@@ -45,3 +45,23 @@ signing-key-info.txt
 JAS-test.apk
 JAS.apk
 JAS.aab
+# Local platform/CI state
+.vercel/
+.netlify/
+.turbo/
+.cache/
+coverage/
+playwright-report/
+test-results/
+# Extra secret/key material
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.csr
+*.mobileprovision
+.env.backup
+.env.bak
+.env.local.*
+.env-safety-backups/

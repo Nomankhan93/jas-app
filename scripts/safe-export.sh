@@ -31,9 +31,20 @@ RSYNC_EXCLUDES=(
   "--exclude=.env.preview"
   "--exclude=.env.staging"
   "--exclude=.env.*.local"
+  "--exclude=.env.backup"
+  "--exclude=.env.bak"
+  "--exclude=.env.local.*"
+  "--exclude=.env-safety-backups/"
   "--exclude=*.local"
   "--exclude=.git/"
   "--exclude=node_modules/"
+  "--exclude=.vercel/"
+  "--exclude=.netlify/"
+  "--exclude=.turbo/"
+  "--exclude=.cache/"
+  "--exclude=coverage/"
+  "--exclude=playwright-report/"
+  "--exclude=test-results/"
   "--exclude=.output/"
   "--exclude=dist/"
   "--exclude=dist-ssr/"
@@ -53,6 +64,13 @@ RSYNC_EXCLUDES=(
   "--exclude=*.apk"
   "--exclude=*.aab"
   "--exclude=*.keystore"
+  "--exclude=*.pem"
+  "--exclude=*.key"
+  "--exclude=*.p12"
+  "--exclude=*.pfx"
+  "--exclude=*.crt"
+  "--exclude=*.csr"
+  "--exclude=*.mobileprovision"
   "--exclude=signing-key-info.txt"
   "--exclude=JAS-test.apk"
   "--exclude=JAS.apk"
@@ -72,9 +90,20 @@ else
     --exclude='./.env.preview' \
     --exclude='./.env.staging' \
     --exclude='./.env.*.local' \
+    --exclude='./.env.local.*' \
+    --exclude='./.env-safety-backups' \
+    --exclude='./.env.bak' \
+    --exclude='./.env.backup' \
     --exclude='*.local' \
     --exclude='./.git' \
     --exclude='./node_modules' \
+    --exclude='./test-results' \
+    --exclude='./playwright-report' \
+    --exclude='./coverage' \
+    --exclude='./.cache' \
+    --exclude='./.turbo' \
+    --exclude='./.netlify' \
+    --exclude='./.vercel' \
     --exclude='./.output' \
     --exclude='./dist' \
     --exclude='./dist-ssr' \
@@ -94,6 +123,13 @@ else
     --exclude='*.apk' \
     --exclude='*.aab' \
     --exclude='*.keystore' \
+    --exclude='*.mobileprovision' \
+    --exclude='*.csr' \
+    --exclude='*.crt' \
+    --exclude='*.pfx' \
+    --exclude='*.p12' \
+    --exclude='*.key' \
+    --exclude='*.pem' \
     --exclude='signing-key-info.txt' \
     --exclude='JAS-test.apk' \
     --exclude='JAS.apk' \
@@ -110,6 +146,24 @@ blocked_paths="$(find "$PROJECT_DIR" \
   -o -name '.env.test' \
   -o -name '.env.preview' \
   -o -name '.env.staging' \
+  -o -name '*.pfx' \
+  -o -name '*.p12' \
+  -o -name '*.key' \
+  -o -name '*.pem' \
+  -o -name 'test-results' \
+  -o -name 'playwright-report' \
+  -o -name 'coverage' \
+  -o -name '.cache' \
+  -o -name '.turbo' \
+  -o -name '.netlify' \
+  -o -name '.vercel' \
+  -o -name '.env.bak' \
+  -o -name '.env.backup' \
+  -o -name '*.mobileprovision' \
+  -o -name '*.csr' \
+  -o -name '*.crt' \
+  -o -name '.env.local.*' \
+  -o -name '.env-safety-backups' \
   -o -name '.git' \
   -o -name 'node_modules' \
   -o -name '.output' \
@@ -152,4 +206,4 @@ bash scripts/check-safe-archive.sh "$ARCHIVE_PATH"
 
 bytes="$(wc -c < "$ARCHIVE_PATH" | tr -d ' ')"
 echo "Safe export created: $ARCHIVE_PATH (${bytes} bytes)"
-echo "Excluded: .env*, .git, node_modules, build output, Supabase temp/branches/snippets, backups, exports, logs, zips, Android packages/keys"
+echo "Excluded: .env*, .git, node_modules, build output, Supabase temp/branches/snippets, platform state, backups, exports, logs, zips, Android packages/keys and certificate files"

@@ -45,6 +45,10 @@ VITE_VAPID_PUBLIC_KEY=
 # Server-only values
 SUPABASE_URL=
 SUPABASE_SERVICE_ROLE_KEY=
+
+# Supabase Edge Function secrets only, not Vercel frontend env
+# VAPID_PRIVATE_KEY=...
+# VAPID_SUBJECT=mailto:support@jasofficial.org
 ```
 
 Important: never commit or share `.env`, `.env.local`, or any file containing real secrets. The service-role key is server-only. `SUPABASE_URL` should normally match `VITE_SUPABASE_URL`, but it is read only by server-side admin actions. Never create `VITE_SUPABASE_SERVICE_ROLE_KEY`, `VITE_VAPID_PRIVATE_KEY`, or any other `VITE_` private secret.
@@ -54,7 +58,22 @@ For Web Push Edge Functions, set private secrets in Supabase rather than client 
 ```bash
 npx supabase secrets set VAPID_PUBLIC_KEY="..."
 npx supabase secrets set VAPID_PRIVATE_KEY="..."
-npx supabase secrets set VAPID_SUBJECT="mailto:admin@example.com"
+npx supabase secrets set VAPID_SUBJECT="mailto:support@jasofficial.org"
+```
+
+Brevo SMTP credentials for password reset emails belong in Supabase Cloud Auth SMTP settings, not in Vercel frontend env. The browser calls Supabase Auth; Supabase sends recovery emails through Brevo.
+
+Run local safety checks before deployment:
+
+```bash
+npm run env:check
+npm run lock:check
+```
+
+If an old local env file contains `VITE_VAPID_PRIVATE_KEY`, fix it with:
+
+```bash
+npm run env:fix-local
 ```
 
 ## Install and run
@@ -152,7 +171,13 @@ Use the safe export script instead:
 npm run safe-export
 ```
 
-The archive will be created in `exports/` and will exclude secrets, git history, build output, dependencies, Supabase temp folders and generated archives.
+The archive will be created in `exports/` and will exclude secrets, git history, build output, dependencies, Supabase temp folders, platform state, generated archives, Android packages, and certificate/key files.
+
+After creating an archive, verify it:
+
+```bash
+npm run qa:archive -- exports/<archive-name>.zip
+```
 
 Manual fallback if needed:
 
@@ -180,9 +205,16 @@ npm run build
 For clean machine/Vercel-style verification, use:
 
 ```bash
+npm run lock:check
 npm ci
 npm run check
 npm run build
+```
+
+Full preflight:
+
+```bash
+npm run preflight
 ```
 
 ## Key routes
