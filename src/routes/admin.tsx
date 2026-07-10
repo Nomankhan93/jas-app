@@ -41,7 +41,6 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase/client";
 import {
-  csvCell,
   formatDisplayDate as formatDate,
   maskCnic,
   maskMobile,
@@ -54,6 +53,7 @@ import {
   filterRowsByAreaAccess,
   getAreaAccessSummaryText,
   loadCurrentAdminAreaAccess,
+  type AdminAreaAccessContext,
 } from "../lib/area-permissions";
 import {
   fetchAuditLogs,
@@ -62,6 +62,11 @@ import {
   getAuditModuleLabel,
   type AuditLogRow,
 } from "../lib/audit-logs";
+import {
+  buildFullMemberCardCsv,
+  type MemberCardCsvSource,
+} from "../lib/admin-member-card-csv";
+import { fetchActiveMemberCardDesignations } from "../lib/member-card-designation";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -140,9 +145,16 @@ type AdminQuickActionConfig = {
 };
 
 const ADMIN_MEMBERS_PAGE_SIZE = 50;
+const ADMIN_MEMBERS_CSV_PAGE_SIZE = 1000;
 const ADMIN_MEMBERS_RESTRICTED_FETCH_LIMIT = 200;
 const MEMBER_PHOTO_BUCKET = "member-photos";
 const MEMBER_PHOTO_SIGNED_URL_TTL_SECONDS = 60 * 60;
+const PUBLIC_VERIFY_ORIGIN = String(
+  import.meta.env.VITE_PUBLIC_SITE_URL ||
+    import.meta.env.VITE_SITE_URL ||
+    import.meta.env.VITE_APP_URL ||
+    "https://jasofficial.org",
+).replace(/\/+$/, "");
 
 const adminDashboardDedupeCopy = {
   en: {
@@ -308,6 +320,7 @@ function AdminPage() {
   const [sortBy, setSortBy] = useState<SortBy>("newest");
   const [searchInput, setSearchInput] = useState("");
   const [showSensitive, setShowSensitive] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [error, setError] = useState("");
   const [areaNotice, setAreaNotice] = useState("");
   const [recentAuditLogs, setRecentAuditLogs] = useState<AuditLogRow[]>([]);
@@ -690,28 +703,87 @@ function AdminPage() {
     setMemberPage((page) => Math.min(totalMemberPages - 1, page + 1));
   }
 
-  function exportCsv() {
-    if (showSensitive) {
-      const confirmed = window.confirm(adminCopy.exportConfirm);
+  async function exportCsv() {
+    const confirmed = window.confirm(adminCopy.exportConfirm);
+    if (!confirmed) return;
 
-      if (!confirmed) return;
+    setExportingCsv(true);
+    setError("");
+
+    try {
+      const access = await ensureAdminAccess();
+
+      if (!access.ok) {
+        await navigate({ to: access.redirectTo });
+        return;
+      }
+
+      if (!canManageMembersFromRoles(access.roles)) {
+        await navigate({ to: getPrimaryAdminRoute(access.roles) });
+        return;
+      }
+
+      const areaAccess = await loadCurrentAdminAreaAccess(
+        "membership",
+        "view",
+        {
+          requiredRoles: ["admin", "super_admin", "membership_admin"],
+          userId: access.userId,
+          roles: access.roles,
+        },
+      );
+
+      if (!areaAccess.ok) {
+        throw new Error(areaAccess.message);
+      }
+
+      const exportMembers = await fetchMembersForCardCsv({
+        statusFilter,
+        districtFilter,
+        talukaFilter,
+        dateFilter,
+        sortBy,
+        search: debouncedSearch,
+        areaAccess,
+      });
+
+      if (exportMembers.length === 0) {
+        throw new Error("No member records are available for this CSV export.");
+      }
+
+      const designationsByMemberId =
+        await fetchActiveMemberCardDesignations(
+          exportMembers.map((member) => member.id),
+          { throwOnError: true },
+        );
+
+      const csv = buildFullMemberCardCsv({
+        members: exportMembers,
+        designationsByMemberId,
+        publicVerifyOrigin: PUBLIC_VERIFY_ORIGIN,
+      });
+      const blob = new Blob([`\uFEFF${csv}`], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `jas-member-card-data-full-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      link.click();
+
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to export full member card data.",
+      );
+    } finally {
+      setExportingCsv(false);
     }
-
-    const csv = buildCsv(filteredMembers, showSensitive);
-    const blob = new Blob([`\uFEFF${csv}`], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    const privacySuffix = showSensitive ? "full" : "masked";
-
-    link.href = url;
-    link.download = `jas-members-${privacySuffix}-${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-    link.click();
-
-    URL.revokeObjectURL(url);
   }
 
   if (isNestedAdminPage) {
@@ -902,14 +974,18 @@ function AdminPage() {
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
-                onClick={exportCsv}
-                disabled={filteredMembers.length === 0}
+                onClick={() => void exportCsv()}
+                disabled={filteredMembers.length === 0 || exportingCsv}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Download className="h-4 w-4" />
-                {showSensitive
-                  ? adminCopy.membership.exportFullCsv
-                  : adminCopy.membership.exportMaskedCsv}
+                {exportingCsv ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
+                {exportingCsv
+                  ? adminCopy.membership.exportingCardCsv
+                  : adminCopy.membership.exportCardCsv}
               </button>
 
               {hasActiveFilters ? (
@@ -995,7 +1071,7 @@ function AdminPage() {
 
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-medium text-slate-500">
-              {adminCopy.membership.sensitiveHint}
+              {adminCopy.membership.cardCsvHint}
             </p>
 
             <select
@@ -2059,31 +2135,107 @@ function matchesDateFilter(value: string, filter: DateFilter) {
   return date >= cutoff;
 }
 
-function buildCsv(members: Member[], includeSensitive: boolean) {
-  const rows = [
-    [
-      "Full Name",
-      "CNIC",
-      "Mobile",
-      "District",
-      "Taluka",
-      "Status",
-      "Member No",
-      "Submitted",
-      "Export Mode",
-    ],
-    ...members.map((member) => [
-      member.full_name,
-      includeSensitive ? member.cnic : maskCnic(member.cnic),
-      includeSensitive ? member.mobile : maskMobile(member.mobile),
-      member.district,
-      member.taluka ?? "",
-      member.status,
-      member.member_no ?? "",
-      formatDate(member.created_at),
-      includeSensitive ? "Full sensitive data" : "Masked sensitive data",
-    ]),
-  ];
+type FetchMembersForCardCsvOptions = {
+  statusFilter: StatusFilter;
+  districtFilter: string;
+  talukaFilter: string;
+  dateFilter: DateFilter;
+  sortBy: SortBy;
+  search: string;
+  areaAccess: AdminAreaAccessContext;
+};
 
-  return rows.map((row) => row.map(csvCell).join(",")).join("\n");
+async function fetchMembersForCardCsv({
+  statusFilter,
+  districtFilter,
+  talukaFilter,
+  dateFilter,
+  sortBy,
+  search,
+  areaAccess,
+}: FetchMembersForCardCsvOptions) {
+  const allMembers: MemberCardCsvSource[] = [];
+  let pageFrom = 0;
+
+  while (true) {
+    let query = supabase.from("members").select(
+      [
+        "id",
+        "member_no",
+        "full_name",
+        "father_name",
+        "cnic",
+        "mobile",
+        "district",
+        "taluka",
+        "profession",
+        "caste_branch",
+        "photo_url",
+        "status",
+        "approved_at",
+        "address",
+        "date_of_birth",
+        "gender",
+        "education",
+        "blood_group",
+        "emergency_contact_name",
+        "emergency_contact_relation",
+        "emergency_contact_mobile",
+        "declaration_accepted",
+        "created_at",
+      ].join(", "),
+    );
+
+    if (statusFilter !== "all") {
+      query = query.eq("status", statusFilter);
+    }
+
+    if (districtFilter !== "all") {
+      query = query.eq("district", districtFilter);
+    }
+
+    if (talukaFilter !== "all") {
+      query = query.eq("taluka", talukaFilter);
+    }
+
+    const dateStart = getDateFilterStart(dateFilter);
+    if (dateStart) {
+      query = query.gte("created_at", dateStart);
+    }
+
+    const searchFilter = buildMemberSearchOrFilter(search);
+    if (searchFilter) {
+      query = query.or(searchFilter);
+    }
+
+    if (sortBy === "oldest") {
+      query = query.order("created_at", { ascending: true });
+    } else if (sortBy === "name") {
+      query = query
+        .order("full_name", { ascending: true })
+        .order("created_at", { ascending: false });
+    } else if (sortBy === "district") {
+      query = query
+        .order("district", { ascending: true })
+        .order("taluka", { ascending: true })
+        .order("created_at", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const pageTo = pageFrom + ADMIN_MEMBERS_CSV_PAGE_SIZE - 1;
+    const { data, error } = await query
+      .range(pageFrom, pageTo)
+      .returns<MemberCardCsvSource[]>();
+
+    if (error) throw error;
+
+    const page = data ?? [];
+    allMembers.push(...page);
+
+    if (page.length < ADMIN_MEMBERS_CSV_PAGE_SIZE) break;
+    pageFrom += ADMIN_MEMBERS_CSV_PAGE_SIZE;
+  }
+
+  return filterRowsByAreaAccess(allMembers, areaAccess);
 }

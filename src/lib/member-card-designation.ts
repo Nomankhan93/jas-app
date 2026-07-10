@@ -27,23 +27,28 @@ export type MemberCardDesignation = {
   expiryLabel: string
 }
 
+type CommitteeSummary = Pick<
+  CommitteeRecord,
+  | 'id'
+  | 'committee_type'
+  | 'name'
+  | 'division'
+  | 'district'
+  | 'taluka'
+  | 'status'
+>
+
 type CommitteeAssignmentRow = {
+  member_id: string
   designation_title: string
   tenure_start: string | null
   tenure_end: string | null
   sort_order: number | null
   created_at: string | null
-  committee:
-    | Pick<
-        CommitteeRecord,
-        'id' | 'committee_type' | 'name' | 'division' | 'district' | 'taluka' | 'status'
-      >
-    | Pick<
-        CommitteeRecord,
-        'id' | 'committee_type' | 'name' | 'division' | 'district' | 'taluka' | 'status'
-      >[]
-    | null
+  committee: CommitteeSummary | CommitteeSummary[] | null
 }
+
+const DESIGNATION_BATCH_SIZE = 100
 
 export function getMemberDesignationTitle(
   designation: MemberCardDesignation | null | undefined,
@@ -56,41 +61,83 @@ export function getMemberDesignationLevel(
 ) {
   if (!designation) return null
 
-  return [designation.committeeLevelLabel, designation.committeeLocationLabel]
-    .filter(Boolean)
-    .join(' · ') || null
+  return (
+    [designation.committeeLevelLabel, designation.committeeLocationLabel]
+      .filter(Boolean)
+      .join(' · ') || null
+  )
 }
 
 export async function fetchActiveMemberCardDesignation(memberId: string) {
-  const { data, error } = await supabase
-    .from('organization_committee_members' as never)
-    .select(
-      [
-        'designation_title',
-        'tenure_start',
-        'tenure_end',
-        'sort_order',
-        'created_at',
-        'committee:organization_committees(id, committee_type, name, division, district, taluka, status)',
-      ].join(', '),
-    )
-    .eq('member_id' as never, memberId as never)
-    .eq('status' as never, 'active' as never)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: false })
-    .limit(5)
+  const designations = await fetchActiveMemberCardDesignations([memberId])
+  return designations[memberId] ?? null
+}
 
-  if (error) {
-    console.warn('Unable to load member card designation:', error.message)
-    return null
+export async function fetchActiveMemberCardDesignations(
+  memberIds: string[],
+  options?: { throwOnError?: boolean },
+) {
+  const uniqueMemberIds = [...new Set(memberIds.filter(Boolean))]
+  const result: Record<string, MemberCardDesignation | null> = Object.fromEntries(
+    uniqueMemberIds.map((memberId) => [memberId, null]),
+  )
+
+  if (uniqueMemberIds.length === 0) return result
+
+  const rows: CommitteeAssignmentRow[] = []
+
+  for (let index = 0; index < uniqueMemberIds.length; index += DESIGNATION_BATCH_SIZE) {
+    const memberIdBatch = uniqueMemberIds.slice(
+      index,
+      index + DESIGNATION_BATCH_SIZE,
+    )
+
+    const { data, error } = await supabase
+      .from('organization_committee_members' as never)
+      .select(
+        [
+          'member_id',
+          'designation_title',
+          'tenure_start',
+          'tenure_end',
+          'sort_order',
+          'created_at',
+          'committee:organization_committees(id, committee_type, name, division, district, taluka, status)',
+        ].join(', '),
+      )
+      .in('member_id' as never, memberIdBatch as never)
+      .eq('status' as never, 'active' as never)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      if (options?.throwOnError) throw error
+
+      console.warn('Unable to load member card designations:', error.message)
+      continue
+    }
+
+    rows.push(...((data ?? []) as unknown as CommitteeAssignmentRow[]))
   }
 
-  const rows = (data ?? []) as unknown as CommitteeAssignmentRow[]
+  const rowsByMemberId = new Map<string, CommitteeAssignmentRow[]>()
 
+  rows.forEach((row) => {
+    const memberRows = rowsByMemberId.get(row.member_id) ?? []
+    memberRows.push(row)
+    rowsByMemberId.set(row.member_id, memberRows)
+  })
+
+  uniqueMemberIds.forEach((memberId) => {
+    result[memberId] = resolveActiveDesignation(rowsByMemberId.get(memberId) ?? [])
+  })
+
+  return result
+}
+
+function resolveActiveDesignation(rows: CommitteeAssignmentRow[]) {
   const activeRow = rows.find((row) => {
-    const committee = Array.isArray(row.committee)
-      ? row.committee[0]
-      : row.committee
+    const committee = getCommittee(row)
 
     return (
       Boolean(row.designation_title?.trim()) &&
@@ -105,10 +152,7 @@ export async function fetchActiveMemberCardDesignation(memberId: string) {
 
   if (!activeRow) return null
 
-  const committee = Array.isArray(activeRow.committee)
-    ? activeRow.committee[0]
-    : activeRow.committee
-
+  const committee = getCommittee(activeRow)
   if (!committee) return null
 
   const validitySource = {
@@ -130,4 +174,8 @@ export async function fetchActiveMemberCardDesignation(memberId: string) {
     validityLabel: formatDesignationValidity(validitySource),
     expiryLabel: formatDesignationExpiry(validitySource),
   } satisfies MemberCardDesignation
+}
+
+function getCommittee(row: CommitteeAssignmentRow) {
+  return Array.isArray(row.committee) ? row.committee[0] : row.committee
 }

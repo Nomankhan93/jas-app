@@ -29,6 +29,9 @@ type AdminDashboardCopy = {
     showing: (shown: number, total: number) => string
     exportFullCsv: string
     exportMaskedCsv: string
+    exportCardCsv: string
+    exportingCardCsv: string
+    cardCsvHint: string
     clearFilters: string
     searchPlaceholder: string
     searchAria: string
@@ -150,6 +153,10 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       showing: (shown, total) => `Showing ${shown} of ${total} members.`,
       exportFullCsv: 'Export Full CSV',
       exportMaskedCsv: 'Export Masked CSV',
+      exportCardCsv: 'Export Full Card CSV',
+      exportingCardCsv: 'Preparing Full CSV...',
+      cardCsvHint:
+        'CSV always exports full unmasked front/back card data for every record matching the current filters. The on-screen table can remain masked.',
       clearFilters: 'Clear Filters',
       searchPlaceholder: 'Search name, CNIC, mobile, district...',
       searchAria: 'Search members',
@@ -312,7 +319,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       roleBased: 'Role-based module access',
     },
     exportConfirm:
-      'This export will include full CNIC and mobile numbers. Continue only if this is required for official verification.',
+      'This export will include all unmasked personal data shown on the front and back of member cards for every record matching the current filters. Continue only for authorized official use.',
     viewApplication: 'View Application',
   },
   ur: {
@@ -351,6 +358,10 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       showing: (shown, total) => `${total} میں سے ${shown} ممبران دکھائے جا رہے ہیں۔`,
       exportFullCsv: 'فل CSV ایکسپورٹ',
       exportMaskedCsv: 'ماسکڈ CSV ایکسپورٹ',
+      exportCardCsv: 'مکمل کارڈ CSV ایکسپورٹ',
+      exportingCardCsv: 'مکمل CSV تیار ہو رہی ہے...',
+      cardCsvHint:
+        'CSV میں موجودہ فلٹرز سے میچ کرنے والے تمام ریکارڈز کا مکمل اور غیر ماسک شدہ فرنٹ/بیک کارڈ ڈیٹا شامل ہوگا۔ اسکرین ٹیبل ماسک رہ سکتی ہے۔',
       clearFilters: 'فلٹرز صاف کریں',
       searchPlaceholder: 'نام، CNIC، موبائل، ضلع تلاش کریں...',
       searchAria: 'ممبرز تلاش کریں',
@@ -513,7 +524,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       roleBased: 'رول بیسڈ ماڈیول ایکسس',
     },
     exportConfirm:
-      'اس ایکسپورٹ میں مکمل CNIC اور موبائل نمبرز شامل ہوں گے۔ صرف سرکاری تصدیق کی ضرورت ہو تو جاری رکھیں۔',
+      'اس ایکسپورٹ میں موجودہ فلٹرز سے میچ کرنے والے تمام ممبرز کے کارڈ کی فرنٹ اور بیک سائیڈ کا مکمل غیر ماسک شدہ ذاتی ڈیٹا شامل ہوگا۔ صرف مجاز سرکاری استعمال کے لیے جاری رکھیں۔',
     viewApplication: 'درخواست دیکھیں',
   },
   sd: {
@@ -552,6 +563,10 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       showing: (shown, total) => `${total} مان ${shown} ميمبر ڏيکاريا پيا وڃن.`,
       exportFullCsv: 'فل CSV ايڪسپورٽ',
       exportMaskedCsv: 'ماسڪڊ CSV ايڪسپورٽ',
+      exportCardCsv: 'مڪمل ڪارڊ CSV ايڪسپورٽ',
+      exportingCardCsv: 'مڪمل CSV تيار ٿي رهي آهي...',
+      cardCsvHint:
+        'CSV ۾ موجوده فلٽرن سان ملندڙ سڀني رڪارڊن جو مڪمل ۽ بغير ماسڪ ٿيل فرنٽ/بيڪ ڪارڊ ڊيٽا شامل هوندو. اسڪرين ٽيبل ماسڪ رهي سگهي ٿي.',
       clearFilters: 'فلٽر صاف ڪريو',
       searchPlaceholder: 'نالو، CNIC، موبائل، ضلعو ڳوليو...',
       searchAria: 'ميمبر ڳوليو',
@@ -714,7 +729,7 @@ const copies: Record<'en' | 'ur' | 'sd', Omit<AdminDashboardCopy, 'textDir' | 'i
       roleBased: 'رول بيسڊ ماڊيول ايڪسس',
     },
     exportConfirm:
-      'هن ايڪسپورٽ ۾ مڪمل CNIC ۽ موبائل نمبر شامل هوندا. صرف سرڪاري تصديق جي ضرورت هجي ته جاري رکو.',
+      'هن ايڪسپورٽ ۾ موجوده فلٽرن سان ملندڙ سڀني ميمبرن جي ڪارڊ فرنٽ ۽ بيڪ جو مڪمل بغير ماسڪ ٿيل ذاتي ڊيٽا شامل هوندو. صرف مجاز سرڪاري استعمال لاءِ جاري رکو.',
     viewApplication: 'درخواست ڏسو',
   },
 }

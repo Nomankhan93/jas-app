@@ -176,7 +176,7 @@ export function AdminMemberManagement({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
-            {showSensitive ? 'Export Full CSV' : 'Export Masked CSV'}
+            Export Full Card CSV
           </button>
 
           {hasActiveFilters ? (
@@ -260,8 +260,8 @@ export function AdminMemberManagement({
 
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs font-medium text-slate-500">
-          CNIC and mobile numbers are masked by default. Full CSV export
-          requires sensitive-data mode and confirmation.
+          CSV export includes full unmasked front/back card data. The
+          on-screen table can remain masked.
         </p>
 
         <select
