@@ -63,7 +63,7 @@ run_cmd() {
   fi
 }
 
-log_section "JAS Production Readiness + QA Phase 6"
+log_section "JAS Production Readiness + QA Phase 8"
 echo "Root: $ROOT_DIR"
 echo "Date: $(date -Is)"
 
@@ -76,6 +76,8 @@ require_file ".gitignore"
 require_file ".zipignore"
 require_dir "src/routes"
 require_dir "supabase/migrations"
+require_dir "supabase/templates"
+require_file "supabase/functions/send-notification-emails/index.ts"
 require_file "src/routeTree.gen.ts"
 
 log_section "Critical routes registered"
@@ -112,6 +114,7 @@ migrations=(
   "20260602004000_database_audit_logs_phase1.sql"
   "20260710193000_member_card_csv_export_audit.sql"
   "20260710213000_profile_update_requests.sql"
+  "20260710230000_branded_notification_emails.sql"
 )
 
 for migration in "${migrations[@]}"; do
@@ -151,6 +154,8 @@ log_section "Environment documentation"
 if grep -q "SUPABASE_URL" .env.example; then pass ".env.example documents SUPABASE_URL"; else warn ".env.example does not document SUPABASE_URL"; fi
 if grep -q "VITE_PUBLIC_SITE_URL" .env.example; then pass ".env.example documents VITE_PUBLIC_SITE_URL"; else warn ".env.example does not document VITE_PUBLIC_SITE_URL"; fi
 if grep -q "SUPABASE_SERVICE_ROLE_KEY" .env.example; then pass ".env.example documents server service role variable"; else warn ".env.example does not document SUPABASE_SERVICE_ROLE_KEY"; fi
+if grep -q "BREVO_API_KEY" .env.example; then pass ".env.example documents Brevo API secret"; else warn ".env.example does not document BREVO_API_KEY"; fi
+if grep -q "EMAIL_WORKER_SECRET" .env.example; then pass ".env.example documents email worker secret"; else warn ".env.example does not document EMAIL_WORKER_SECRET"; fi
 
 log_section "Client secret exposure scan"
 if grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.output --exclude='*.zip' "SUPABASE_SERVICE_ROLE_KEY" src | grep -v "src/lib/supabase/admin.ts"; then
@@ -192,11 +197,20 @@ critical_test_files=(
   "src/lib/area-permissions.test.ts"
   "src/lib/admin/member-action-validation.test.ts"
   "src/lib/profile-update.test.ts"
+  "src/lib/notification-email.test.ts"
 )
 
 for test_file in "${critical_test_files[@]}"; do
   require_file "$test_file"
 done
+
+log_section "Branded email templates"
+if npm run email:templates:check; then
+  pass "Email template verification passed"
+else
+  fail "Email template verification failed"
+  exit 1
+fi
 
 log_section "TypeScript, unit tests and production build"
 if npm run check; then

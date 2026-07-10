@@ -18,7 +18,7 @@
     "lock:sync": "npm install --package-lock-only",
     "verify:clean": "npm run check && npm run build",
     "qa": "bash scripts/verify-project.sh",
-    "qa:core": "npm run check && npm test && npm run build",
+    "qa:core": "npm run email:templates:check && npm run check && npm test && npm run build",
     "qa:archive": "bash scripts/check-safe-archive.sh",
     "verify:production": "bash scripts/verify-production-readiness.sh",
     "verify:android": "bash scripts/verify-android-twa.sh",
@@ -27,7 +27,8 @@
     "env:check": "bash scripts/check-env-safety.sh",
     "env:fix-local": "bash scripts/fix-local-env-safety.sh",
     "lock:check": "bash scripts/check-lockfile-integrity.sh",
-    "preflight": "npm run env:check && npm run lock:check && npm run scan:secrets && npm run check && npm run build"
+    "preflight": "npm run env:check && npm run lock:check && npm run scan:secrets && npm run check && npm run build",
+    "email:templates:check": "node scripts/check-email-templates.mjs"
   },
   "dependencies": {
     "@faker-js/faker": "^10.3.0",

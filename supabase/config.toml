@@ -217,11 +217,11 @@ enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
-# If enabled, users need to confirm their email address before signing in.
+# Signup email confirmation is intentionally disabled. New email/password users can sign in immediately.
 enable_confirmations = false
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
-# Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
+# Controls the minimum amount of time that must pass before sending another password reset or other Auth email.
 max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
@@ -238,16 +238,65 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# JAS branded authentication email templates for local development.
+# Hosted Supabase projects must also copy these subjects and HTML files into
+# Authentication -> Email Templates in the Supabase Dashboard.
+[auth.email.template.invite]
+subject = "You are invited to Jatt Alliance Sindh"
+content_path = "./supabase/templates/invite.html"
 
-# Uncomment to customize notification email template
-# [auth.email.notification.password_changed]
-# enabled = true
-# subject = "Your password has been changed"
-# content_path = "./templates/password_changed_notification.html"
+[auth.email.template.recovery]
+subject = "Reset your JAS password"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.magic_link]
+subject = "Your secure JAS sign-in link"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new JAS email address"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.reauthentication]
+subject = "{{ .Token }} is your JAS verification code"
+content_path = "./supabase/templates/reauthentication.html"
+
+# Security notifications are enabled so account owners are alerted when
+# sensitive authentication details change.
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Security notice: your JAS password was changed"
+content_path = "./supabase/templates/password_changed_notification.html"
+
+[auth.email.notification.email_changed]
+enabled = true
+subject = "Security notice: your JAS email was changed"
+content_path = "./supabase/templates/email_changed_notification.html"
+
+[auth.email.notification.phone_changed]
+enabled = true
+subject = "Security notice: your JAS phone number was changed"
+content_path = "./supabase/templates/phone_changed_notification.html"
+
+[auth.email.notification.identity_linked]
+enabled = true
+subject = "Security notice: a sign-in method was linked"
+content_path = "./supabase/templates/identity_linked_notification.html"
+
+[auth.email.notification.identity_unlinked]
+enabled = true
+subject = "Security notice: a sign-in method was removed"
+content_path = "./supabase/templates/identity_unlinked_notification.html"
+
+[auth.email.notification.mfa_factor_enrolled]
+enabled = true
+subject = "Security notice: a verification method was added"
+content_path = "./supabase/templates/mfa_factor_enrolled_notification.html"
+
+[auth.email.notification.mfa_factor_unenrolled]
+enabled = true
+subject = "Security notice: a verification method was removed"
+content_path = "./supabase/templates/mfa_factor_unenrolled_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS/phone to your project.
@@ -406,3 +455,9 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Notification email worker is called by a protected cron/webhook request.
+# JWT verification is disabled at the gateway because the function validates
+# the X-Email-Worker-Secret header itself.
+[functions.send-notification-emails]
+verify_jwt = false

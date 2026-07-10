@@ -290,3 +290,16 @@ If a raw zip containing `.env`, `.env.local`, `SUPABASE_SERVICE_ROLE_KEY`, or a 
 3. Admin Reports Center
 4. Role Management UI
 5. Committee and Designation Management
+
+## Phase 8 email system
+
+Branded JAS authentication templates are stored in `supabase/templates/`. Signup email confirmation is intentionally excluded and local `auth.email.enable_confirmations` remains `false`, so new email/password users can sign in immediately. Password recovery, email-change, invitation, security, and important membership/program notifications remain supported through Supabase Auth and the protected `send-notification-emails` Edge Function with Brevo.
+
+Validate templates and core QA:
+
+```bash
+npm run email:templates:check
+npm run qa:core
+```
+
+Deployment and cron setup are documented in `PATCH_NOTES_PHASE8_BRANDED_EMAILS.md`.
