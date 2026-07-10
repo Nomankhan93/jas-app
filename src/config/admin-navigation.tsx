@@ -3,6 +3,7 @@ import {
   BadgeIndianRupee,
   BarChart3,
   Bell,
+  BellRing,
   BookOpenCheck,
   BriefcaseBusiness,
   CalendarDays,
@@ -26,6 +27,7 @@ import {
 export type AdminNavigationRoute =
   | '/admin'
   | '/admin/profile-update-requests'
+  | '/admin/notifications'
   | '/admin/programs/education'
   | '/admin/programs/health'
   | '/admin/programs/welfare'
@@ -63,6 +65,11 @@ export const adminNavigationGroups: AdminNavigationGroup[] = [
         label: 'Dashboard',
         to: '/admin',
         icon: <LayoutDashboard size={17} />,
+      },
+      {
+        label: 'Notification Center',
+        to: '/admin/notifications',
+        icon: <BellRing size={17} />,
       },
     ],
   },

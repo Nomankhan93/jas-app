@@ -1,54 +1,48 @@
 # send-web-push Edge Function
 
-This function sends browser/PWA push notifications to saved `push_subscriptions` rows.
+Protected Phase 9 worker for the durable `public.web_push_deliveries` queue.
 
-## Security rules
+The database trigger queues one delivery per enabled browser subscription whenever an in-app notification is created and the member's category preferences allow browser push.
 
-- Normal logged-in users may call the function only with a `notification_id` that belongs to their own `auth.users.id`.
-- Admin roles may send an existing `notification_id` to any user.
-- Direct payloads with `user_id`, `title`, `body`, or `url` require an admin session or the internal `X-Push-Secret` header.
-- Notification click URLs are restricted to same-app relative paths such as `/notifications` to avoid open redirects.
+## Reliability behavior
 
-Admin roles currently accepted by the function:
-
-```txt
-admin
-super_admin
-membership_admin
-education_admin
-health_admin
-employment_admin
-ration_admin
-welfare_admin
-finance_admin
-```
+- Atomic `FOR UPDATE SKIP LOCKED` job claims
+- Maximum five attempts per delivery
+- Exponential retry delay: 1, 2, 4, 8, then dead
+- Ten-minute stuck-worker recovery
+- Database-enforced global per-minute rate capacity
+- Maximum 50 jobs per invocation
+- Concurrency limited to five provider requests
+- HTTP 404/410 subscriptions automatically disabled
+- Failure reason and HTTP status stored without endpoint/key data
+- User preferences checked again at claim time
 
 ## Required secrets
 
-Set these in Supabase Edge Function secrets, not in client-side `VITE_` env variables:
-
 ```bash
-supabase secrets set VAPID_PUBLIC_KEY="..."
-supabase secrets set VAPID_PRIVATE_KEY="..."
-supabase secrets set VAPID_SUBJECT="mailto:admin@example.com"
-supabase secrets set SUPABASE_URL="https://PROJECT.supabase.co"
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY="..."
+npx supabase secrets set \
+  VAPID_PUBLIC_KEY="YOUR_PUBLIC_VAPID_KEY" \
+  VAPID_PRIVATE_KEY="YOUR_PRIVATE_VAPID_KEY" \
+  VAPID_SUBJECT="mailto:support@jasofficial.org" \
+  PUSH_SEND_SECRET="$(openssl rand -hex 32)" \
+  PUSH_MAX_SENDS_PER_MINUTE="120"
 ```
 
-## Recommended optional secrets
+`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are supplied by the Supabase Edge Function runtime. Never expose the private VAPID key or worker secret with a `VITE_` prefix.
+
+## Deploy
 
 ```bash
-supabase secrets set PUSH_SEND_SECRET="$(openssl rand -base64 48)"
-supabase secrets set APP_ORIGIN="https://jasofficial.org,http://localhost:3000"
+npx supabase functions deploy send-web-push --no-verify-jwt
 ```
 
-Use `PUSH_SEND_SECRET` only from trusted server/cron jobs:
+## Worker request
 
 ```bash
-curl -X POST "https://PROJECT.supabase.co/functions/v1/send-web-push" \
+curl -X POST "https://PROJECT_REF.supabase.co/functions/v1/send-web-push" \
   -H "Content-Type: application/json" \
   -H "X-Push-Secret: $PUSH_SEND_SECRET" \
-  -d '{"notification_id":"00000000-0000-4000-8000-000000000000"}'
+  -d '{"batch_size":20}'
 ```
 
-Browser/client calls should use a Supabase auth bearer token and `notification_id` only.
+Schedule the same request once per minute with Supabase Cron. Keep the secret in Vault/Edge Function secrets rather than committed SQL.

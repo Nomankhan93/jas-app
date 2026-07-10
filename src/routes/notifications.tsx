@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Loader2,
   RefreshCw,
+  Settings,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -181,7 +182,7 @@ function NotificationsPage() {
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={markAllRead}
@@ -202,6 +203,13 @@ function NotificationsPage() {
                   />
                   Refresh
                 </button>
+                <Link
+                  to="/notification-preferences"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 text-sm font-black text-white no-underline transition hover:bg-white/20 visited:text-white"
+                >
+                  <Settings className="h-4 w-4" />
+                  Preferences
+                </Link>
               </div>
             </div>
           </div>

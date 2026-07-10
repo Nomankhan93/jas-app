@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'jas-pwa'
-const CACHE_VERSION = 'v7-auto-update-hard-reset'
+const CACHE_VERSION = 'v8-push-reliability-preferences'
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`
 const CORE_ASSETS = [
   '/offline.html',
@@ -32,6 +32,28 @@ function buildResetRedirectUrl(url) {
 
   cleanUrl.searchParams.set(RESET_DONE_PARAM, Date.now().toString())
   return cleanUrl.href
+}
+
+function safeNotificationTarget(value) {
+  if (typeof value !== 'string') return '/notifications'
+  const trimmed = value.trim()
+
+  if (
+    !trimmed.startsWith('/') ||
+    trimmed.startsWith('//') ||
+    trimmed.includes('\\') ||
+    /[\u0000-\u001f\u007f]/.test(trimmed)
+  ) {
+    return '/notifications'
+  }
+
+  try {
+    const parsed = new URL(trimmed, self.location.origin)
+    if (parsed.origin !== self.location.origin) return '/notifications'
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return '/notifications'
+  }
 }
 
 async function deleteOldJasCaches() {
@@ -235,7 +257,9 @@ self.addEventListener('push', (event) => {
     badge: payload.badge || '/icon-192.png',
     tag: payload.tag || payload.notification_id || 'jas-update',
     data: {
-      url: payload.url || payload.action_url || '/notifications',
+      url: safeNotificationTarget(
+        payload.url || payload.action_url || '/notifications',
+      ),
       notification_id: payload.notification_id || null,
     },
   }
@@ -247,7 +271,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
   const targetUrl = new URL(
-    event.notification.data?.url || '/notifications',
+    safeNotificationTarget(event.notification.data?.url),
     self.location.origin,
   ).href
 

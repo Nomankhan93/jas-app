@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileUpdateRouteImport } from './routes/profile-update'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as NotificationPreferencesRouteImport } from './routes/notification-preferences'
 import { Route as NewsRouteImport } from './routes/news'
 import { Route as ManifestoRouteImport } from './routes/manifesto'
 import { Route as LoginRouteImport } from './routes/login'
@@ -44,6 +45,7 @@ import { Route as CommitteesIdRouteImport } from './routes/committees/$id'
 import { Route as AdminRolesRouteImport } from './routes/admin/roles'
 import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as AdminProfileUpdateRequestsRouteImport } from './routes/admin/profile-update-requests'
+import { Route as AdminNotificationsRouteImport } from './routes/admin/notifications'
 import { Route as AdminNewsRouteImport } from './routes/admin/news'
 import { Route as AdminGalleryRouteImport } from './routes/admin/gallery'
 import { Route as AdminFinanceRouteImport } from './routes/admin/finance'
@@ -109,6 +111,11 @@ const ProfileUpdateRoute = ProfileUpdateRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationPreferencesRoute = NotificationPreferencesRouteImport.update({
+  id: '/notification-preferences',
+  path: '/notification-preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NewsRoute = NewsRouteImport.update({
@@ -257,6 +264,11 @@ const AdminProfileUpdateRequestsRoute =
     path: '/profile-update-requests',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminNewsRoute = AdminNewsRouteImport.update({
   id: '/news',
   path: '/news',
@@ -466,6 +478,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
+  '/notification-preferences': typeof NotificationPreferencesRoute
   '/notifications': typeof NotificationsRoute
   '/profile-update': typeof ProfileUpdateRoute
   '/register': typeof RegisterRoute
@@ -481,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile-update-requests': typeof AdminProfileUpdateRequestsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
@@ -539,6 +553,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
+  '/notification-preferences': typeof NotificationPreferencesRoute
   '/notifications': typeof NotificationsRoute
   '/profile-update': typeof ProfileUpdateRoute
   '/register': typeof RegisterRoute
@@ -554,6 +569,7 @@ export interface FileRoutesByTo {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile-update-requests': typeof AdminProfileUpdateRequestsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
@@ -613,6 +629,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/manifesto': typeof ManifestoRoute
   '/news': typeof NewsRouteWithChildren
+  '/notification-preferences': typeof NotificationPreferencesRoute
   '/notifications': typeof NotificationsRoute
   '/profile-update': typeof ProfileUpdateRoute
   '/register': typeof RegisterRoute
@@ -628,6 +645,7 @@ export interface FileRoutesById {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/gallery': typeof AdminGalleryRoute
   '/admin/news': typeof AdminNewsRouteWithChildren
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/profile-update-requests': typeof AdminProfileUpdateRequestsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/roles': typeof AdminRolesRoute
@@ -688,6 +706,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/manifesto'
     | '/news'
+    | '/notification-preferences'
     | '/notifications'
     | '/profile-update'
     | '/register'
@@ -703,6 +722,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/notifications'
     | '/admin/profile-update-requests'
     | '/admin/reports'
     | '/admin/roles'
@@ -761,6 +781,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/manifesto'
     | '/news'
+    | '/notification-preferences'
     | '/notifications'
     | '/profile-update'
     | '/register'
@@ -776,6 +797,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/notifications'
     | '/admin/profile-update-requests'
     | '/admin/reports'
     | '/admin/roles'
@@ -834,6 +856,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/manifesto'
     | '/news'
+    | '/notification-preferences'
     | '/notifications'
     | '/profile-update'
     | '/register'
@@ -849,6 +872,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/gallery'
     | '/admin/news'
+    | '/admin/notifications'
     | '/admin/profile-update-requests'
     | '/admin/reports'
     | '/admin/roles'
@@ -908,6 +932,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ManifestoRoute: typeof ManifestoRoute
   NewsRoute: typeof NewsRouteWithChildren
+  NotificationPreferencesRoute: typeof NotificationPreferencesRoute
   NotificationsRoute: typeof NotificationsRoute
   ProfileUpdateRoute: typeof ProfileUpdateRoute
   RegisterRoute: typeof RegisterRoute
@@ -964,6 +989,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notification-preferences': {
+      id: '/notification-preferences'
+      path: '/notification-preferences'
+      fullPath: '/notification-preferences'
+      preLoaderRoute: typeof NotificationPreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/news': {
@@ -1167,6 +1199,13 @@ declare module '@tanstack/react-router' {
       path: '/profile-update-requests'
       fullPath: '/admin/profile-update-requests'
       preLoaderRoute: typeof AdminProfileUpdateRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/news': {
@@ -1534,6 +1573,7 @@ interface AdminRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminGalleryRoute: typeof AdminGalleryRoute
   AdminNewsRoute: typeof AdminNewsRouteWithChildren
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminProfileUpdateRequestsRoute: typeof AdminProfileUpdateRequestsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminRolesRoute: typeof AdminRolesRoute
@@ -1554,6 +1594,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminGalleryRoute: AdminGalleryRoute,
   AdminNewsRoute: AdminNewsRouteWithChildren,
+  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminProfileUpdateRequestsRoute: AdminProfileUpdateRequestsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminRolesRoute: AdminRolesRoute,
@@ -1670,6 +1711,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ManifestoRoute: ManifestoRoute,
   NewsRoute: NewsRouteWithChildren,
+  NotificationPreferencesRoute: NotificationPreferencesRoute,
   NotificationsRoute: NotificationsRoute,
   ProfileUpdateRoute: ProfileUpdateRoute,
   RegisterRoute: RegisterRoute,

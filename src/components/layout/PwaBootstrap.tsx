@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase/client'
 import { deleteJasCacheStorage } from '../../lib/pwa-cache-reset'
+import {
+  getDeviceLabel,
+  normalizeNotificationPreferences,
+  supportsWebPush,
+  urlBase64ToUint8Array,
+} from '../../lib/web-push'
 
 type BeforeInstallPromptEvent = Event & {
   platforms?: string[]
@@ -9,23 +15,6 @@ type BeforeInstallPromptEvent = Event & {
     outcome: 'accepted' | 'dismissed'
     platform: string
   }>
-}
-
-type PushClient = {
-  from: (table: 'push_subscriptions') => {
-    upsert: (
-      values: {
-        user_id: string
-        endpoint: string
-        p256dh: string
-        auth: string
-        user_agent: string
-        enabled: boolean
-        last_seen_at: string
-      },
-      options: { onConflict: string },
-    ) => Promise<{ error: Error | null }>
-  }
 }
 
 type PushSubscriptionJson = {
@@ -37,31 +26,8 @@ type PushSubscriptionJson = {
 }
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as
-  string | undefined
-
-function urlBase64ToUint8Array(value: string) {
-  const padding = '='.repeat((4 - (value.length % 4)) % 4)
-  const base64 = `${value}${padding}`.replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-
-  for (let index = 0; index < rawData.length; index += 1) {
-    outputArray[index] = rawData.charCodeAt(index)
-  }
-
-  return outputArray
-}
-
-function supportsWebPush() {
-  if (typeof window === 'undefined') return false
-
-  return (
-    'Notification' in window &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window &&
-    window.isSecureContext
-  )
-}
+  | string
+  | undefined
 
 function isStandaloneDisplay() {
   if (typeof window === 'undefined') return false
@@ -121,6 +87,8 @@ export function PwaBootstrap() {
   const [pushPermission, setPushPermission] =
     useState<NotificationPermission>('default')
   const [pushSubscribed, setPushSubscribed] = useState(false)
+  const [pushPreferenceEnabled, setPushPreferenceEnabled] = useState(true)
+  const [pushPreferenceLoaded, setPushPreferenceLoaded] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
   const [pushMessage, setPushMessage] = useState('')
 
@@ -187,23 +155,69 @@ export function PwaBootstrap() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    let mounted = true
     const isSupported = supportsWebPush()
     setPushSupported(isSupported)
+    setPushPreferenceLoaded(false)
 
-    if (!isSupported) return
+    async function syncPushState() {
+      if (!isLoggedIn) {
+        if (!mounted) return
+        setPushSubscribed(false)
+        setPushPreferenceEnabled(true)
+        setPushPreferenceLoaded(true)
+        return
+      }
 
-    setPushPermission(Notification.permission)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-    if (import.meta.env.DEV || !VAPID_PUBLIC_KEY) return
+      if (!user || !mounted) return
 
-    navigator.serviceWorker.ready
-      .then((registration) => registration.pushManager.getSubscription())
-      .then((subscription) => {
-        setPushSubscribed(Boolean(subscription))
-      })
-      .catch((error) => {
+      const { data: preferenceRow } = await supabase
+        .from('notification_preferences')
+        .select('web_push_enabled')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (!mounted) return
+      setPushPreferenceEnabled(
+        normalizeNotificationPreferences(preferenceRow).web_push_enabled,
+      )
+      setPushPreferenceLoaded(true)
+
+      if (!isSupported) return
+      setPushPermission(Notification.permission)
+
+      if (import.meta.env.DEV || !VAPID_PUBLIC_KEY) return
+
+      try {
+        const registration = await navigator.serviceWorker.ready
+        const subscription = await registration.pushManager.getSubscription()
+        if (mounted) setPushSubscribed(Boolean(subscription))
+      } catch (error) {
         console.warn('JAS push subscription check failed:', error)
-      })
+      }
+    }
+
+    const handlePreferencesUpdated = () => {
+      void syncPushState()
+    }
+
+    void syncPushState()
+    window.addEventListener(
+      'jas-web-push-preferences-updated',
+      handlePreferencesUpdated,
+    )
+
+    return () => {
+      mounted = false
+      window.removeEventListener(
+        'jas-web-push-preferences-updated',
+        handlePreferencesUpdated,
+      )
+    }
   }, [isLoggedIn])
 
   useEffect(() => {
@@ -407,16 +421,20 @@ export function PwaBootstrap() {
         return
       }
 
-      const pushClient = supabase as unknown as PushClient
-      const { error } = await pushClient.from('push_subscriptions').upsert(
+      const now = new Date().toISOString()
+      const { error } = await supabase.from('push_subscriptions').upsert(
         {
           user_id: user.id,
           endpoint,
           p256dh,
           auth,
           user_agent: navigator.userAgent,
+          device_label: getDeviceLabel(navigator.userAgent),
           enabled: true,
-          last_seen_at: new Date().toISOString(),
+          failure_count: 0,
+          last_seen_at: now,
+          disabled_at: null,
+          disabled_reason: null,
         },
         { onConflict: 'user_id,endpoint' },
       )
@@ -426,9 +444,28 @@ export function PwaBootstrap() {
         return
       }
 
+      const { error: preferenceError } = await supabase
+        .from('notification_preferences')
+        .upsert(
+          {
+            user_id: user.id,
+            web_push_enabled: true,
+          },
+          { onConflict: 'user_id' },
+        )
+
+      if (preferenceError) {
+        setPushMessage(preferenceError.message)
+        return
+      }
+
       setPushSubscribed(true)
+      setPushPreferenceEnabled(true)
       setDismissedPush(false)
       setPushMessage('Browser notifications enabled.')
+      window.dispatchEvent(
+        new CustomEvent('jas-web-push-preferences-updated'),
+      )
     } catch (error) {
       setPushMessage(
         error instanceof Error
@@ -452,6 +489,8 @@ export function PwaBootstrap() {
     !shouldShowInstall &&
     !dismissedPush &&
     isLoggedIn &&
+    pushPreferenceLoaded &&
+    pushPreferenceEnabled &&
     pushSupported &&
     !pushSubscribed &&
     pushPermission !== 'denied' &&

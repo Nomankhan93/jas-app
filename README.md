@@ -228,6 +228,7 @@ Public/member routes:
 /register
 /dashboard
 /notifications
+/notification-preferences
 /card
 /verify/$memberNo
 /donate
@@ -249,6 +250,7 @@ Admin routes:
 /admin/programs/welfare
 /admin/programs/employment
 /admin/finance
+/admin/notifications
 ```
 
 ## Security notes
@@ -303,3 +305,32 @@ npm run qa:core
 ```
 
 Deployment and cron setup are documented in `PATCH_NOTES_PHASE8_BRANDED_EMAILS.md`.
+
+
+## Phase 9 web push reliability
+
+Web push now uses a durable, rate-limited delivery queue instead of direct best-effort sends. Members can manage categories and saved devices at `/notification-preferences`. Admin and super-admin accounts can send filtered campaigns and review/retry delivery failures at `/admin/notifications`.
+
+Apply and validate the Phase 9 migration:
+
+```bash
+npx supabase db push --dry-run
+npx supabase db push
+npm run push:check
+npm run qa:core
+```
+
+Set the server-only push worker secrets and deploy the worker:
+
+```bash
+npx supabase secrets set \
+  VAPID_PUBLIC_KEY="YOUR_PUBLIC_VAPID_KEY" \
+  VAPID_PRIVATE_KEY="YOUR_PRIVATE_VAPID_KEY" \
+  VAPID_SUBJECT="mailto:support@jasofficial.org" \
+  PUSH_SEND_SECRET="$(openssl rand -hex 32)" \
+  PUSH_MAX_SENDS_PER_MINUTE="120"
+
+npx supabase functions deploy send-web-push --no-verify-jwt
+```
+
+Schedule a trusted one-minute POST request to the function with the `X-Push-Secret` header and `{"batch_size":20}` body. Full migration, Cron, preference, delivery-log, and production test instructions are in `PATCH_NOTES_PHASE9_WEB_PUSH_RELIABILITY.md`.

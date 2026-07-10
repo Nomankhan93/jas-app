@@ -61,7 +61,10 @@ for (const [filename, variables] of Object.entries(requiredTemplates)) {
     if (pattern.test(html)) failures.push(`${filename}: forbidden content matched ${pattern}`)
   }
 
-  const configReference = `./supabase/templates/${filename}`
+  const isSecurityNotification = filename.endsWith('_notification.html')
+  const configReference = isSecurityNotification
+    ? `./templates/${filename}`
+    : `./supabase/templates/${filename}`
   if (!config.includes(configReference)) {
     failures.push(`supabase/config.toml does not reference ${filename}`)
   }

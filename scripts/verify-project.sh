@@ -63,7 +63,7 @@ run_cmd() {
   fi
 }
 
-log_section "JAS Production Readiness + QA Phase 8"
+log_section "JAS Production Readiness + QA Phase 9"
 echo "Root: $ROOT_DIR"
 echo "Date: $(date -Is)"
 
@@ -78,6 +78,11 @@ require_dir "src/routes"
 require_dir "supabase/migrations"
 require_dir "supabase/templates"
 require_file "supabase/functions/send-notification-emails/index.ts"
+require_file "supabase/functions/send-web-push/index.ts"
+require_file "supabase/migrations/20260711010000_web_push_reliability_preferences.sql"
+require_file "supabase/qa/web-push-reliability-smoke-tests.sql"
+require_file "src/routes/notification-preferences.tsx"
+require_file "src/routes/admin/notifications.tsx"
 require_file "src/routeTree.gen.ts"
 
 log_section "Critical routes registered"
@@ -94,6 +99,8 @@ critical_routes=(
   "/dashboard"
   "/profile-update"
   "/admin/profile-update-requests"
+  "/notification-preferences"
+  "/admin/notifications"
 )
 
 for route in "${critical_routes[@]}"; do
@@ -115,6 +122,7 @@ migrations=(
   "20260710193000_member_card_csv_export_audit.sql"
   "20260710213000_profile_update_requests.sql"
   "20260710230000_branded_notification_emails.sql"
+  "20260711010000_web_push_reliability_preferences.sql"
 )
 
 for migration in "${migrations[@]}"; do
@@ -156,6 +164,8 @@ if grep -q "VITE_PUBLIC_SITE_URL" .env.example; then pass ".env.example document
 if grep -q "SUPABASE_SERVICE_ROLE_KEY" .env.example; then pass ".env.example documents server service role variable"; else warn ".env.example does not document SUPABASE_SERVICE_ROLE_KEY"; fi
 if grep -q "BREVO_API_KEY" .env.example; then pass ".env.example documents Brevo API secret"; else warn ".env.example does not document BREVO_API_KEY"; fi
 if grep -q "EMAIL_WORKER_SECRET" .env.example; then pass ".env.example documents email worker secret"; else warn ".env.example does not document EMAIL_WORKER_SECRET"; fi
+if grep -q "PUSH_SEND_SECRET" .env.example; then pass ".env.example documents push worker secret"; else warn ".env.example does not document PUSH_SEND_SECRET"; fi
+if grep -q "PUSH_MAX_SENDS_PER_MINUTE" .env.example; then pass ".env.example documents push rate limit"; else warn ".env.example does not document PUSH_MAX_SENDS_PER_MINUTE"; fi
 
 log_section "Client secret exposure scan"
 if grep -RIn --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.output --exclude='*.zip' "SUPABASE_SERVICE_ROLE_KEY" src | grep -v "src/lib/supabase/admin.ts"; then
@@ -198,6 +208,7 @@ critical_test_files=(
   "src/lib/admin/member-action-validation.test.ts"
   "src/lib/profile-update.test.ts"
   "src/lib/notification-email.test.ts"
+  "src/lib/web-push.test.ts"
 )
 
 for test_file in "${critical_test_files[@]}"; do
@@ -209,6 +220,14 @@ if npm run email:templates:check; then
   pass "Email template verification passed"
 else
   fail "Email template verification failed"
+  exit 1
+fi
+
+log_section "Web push reliability checks"
+if npm run push:check; then
+  pass "Web push reliability verification passed"
+else
+  fail "Web push reliability verification failed"
   exit 1
 fi
 

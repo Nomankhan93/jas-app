@@ -777,6 +777,87 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_campaigns: {
+        Row: {
+          action_url: string
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          push_delivery_count: number
+          recipient_count: number
+          recipient_limit: number
+          target_district: string | null
+          target_status: string
+          target_taluka: string | null
+          title: string
+        }
+        Insert: {
+          action_url?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          push_delivery_count?: number
+          recipient_count?: number
+          recipient_limit?: number
+          target_district?: string | null
+          target_status?: string
+          target_taluka?: string | null
+          title: string
+        }
+        Update: {
+          action_url?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          push_delivery_count?: number
+          recipient_count?: number
+          recipient_limit?: number
+          target_district?: string | null
+          target_status?: string
+          target_taluka?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          finance_updates: boolean
+          general_updates: boolean
+          membership_updates: boolean
+          program_updates: boolean
+          updated_at: string
+          user_id: string
+          web_push_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          finance_updates?: boolean
+          general_updates?: boolean
+          membership_updates?: boolean
+          program_updates?: boolean
+          updated_at?: string
+          user_id: string
+          web_push_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          finance_updates?: boolean
+          general_updates?: boolean
+          membership_updates?: boolean
+          program_updates?: boolean
+          updated_at?: string
+          user_id?: string
+          web_push_enabled?: boolean
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           action_url: string | null
@@ -1307,10 +1388,16 @@ export type Database = {
         Row: {
           auth: string
           created_at: string
+          device_label: string | null
+          disabled_at: string | null
+          disabled_reason: string | null
           enabled: boolean
           endpoint: string
+          failure_count: number
           id: string
+          last_failure_at: string | null
           last_seen_at: string
+          last_success_at: string | null
           p256dh: string
           updated_at: string
           user_agent: string | null
@@ -1319,10 +1406,16 @@ export type Database = {
         Insert: {
           auth: string
           created_at?: string
+          device_label?: string | null
+          disabled_at?: string | null
+          disabled_reason?: string | null
           enabled?: boolean
           endpoint: string
+          failure_count?: number
           id?: string
+          last_failure_at?: string | null
           last_seen_at?: string
+          last_success_at?: string | null
           p256dh: string
           updated_at?: string
           user_agent?: string | null
@@ -1331,16 +1424,94 @@ export type Database = {
         Update: {
           auth?: string
           created_at?: string
+          device_label?: string | null
+          disabled_at?: string | null
+          disabled_reason?: string | null
           enabled?: boolean
           endpoint?: string
+          failure_count?: number
           id?: string
+          last_failure_at?: string | null
           last_seen_at?: string
+          last_success_at?: string | null
           p256dh?: string
           updated_at?: string
           user_agent?: string | null
           user_id?: string
         }
         Relationships: []
+      }
+      web_push_deliveries: {
+        Row: {
+          attempts: number
+          created_at: string
+          failed_at: string | null
+          http_status: number | null
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          locked_at: string | null
+          next_attempt_at: string
+          notification_id: string
+          sent_at: string | null
+          status: string
+          subscription_id: string
+          updated_at: string
+          user_id: string
+          worker_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          failed_at?: string | null
+          http_status?: number | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          notification_id: string
+          sent_at?: string | null
+          status?: string
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+          worker_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          failed_at?: string | null
+          http_status?: number | null
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          notification_id?: string
+          sent_at?: string | null
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "web_push_deliveries_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "web_push_deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "push_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1368,6 +1539,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_send_bulk_notification: {
+        Args: {
+          _action_url?: string
+          _category?: string
+          _district?: string
+          _member_status?: string
+          _message: string
+          _recipient_limit?: number
+          _taluka?: string
+          _title: string
+        }
+        Returns: Json
+      }
       admin_area_permission_matches: {
         Args: {
           _action?: string
@@ -1700,6 +1884,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      retry_web_push_delivery: {
+        Args: { _delivery_id: string }
+        Returns: boolean
       }
       role_management_assign_role: {
         Args: {
