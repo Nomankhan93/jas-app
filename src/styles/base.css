@@ -1,0 +1,155 @@
+/* ─── Design Tokens ──────────────────────────────────── */
+:root {
+  --ink: #141210;
+  --ink-soft: #5c5448;
+  --ink-muted: #9c9488;
+
+  --forest: #1a4d2e;
+  --forest-mid: #236638;
+  --forest-light: #2d7a46;
+  --forest-dark: #0b2f1d;
+  --forest-deep: #071f15;
+  --forest-glow: rgba(26, 77, 46, 0.12);
+
+  --gold: #b07d2a;
+  --gold-light: #c9952f;
+  --gold-bright: #ddb75d;
+  --gold-pale: #f5edd8;
+  --gold-glow: rgba(176, 125, 42, 0.18);
+
+  --teal: #2e8b78;
+  --teal-soft: #dff0ec;
+
+  --red: #c0392b;
+  --red-soft: #fdf2f2;
+
+  --amber: #b7791f;
+  --amber-soft: #fff8e5;
+
+  --parchment: #f8f4ee;
+  --paper: #fdfbf7;
+  --surface: #ffffff;
+
+  --line: rgba(20, 18, 16, 0.08);
+  --line-mid: rgba(20, 18, 16, 0.14);
+  --line-strong: rgba(20, 18, 16, 0.22);
+
+  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --shadow-xs: 0 1px 3px rgba(20, 18, 16, 0.06);
+  --shadow-sm: 0 4px 16px rgba(20, 18, 16, 0.07);
+  --shadow-md: 0 12px 40px rgba(20, 18, 16, 0.09);
+  --shadow-lg: 0 24px 80px rgba(20, 18, 16, 0.11);
+  --shadow-xl: 0 40px 100px rgba(20, 18, 16, 0.14);
+
+  --r-xs: 0.375rem;
+  --r-sm: 0.625rem;
+  --r-md: 1rem;
+  --r-lg: 1.5rem;
+  --r-xl: 2rem;
+  --r-2xl: 2.75rem;
+
+  --container: 1200px;
+}
+
+/* ─── Reset & Base ───────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  font-family: var(--font-body);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  color: var(--ink);
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(
+      ellipse 70% 50% at 5% 0%,
+      rgba(26, 77, 46, 0.07) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 95% 100%,
+      rgba(176, 125, 42, 0.07) 0%,
+      transparent 55%
+    ),
+    url("data:image/svg+xml,%3Csvg width='52' height='52' viewBox='0 0 52 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%231A4D2E' fill-opacity='0.025'%3E%3Cpath d='M26 0l4 4-4 4-4-4 4-4zm0 44l4 4-4 4-4-4 4-4zM0 26l4-4 4 4-4 4-4-4zm44 0l4-4 4 4-4 4-4-4z'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+select {
+  text-transform: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  color: white;
+  background: var(--forest);
+}
+
+:focus-visible {
+  outline: 3px solid rgba(201, 149, 47, 0.58);
+  outline-offset: 3px;
+}
+
+/* ─── Accessibility Helpers ──────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
