@@ -1,4 +1,3 @@
-// src/components/MembershipCard.tsx
 import type { ReactNode } from 'react'
 import {
   getMemberDesignationTitle,
@@ -163,7 +162,6 @@ function CardFront({
               </h3>
 
               <div className="mt-5 h-[3px] w-28 rounded-full bg-gradient-to-r from-slate-950 via-yellow-500 to-yellow-300" />
-
             </div>
 
             <div className="grid grid-cols-2 gap-x-12 gap-y-6">
@@ -224,41 +222,42 @@ function CardBack({
       <div className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <SoftBackground logoUrl={logoUrl} flagUrl={flagUrl} />
 
-        <div className="relative grid h-full min-h-0 grid-cols-[1fr_260px] gap-5 p-5">
-          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[1fr_1.05fr_1.3fr] gap-4">
+        <div className="relative grid h-full min-h-0 grid-cols-[1fr_260px] gap-4 p-5">
+          <section className="grid h-full min-h-0 grid-cols-2 grid-rows-[1fr_1.1fr_1.25fr] gap-3.5">
             <BackPanel title="Residential Address" tone="gold">
-              <p className="line-clamp-3 break-words text-[15px] font-black leading-snug text-slate-950">
+              <p className="line-clamp-2 break-words text-[14px] font-black leading-snug text-slate-950">
                 {member.address || 'Full street address not provided.'}
               </p>
-              <p className="mt-2 break-words text-[13px] font-bold text-slate-800">
+              <p className="mt-1.5 break-words text-[12.5px] font-bold text-slate-800">
                 {member.taluka || 'Taluka not provided'}, {member.district}
               </p>
             </BackPanel>
 
             <BackPanel title="Emergency Contact">
               {member.emergency_contact_name || member.emergency_contact_mobile ? (
-                <>
-                  <p className="line-clamp-1 break-words text-[15px] font-black text-slate-950">
+                <div className="space-y-1">
+                  <p className="line-clamp-1 break-words text-[14px] font-black text-slate-950">
                     {member.emergency_contact_name || 'Name not provided'}
                   </p>
-                  <p className="mt-1 text-[13px] font-bold text-slate-700">
-                    {member.emergency_contact_relation || 'Relation not provided'}
+                  <p className="text-[12px] font-bold text-slate-700">
+                    <span className="mr-1 text-[10px] font-black uppercase tracking-wider text-slate-500">Relation:</span>
+                    {member.emergency_contact_relation || 'N/A'}
                   </p>
-                  <p className="mt-1 text-[15px] font-black text-slate-950">
+                  <p className="text-[14px] font-black text-slate-950">
                     {formatMobile(member.emergency_contact_mobile)}
                   </p>
-                </>
+                </div>
               ) : (
-                <p className="text-[14px] font-black text-slate-950">Not provided.</p>
+                <p className="text-[13px] font-bold text-slate-500">Not provided.</p>
               )}
             </BackPanel>
 
-            <BackPanel title="Member Information" contentClassName="flex items-center">
-              <div className="grid w-full grid-cols-3 gap-x-4 gap-y-3">
+            <BackPanel title="Member Information">
+              <div className="grid w-full grid-cols-3 gap-x-3 gap-y-1.5">
                 <MiniInfo label="DOB" value={formatDate(member.date_of_birth)} />
-                <MiniInfo label="Gender" value={member.gender || 'Not provided'} />
-                <MiniInfo label="Blood" value={member.blood_group || 'Not provided'} />
-                <MiniInfo label="Education" value={member.education || 'Not provided'} />
+                <MiniInfo label="Gender" value={member.gender || 'N/A'} />
+                <MiniInfo label="Blood" value={member.blood_group || 'N/A'} />
+                <MiniInfo label="Education" value={member.education || 'N/A'} />
                 <MiniInfo
                   label="Designation"
                   value={getMemberDesignationTitle(member.activeDesignation) || 'Member'}
@@ -269,17 +268,15 @@ function CardBack({
             </BackPanel>
 
             <BackPanel title="Verification Instructions">
-              <p>Scan the QR code or open the verification URL.</p>
-              <p className="mt-1">
-                Match verified name, member number, district and approval status
-                before accepting this card as valid.
+              <p className="text-[12px] font-semibold leading-relaxed text-slate-700">
+                Scan the QR code or visit the verification URL. Match verified name, member number, district and approval status before accepting this card as valid.
               </p>
             </BackPanel>
 
             <BackPanel title="Terms and Conditions">
-              <ul className="list-disc space-y-1 pl-4">
+              <ul className="list-disc space-y-1 pl-3.5 text-[11.5px] font-semibold leading-tight text-slate-700">
                 <li>This card remains property of Jatt Alliance Sindh.</li>
-                <li>Misuse, alteration or transfer is not permitted.</li>
+                <li>Misuse, alteration or transfer is strictly prohibited.</li>
                 <li>Validity depends on live QR verification status.</li>
               </ul>
             </BackPanel>
@@ -287,75 +284,75 @@ function CardBack({
             <BackPanel
               title="Issuing Authority"
               tone="dark"
-              contentClassName="flex flex-1 flex-col justify-end"
+              contentClassName="flex flex-1 flex-col justify-between"
             >
-              <div className="flex h-[108px] items-center overflow-hidden rounded-2xl bg-white/80 px-2 ring-1 ring-slate-200">
+              <div className="flex h-[75px] items-center overflow-hidden rounded-xl bg-white/80 px-2 ring-1 ring-slate-200">
                 <img
                   src={SIGNATURE_PATH}
                   alt="Authorized signature"
-                  className="h-[104px] w-[520px] max-w-full object-contain object-left brightness-75 contrast-150 saturate-0"
-                  style={{ transform: 'scaleX(1.1)', transformOrigin: 'left center' }}
+                  className="h-[70px] w-full object-contain object-left brightness-75 contrast-150 saturate-0"
                   draggable={false}
                 />
               </div>
 
-              <div className="mt-2 h-[2px] w-full bg-slate-500" />
-
-              <p className="mt-2 text-[17px] font-black leading-none text-slate-950">
-                Authorized Signature
-              </p>
-              <p className="mt-1 text-[12px] font-black uppercase tracking-[0.08em] text-slate-600">
-                GENERAL SECRETARY
-              </p>
+              <div>
+                <div className="h-[1.5px] w-full bg-slate-400" />
+                <p className="mt-1 text-[15px] font-black leading-none text-slate-950">
+                  Authorized Signature
+                </p>
+                <p className="mt-0.5 text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">
+                  GENERAL SECRETARY
+                </p>
+              </div>
             </BackPanel>
           </section>
 
-          <aside className="flex h-full min-h-0 flex-col justify-between gap-3 rounded-[1.5rem] border border-slate-200 bg-white/95 p-4 shadow-lg">
-            <div className="rounded-2xl border border-yellow-400 bg-slate-950 px-3 py-3 text-center shadow-sm">
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-yellow-300">
+          <aside className="flex h-full min-h-0 flex-col justify-between gap-2.5 rounded-[1.25rem] border border-slate-200 bg-white/95 p-3.5 shadow-md">
+            <div className="rounded-xl border border-yellow-400 bg-slate-950 px-3 py-2.5 text-center shadow-sm">
+              <p className="text-[10.5px] font-black uppercase tracking-[0.16em] text-yellow-300">
                 Issue No / Version
               </p>
-              <p className="mt-1 break-all text-[16px] font-black text-white">
+              <p className="mt-0.5 break-all text-[15px] font-black text-white">
                 {buildMemberCardIssueLabel(member.member_no)}
               </p>
             </div>
 
-            <div className="rounded-2xl bg-white p-2 text-center shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-xl bg-white p-2 text-center shadow-sm ring-1 ring-slate-200">
               {qrUrl ? (
                 <img
                   src={qrUrl}
                   alt="Verification QR code"
-                  className="mx-auto h-[176px] w-[176px] rounded-xl bg-white p-1"
+                  className="mx-auto h-[160px] w-[160px] rounded-lg bg-white p-1"
                   draggable={false}
                 />
               ) : (
-                <div className="mx-auto flex h-[176px] w-[176px] items-center justify-center rounded-xl bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
+                <div className="mx-auto flex h-[160px] w-[160px] items-center justify-center rounded-lg bg-slate-100 text-[12px] font-bold text-slate-500 ring-1 ring-slate-200">
                   QR unavailable
                 </div>
               )}
 
-              <p className="mt-2 text-center text-[12px] font-black uppercase tracking-[0.16em] text-slate-500">
+              <p className="mt-1.5 text-center text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">
                 Scan to verify
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+              <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">
                 Verification URL
               </p>
-              <p className="mt-1 break-all text-[11px] font-bold leading-4 text-slate-950">
+              <p className="mt-0.5 text-[10.5px] font-bold leading-tight text-slate-900 break-words [overflow-wrap:anywhere]">
                 {formatVerifyUrlForDisplay(verifyUrl) || 'Verification link unavailable'}
               </p>
             </div>
 
-            <div className="rounded-2xl border border-yellow-300 bg-yellow-50 p-3">
-              <p className="text-[11px] font-black uppercase tracking-wide text-yellow-800">
+            <div className="rounded-xl border border-yellow-300 bg-yellow-50/80 p-2.5">
+              <p className="text-[10px] font-black uppercase tracking-wide text-yellow-800">
                 Organization
               </p>
-              <p className="mt-1 text-[14px] font-black leading-4 text-slate-950">
+              <p className="mt-0.5 text-[13px] font-black leading-tight text-slate-950">
                 Jatt Alliance Sindh
               </p>
-              <p className="text-[11px] font-semibold text-slate-600">
+              <p className="text-[10.5px] font-semibold text-slate-600">
                 Sindh, Pakistan
               </p>
             </div>
@@ -364,8 +361,7 @@ function CardBack({
       </div>
 
       <CardFooter>
-        This card is valid only when the QR verification page confirms the
-        membership as approved and active.
+        This card is valid only when the QR verification page confirms the membership as approved and active.
       </CardFooter>
     </>
   )
@@ -385,32 +381,32 @@ function CardHeader({
   badge: string
 }) {
   return (
-    <header className="relative h-[182px] shrink-0 overflow-hidden bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 px-8 py-6 text-white">
+    <header className="relative h-[160px] shrink-0 overflow-hidden bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 px-8 py-5 text-white">
       <div className="absolute right-0 top-0 h-48 w-48 rounded-bl-full bg-yellow-300/15" />
       <div className="absolute bottom-0 left-0 h-32 w-32 rounded-tr-full bg-white/8" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.20),transparent_34%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-[5px] bg-gradient-to-r from-yellow-500 via-yellow-300 to-amber-600" />
+      <div className="absolute inset-x-0 bottom-0 h-[4px] bg-gradient-to-r from-yellow-500 via-yellow-300 to-amber-600" />
 
-      <div className="relative flex items-start justify-between gap-6">
-        <div className="flex min-w-0 items-start gap-5">
+      <div className="relative flex items-center justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-4">
           <LogoMark logoUrl={logoUrl} />
 
           <div className="min-w-0 max-w-[830px]">
-            <p className="text-[13px] font-black uppercase tracking-[0.34em] text-yellow-300">
+            <p className="text-[12px] font-black uppercase tracking-[0.3em] text-yellow-300">
               {label}
             </p>
 
-            <h2 className="mt-3 whitespace-nowrap text-[54px] font-black uppercase leading-[0.94] tracking-tight text-white">
+            <h2 className="mt-1.5 whitespace-nowrap text-[48px] font-black uppercase leading-none tracking-tight text-white">
               {title}
             </h2>
 
-            <p className="mt-3 text-[15px] font-semibold text-emerald-50">
+            <p className="mt-2 text-[14px] font-semibold text-emerald-50">
               {subtitle}
             </p>
           </div>
         </div>
 
-        <div className="min-w-[160px] whitespace-nowrap rounded-[1.1rem] border border-yellow-300/70 bg-yellow-300 px-6 py-4 text-center text-[17px] font-black uppercase tracking-wide text-slate-950 shadow-lg">
+        <div className="min-w-[150px] whitespace-nowrap rounded-xl border border-yellow-300/80 bg-yellow-400/90 px-5 py-2.5 text-center text-[15px] font-black uppercase tracking-wider text-slate-950 shadow-md backdrop-blur-sm">
           {badge}
         </div>
       </div>
@@ -423,11 +419,11 @@ function LogoMark({ logoUrl }: { logoUrl: string | null }) {
     <img
       src={logoUrl}
       alt="Jatt Alliance Sindh logo"
-      className="mt-1 h-24 w-24 rounded-full border-2 border-yellow-400 bg-white object-cover object-top shadow-xl"
+      className="h-20 w-20 rounded-full border-2 border-yellow-400 bg-white object-cover object-top shadow-xl"
       draggable={false}
     />
   ) : (
-    <div className="mt-1 flex h-24 w-24 items-center justify-center rounded-full border-2 border-yellow-400 bg-slate-950 text-xl font-black text-yellow-300 shadow-xl">
+    <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-yellow-400 bg-slate-950 text-lg font-black text-yellow-300 shadow-xl">
       JAS
     </div>
   )
@@ -483,10 +479,13 @@ function Info({ label, value }: { label: string; value: string }) {
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-black uppercase tracking-wide text-emerald-800">
+      <p className="text-[9.5px] font-black uppercase tracking-wider text-emerald-800">
         {label}
       </p>
-      <p className="mt-0.5 break-words text-[13px] font-black leading-[1.15] text-slate-950">
+      <p
+        className="mt-0.5 truncate text-[12.5px] font-black leading-tight text-slate-950"
+        title={value}
+      >
         {value}
       </p>
     </div>
@@ -506,21 +505,21 @@ function BackPanel({
 }) {
   const toneClass =
     tone === 'gold'
-      ? 'border-yellow-300 bg-yellow-50/95'
+      ? 'border-amber-300/80 bg-amber-50/60'
       : tone === 'dark'
-        ? 'border-slate-300 bg-slate-50/95'
+        ? 'border-slate-300 bg-slate-50/80'
         : 'border-slate-200 bg-white/90'
 
   return (
     <section
-      className={`flex min-h-0 flex-col overflow-hidden rounded-[1.05rem] border p-3.5 shadow-sm ${toneClass}`}
+      className={`flex min-h-0 flex-col overflow-hidden rounded-[1rem] border p-3 shadow-sm ${toneClass}`}
     >
-      <h3 className="shrink-0 text-[11px] font-black uppercase tracking-[0.18em] text-emerald-800">
+      <h3 className="shrink-0 text-[10.5px] font-black uppercase tracking-[0.16em] text-emerald-800">
         {title}
       </h3>
 
       <div
-        className={`mt-2 min-h-0 text-[13px] font-semibold leading-[1.38] text-slate-700 ${contentClassName}`}
+        className={`mt-1.5 min-h-0 text-[12.5px] font-semibold leading-normal text-slate-700 ${contentClassName}`}
       >
         {children}
       </div>
@@ -563,7 +562,6 @@ function QrPanel({
   )
 }
 
-
 function formatVerifyUrlForDisplay(value: string | null | undefined) {
   if (!value) return ''
 
@@ -577,8 +575,8 @@ function formatVerifyUrlForDisplay(value: string | null | undefined) {
 
 function CardFooter({ children }: { children: ReactNode }) {
   return (
-    <footer className="shrink-0 border-t border-slate-200 bg-slate-50 px-8 py-2">
-      <p className="text-[11.5px] font-semibold leading-5 text-slate-500">
+    <footer className="shrink-0 border-t border-slate-200 bg-slate-100 px-8 py-2">
+      <p className="text-[12px] font-bold leading-5 text-slate-700">
         {children}
       </p>
     </footer>
